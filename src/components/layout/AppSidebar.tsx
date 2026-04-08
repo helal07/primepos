@@ -67,7 +67,6 @@ const menuGroups = [
     label: "Main",
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Reports", url: "/reports", icon: BarChart3 },
     ],
   },
   {
