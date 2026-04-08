@@ -40,6 +40,9 @@ import {
   Globe,
   ChevronRight,
   BarChart3,
+  CreditCard,
+  UserPlus,
+  CalendarCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -95,6 +98,17 @@ const menuGroups = [
       { title: "Quotations", url: "/quotations", icon: FileQuestion },
       { title: "Sale Returns", url: "/sales/returns", icon: Undo2 },
       { title: "Shipments", url: "/shipments", icon: Ship },
+    ],
+  },
+  {
+    label: "Installment",
+    items: [
+      { title: "Add Customer", url: "/installment/customers/add", icon: UserPlus },
+      { title: "Customers", url: "/installment/customers", icon: UserCircle },
+      { title: "New Sale", url: "/installment/sales/add", icon: CreditCard },
+      { title: "Sales List", url: "/installment/sales", icon: ListOrdered },
+      { title: "Collection", url: "/installment/collections", icon: Banknote },
+      { title: "Schedule", url: "/installment/schedule", icon: CalendarCheck },
     ],
   },
   {

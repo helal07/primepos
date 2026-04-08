@@ -440,6 +440,264 @@ export type Database = {
         }
         Relationships: []
       }
+      installment_collections: {
+        Row: {
+          amount: number
+          collected_at: string
+          collected_by: string | null
+          id: string
+          installment_sale_id: string
+          notes: string | null
+          payment_method: string
+          schedule_id: string
+        }
+        Insert: {
+          amount?: number
+          collected_at?: string
+          collected_by?: string | null
+          id?: string
+          installment_sale_id: string
+          notes?: string | null
+          payment_method?: string
+          schedule_id: string
+        }
+        Update: {
+          amount?: number
+          collected_at?: string
+          collected_by?: string | null
+          id?: string
+          installment_sale_id?: string
+          notes?: string | null
+          payment_method?: string
+          schedule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installment_collections_installment_sale_id_fkey"
+            columns: ["installment_sale_id"]
+            isOneToOne: false
+            referencedRelation: "installment_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installment_collections_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "installment_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installment_customers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          guarantor_mobile: string | null
+          guarantor_name: string | null
+          guarantor_nid_url: string | null
+          guarantor_permanent_address: string | null
+          guarantor_photo_url: string | null
+          guarantor_present_address: string | null
+          guarantor_work_address: string | null
+          id: string
+          nid_url: string | null
+          permanent_address: string | null
+          photo_url: string | null
+          work_address: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          guarantor_mobile?: string | null
+          guarantor_name?: string | null
+          guarantor_nid_url?: string | null
+          guarantor_permanent_address?: string | null
+          guarantor_photo_url?: string | null
+          guarantor_present_address?: string | null
+          guarantor_work_address?: string | null
+          id?: string
+          nid_url?: string | null
+          permanent_address?: string | null
+          photo_url?: string | null
+          work_address?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          guarantor_mobile?: string | null
+          guarantor_name?: string | null
+          guarantor_nid_url?: string | null
+          guarantor_permanent_address?: string | null
+          guarantor_photo_url?: string | null
+          guarantor_present_address?: string | null
+          guarantor_work_address?: string | null
+          id?: string
+          nid_url?: string | null
+          permanent_address?: string | null
+          photo_url?: string | null
+          work_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installment_customers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installment_sales: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          discount: number
+          down_payment: number
+          down_payment_account: string
+          id: string
+          imei_serial: string | null
+          installment_customer_id: string | null
+          installment_duration_days: number
+          interest_percent: number
+          invoice_no: string
+          notes: string | null
+          num_installments: number
+          price: number
+          product_id: string | null
+          remaining_amount: number
+          sale_date: string
+          shipping_cost: number
+          status: string
+          total_amount: number
+          variation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount?: number
+          down_payment?: number
+          down_payment_account?: string
+          id?: string
+          imei_serial?: string | null
+          installment_customer_id?: string | null
+          installment_duration_days?: number
+          interest_percent?: number
+          invoice_no?: string
+          notes?: string | null
+          num_installments?: number
+          price?: number
+          product_id?: string | null
+          remaining_amount?: number
+          sale_date?: string
+          shipping_cost?: number
+          status?: string
+          total_amount?: number
+          variation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount?: number
+          down_payment?: number
+          down_payment_account?: string
+          id?: string
+          imei_serial?: string | null
+          installment_customer_id?: string | null
+          installment_duration_days?: number
+          interest_percent?: number
+          invoice_no?: string
+          notes?: string | null
+          num_installments?: number
+          price?: number
+          product_id?: string | null
+          remaining_amount?: number
+          sale_date?: string
+          shipping_cost?: number
+          status?: string
+          total_amount?: number
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installment_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installment_sales_installment_customer_id_fkey"
+            columns: ["installment_customer_id"]
+            isOneToOne: false
+            referencedRelation: "installment_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installment_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installment_sales_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installment_schedules: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_sale_id: string
+          paid_amount: number
+          paid_date: string | null
+          serial_no: number
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_sale_id: string
+          paid_amount?: number
+          paid_date?: string | null
+          serial_no: number
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_sale_id?: string
+          paid_amount?: number
+          paid_date?: string | null
+          serial_no?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installment_schedules_installment_sale_id_fkey"
+            columns: ["installment_sale_id"]
+            isOneToOne: false
+            referencedRelation: "installment_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           created_at: string
@@ -1606,6 +1864,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_installment_invoice: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       has_module_permission: {
         Args: { _module: string; _permission: string; _user_id: string }

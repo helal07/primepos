@@ -42,6 +42,13 @@ import PayrollPage from "./pages/Payroll";
 import WarrantyClaims from "./pages/WarrantyClaims";
 import CmsPages from "./pages/CmsPages";
 import Reports from "./pages/Reports";
+import InstallmentCustomerAdd from "./pages/InstallmentCustomerAdd";
+import InstallmentCustomers from "./pages/InstallmentCustomers";
+import InstallmentSaleAdd from "./pages/InstallmentSaleAdd";
+import InstallmentSales from "./pages/InstallmentSales";
+import InstallmentCollections from "./pages/InstallmentCollections";
+import InstallmentSchedule from "./pages/InstallmentSchedule";
+import InstallmentAgreement from "./pages/InstallmentAgreement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -103,6 +110,13 @@ const App = () => (
                       <Route path="/warranty-claims" element={<WarrantyClaims />} />
                       <Route path="/cms/pages" element={<CmsPages />} />
                       <Route path="/reports" element={<Reports />} />
+                      <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
+                      <Route path="/installment/customers" element={<InstallmentCustomers />} />
+                      <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
+                      <Route path="/installment/sales" element={<InstallmentSales />} />
+                      <Route path="/installment/collections" element={<InstallmentCollections />} />
+                      <Route path="/installment/schedule" element={<InstallmentSchedule />} />
+                      <Route path="/installment/agreement/:id" element={<InstallmentAgreement />} />
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/roles" element={<RolesPage />} />
                       <Route path="/activity-log" element={<ActivityLogPage />} />
