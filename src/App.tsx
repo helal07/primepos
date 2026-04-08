@@ -40,6 +40,7 @@ import LeaveManagement from "./pages/LeaveManagement";
 import PayrollPage from "./pages/Payroll";
 import WarrantyClaims from "./pages/WarrantyClaims";
 import CmsPages from "./pages/CmsPages";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
