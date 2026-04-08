@@ -142,7 +142,8 @@ const menuGroups = [
   {
     label: "Admin",
     items: [
-      { title: "Users & Roles", url: "/users", icon: UserCog },
+      { title: "Users", url: "/users", icon: UserCog },
+      { title: "Roles & Permissions", url: "/roles", icon: Shield },
       { title: "Activity Log", url: "/activity-log", icon: Activity },
       { title: "Settings", url: "/settings", icon: Settings },
     ],
