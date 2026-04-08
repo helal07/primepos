@@ -41,6 +41,14 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
+              path="/pos"
+              element={
+                <ProtectedRoute>
+                  <POS />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/*"
               element={
                 <ProtectedRoute>
@@ -58,7 +66,6 @@ const App = () => (
                       <Route path="/products/import" element={<PlaceholderPage title="Bulk Import" />} />
                       <Route path="/products/export" element={<PlaceholderPage title="Export" />} />
                       <Route path="/products/labels" element={<PlaceholderPage title="Print Labels" />} />
-                      <Route path="/pos" element={<POS />} />
                       <Route path="/sales" element={<Sales />} />
                       <Route path="/sales/add" element={<SaleAdd />} />
                       <Route path="/invoices" element={<PlaceholderPage title="Invoices" />} />
