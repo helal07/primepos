@@ -38,6 +38,8 @@ import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import PayrollPage from "./pages/Payroll";
+import WarrantyClaims from "./pages/WarrantyClaims";
+import CmsPages from "./pages/CmsPages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
