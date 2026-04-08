@@ -14,6 +14,9 @@ import Products from "./pages/Products";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import Units from "./pages/Units";
+import Variations from "./pages/Variations";
+import StockAdjustments from "./pages/StockAdjustments";
+import StockTransfers from "./pages/StockTransfers";
 import Sales from "./pages/Sales";
 import Customers from "./pages/Customers";
 import SettingsPage from "./pages/Settings";
@@ -45,7 +48,9 @@ const App = () => (
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/brands" element={<Brands />} />
                       <Route path="/units" element={<Units />} />
-                      <Route path="/variations" element={<PlaceholderPage title="Variations" />} />
+                      <Route path="/variations" element={<Variations />} />
+                      <Route path="/stock-adjustments" element={<StockAdjustments />} />
+                      <Route path="/stock-transfers" element={<StockTransfers />} />
                       <Route path="/warranties" element={<PlaceholderPage title="Warranties" />} />
                       <Route path="/products/import" element={<PlaceholderPage title="Bulk Import" />} />
                       <Route path="/products/export" element={<PlaceholderPage title="Export" />} />
