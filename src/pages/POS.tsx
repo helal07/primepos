@@ -46,6 +46,7 @@ export default function POS() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [customerId, setCustomerId] = useState("");
+  const customerSelectValue = customerId || "walk-in";
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountValue, setDiscountValue] = useState(0);
   const [discountType, setDiscountType] = useState("fixed");
@@ -166,12 +167,15 @@ export default function POS() {
           <h1 className="text-lg font-bold">POS Terminal</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={customerId} onValueChange={setCustomerId}>
+          <Select
+            value={customerSelectValue}
+            onValueChange={(value) => setCustomerId(value === "walk-in" ? "" : value)}
+          >
             <SelectTrigger className="w-[180px] h-9">
               <SelectValue placeholder="Walk-in Customer" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Walk-in Customer</SelectItem>
+              <SelectItem value="walk-in">Walk-in Customer</SelectItem>
               {(customers ?? []).map((c: any) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
               ))}
