@@ -15,6 +15,9 @@ export interface PurchaseItem {
   total: number;
   serial_number?: string | null;
   product_name?: string;
+  product_type?: string;
+  brand_name?: string;
+  sku?: string;
 }
 
 export interface PurchaseFormData {
