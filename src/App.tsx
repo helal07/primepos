@@ -12,6 +12,8 @@ import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
+import Brands from "./pages/Brands";
+import Units from "./pages/Units";
 import Sales from "./pages/Sales";
 import Customers from "./pages/Customers";
 import SettingsPage from "./pages/Settings";
