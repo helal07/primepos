@@ -41,14 +41,6 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
-              path="/pos"
-              element={
-                <ProtectedRoute>
-                  <POS />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/*"
               element={
                 <ProtectedRoute>
