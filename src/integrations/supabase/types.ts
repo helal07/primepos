@@ -47,6 +47,180 @@ export type Database = {
         }
         Relationships: []
       }
+      brands: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          alert_quantity: number
+          barcode: string | null
+          brand_id: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          has_warranty: boolean
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          purchase_price: number
+          selling_price: number
+          serial_tracking: boolean
+          sku: string | null
+          stock_quantity: number
+          tax_percent: number
+          unit_id: string | null
+          updated_at: string
+          warranty_duration: number | null
+          warranty_type: string | null
+        }
+        Insert: {
+          alert_quantity?: number
+          barcode?: string | null
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          has_warranty?: boolean
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          purchase_price?: number
+          selling_price?: number
+          serial_tracking?: boolean
+          sku?: string | null
+          stock_quantity?: number
+          tax_percent?: number
+          unit_id?: string | null
+          updated_at?: string
+          warranty_duration?: number | null
+          warranty_type?: string | null
+        }
+        Update: {
+          alert_quantity?: number
+          barcode?: string | null
+          brand_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          has_warranty?: boolean
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          purchase_price?: number
+          selling_price?: number
+          serial_tracking?: boolean
+          sku?: string | null
+          stock_quantity?: number
+          tax_percent?: number
+          unit_id?: string | null
+          updated_at?: string
+          warranty_duration?: number | null
+          warranty_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -147,6 +321,36 @@ export type Database = {
           id?: string
           is_system?: boolean
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      units: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          short_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          short_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          short_name?: string
           updated_at?: string
         }
         Relationships: []
