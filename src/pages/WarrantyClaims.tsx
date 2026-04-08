@@ -19,8 +19,8 @@ const statusColor: Record<string, string> = { pending: "secondary", in_progress:
 export default function WarrantyClaims() {
   const { data: claims, isLoading } = useWarrantyClaims();
   const { upsertClaim, deleteClaim } = useWarrantyMutations();
-  const { customers } = useContacts();
-  const { products } = useInventory();
+  const { data: customerList } = useCustomers();
+  const { data: productList } = useProducts();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ customer_id: "", product_id: "", claim_date: new Date().toISOString().slice(0, 10), issue_description: "", status: "pending", resolution: "", notes: "" });
