@@ -101,11 +101,11 @@ export default function PurchaseAdd() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Add Purchase" description="Record a new purchase from supplier">
+      <PageHeader title="Add Purchase" description="Record a new purchase from supplier" actions={
         <Button variant="outline" onClick={() => navigate("/purchases")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
-      </PageHeader>
+      } />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">

@@ -32,11 +32,11 @@ export default function Purchases() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Purchases" description="Manage purchase records">
+      <PageHeader title="Purchases" description="Manage purchase records" actions={
         <Button onClick={() => navigate("/purchases/add")}>
           <Plus className="h-4 w-4 mr-2" /> Add Purchase
         </Button>
-      </PageHeader>
+      } />
 
       <Card>
         <CardContent className="pt-6">
