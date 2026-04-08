@@ -429,6 +429,141 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_items: {
+        Row: {
+          created_at: string
+          discount: number
+          id: string
+          product_id: string
+          quantity: number
+          sale_id: string
+          serial_number: string | null
+          tax_percent: number
+          total: number
+          unit_price: number
+          variation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          discount?: number
+          id?: string
+          product_id: string
+          quantity?: number
+          sale_id: string
+          serial_number?: string | null
+          tax_percent?: number
+          total?: number
+          unit_price?: number
+          variation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          id?: string
+          product_id?: string
+          quantity?: number
+          sale_id?: string
+          serial_number?: string | null
+          tax_percent?: number
+          total?: number
+          unit_price?: number
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          discount_amount: number
+          discount_type: string | null
+          discount_value: number
+          id: string
+          invoice_number: string
+          notes: string | null
+          payment_method: string | null
+          payment_status: string
+          sale_date: string
+          shipping_cost: number
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number
+          discount_type?: string | null
+          discount_value?: number
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          sale_date?: string
+          shipping_cost?: number
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number
+          discount_type?: string | null
+          discount_value?: number
+          id?: string
+          invoice_number?: string
+          notes?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          sale_date?: string
+          shipping_cost?: number
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_adjustments: {
         Row: {
           adjusted_by: string
@@ -649,6 +784,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invoice_number: { Args: never; Returns: string }
       has_module_permission: {
         Args: { _module: string; _permission: string; _user_id: string }
         Returns: boolean
