@@ -41,7 +41,7 @@ export default function ChartOfAccounts() {
     setOpen(true);
   };
   const handleSubmit = () => {
-    const payload = { ...form, parent_id: form.parent_id || null };
+    const payload = { ...form, parent_id: form.parent_id && form.parent_id !== "none" ? form.parent_id : null };
     if (editId) {
       update.mutate({ id: editId, ...payload }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
@@ -131,7 +131,7 @@ export default function ChartOfAccounts() {
               <Select value={form.parent_id} onValueChange={(v) => setForm({ ...form, parent_id: v })}>
                 <SelectTrigger><SelectValue placeholder="None (top level)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {(accounts ?? []).filter((a: any) => a.id !== editId).map((a: any) => (
                     <SelectItem key={a.id} value={a.id}>{a.code} — {a.name}</SelectItem>
                   ))}
