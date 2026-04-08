@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import Login from "./pages/Login";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
@@ -29,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/*"
@@ -36,7 +38,7 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/brands" element={<PlaceholderPage title="Brands" />} />
