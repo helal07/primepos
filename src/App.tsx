@@ -59,6 +59,7 @@ const App = () => (
                       <Route path="/products/labels" element={<PlaceholderPage title="Print Labels" />} />
                       <Route path="/pos" element={<PlaceholderPage title="Point of Sale" description="Full-screen POS terminal" />} />
                       <Route path="/sales" element={<Sales />} />
+                      <Route path="/sales/add" element={<SaleAdd />} />
                       <Route path="/invoices" element={<PlaceholderPage title="Invoices" />} />
                       <Route path="/sales/drafts" element={<PlaceholderPage title="Drafts" />} />
                       <Route path="/quotations" element={<PlaceholderPage title="Quotations" />} />
