@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCustomers, useCustomerMutations } from "@/hooks/useContacts";
+import { useSuppliers, useSupplierMutations } from "@/hooks/useContacts";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,9 @@ import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
 const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", notes: "", is_active: true };
 
-export default function Customers() {
-  const { data: customers, isLoading } = useCustomers();
-  const { create, update, remove } = useCustomerMutations();
+export default function Suppliers() {
+  const { data: suppliers, isLoading } = useSuppliers();
+  const { create, update, remove } = useSupplierMutations();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -42,39 +42,39 @@ export default function Customers() {
     }
   };
 
-  const handleEdit = (c: any) => {
-    setEditId(c.id);
+  const handleEdit = (s: any) => {
+    setEditId(s.id);
     setForm({
-      name: c.name, phone: c.phone || "", email: c.email || "",
-      address: c.address || "", company: c.company || "",
-      tax_number: c.tax_number || "", notes: c.notes || "", is_active: c.is_active,
+      name: s.name, phone: s.phone || "", email: s.email || "",
+      address: s.address || "", company: s.company || "",
+      tax_number: s.tax_number || "", notes: s.notes || "", is_active: s.is_active,
     });
     setOpen(true);
   };
 
-  const filtered = customers?.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.phone && c.phone.includes(search)) ||
-    (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+  const filtered = suppliers?.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    (s.phone && s.phone.includes(search)) ||
+    (s.company && s.company.toLowerCase().includes(search.toLowerCase()))
   ) || [];
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Customers" description="Manage your customer database" />
+      <PageHeader title="Suppliers" description="Manage your supplier contacts" />
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name, phone, email..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder="Search by name, phone, company..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Dialog open={open} onOpenChange={o => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Add Customer</Button></DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Add Supplier</Button></DialogTrigger>
           <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>{editId ? "Edit" : "Add"} Customer</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editId ? "Edit" : "Add"} Supplier</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2 sm:col-span-2">
                   <Label>Name *</Label>
-                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Customer name" />
+                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Supplier name" />
                 </div>
                 <div className="space-y-2">
                   <Label>Phone</Label>
@@ -108,7 +108,7 @@ export default function Customers() {
             </div>
             <DialogFooter>
               <Button onClick={handleSubmit} disabled={!form.name || create.isPending || update.isPending}>
-                {editId ? "Update" : "Create"} Customer
+                {editId ? "Update" : "Create"} Supplier
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -123,32 +123,30 @@ export default function Customers() {
               <TableHead className="hidden sm:table-cell">Phone</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="text-right hidden sm:table-cell">Balance</TableHead>
-              <TableHead className="text-right hidden md:table-cell">Purchases</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+              <TableRow key={i}><TableCell colSpan={6}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
             )) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No customers found</TableCell></TableRow>
-            ) : filtered.map((c: any) => (
-              <TableRow key={c.id}>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No suppliers found</TableCell></TableRow>
+            ) : filtered.map((s: any) => (
+              <TableRow key={s.id}>
                 <TableCell>
-                  <div className="font-medium">{c.name}</div>
-                  {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
+                  <div className="font-medium">{s.name}</div>
+                  {s.company && <div className="text-xs text-muted-foreground">{s.company}</div>}
                 </TableCell>
-                <TableCell className="hidden sm:table-cell text-muted-foreground">{c.phone || "—"}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{c.email || "—"}</TableCell>
-                <TableCell className="text-right hidden sm:table-cell font-medium">৳{Number(c.balance).toLocaleString()}</TableCell>
-                <TableCell className="text-right hidden md:table-cell">{c.total_purchases}</TableCell>
+                <TableCell className="hidden sm:table-cell text-muted-foreground">{s.phone || "—"}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{s.email || "—"}</TableCell>
+                <TableCell className="text-right hidden sm:table-cell font-medium">৳{Number(s.balance).toLocaleString()}</TableCell>
                 <TableCell>
-                  <Badge variant={c.is_active ? "default" : "secondary"}>{c.is_active ? "Active" : "Inactive"}</Badge>
+                  <Badge variant={s.is_active ? "default" : "secondary"}>{s.is_active ? "Active" : "Inactive"}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => handleEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove.mutate(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </TableCell>
               </TableRow>
             ))}
