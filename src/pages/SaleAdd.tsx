@@ -152,11 +152,14 @@ export default function SaleAdd() {
 
   return (
     <div>
-      <PageHeader title="New Sale">
-        <Button variant="outline" size="sm" onClick={() => navigate("/sales")}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back
-        </Button>
-      </PageHeader>
+      <PageHeader
+        title="New Sale"
+        actions={
+          <Button variant="outline" size="sm" onClick={() => navigate("/sales")}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: Items */}
