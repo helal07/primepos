@@ -1,108 +1,52 @@
-# Installment Sales Module
+# Enhanced Add Purchase Page — IMEI/Serial Support & UI Refresh
 
-## Overview
+## What We're Building
 
-A complete installment sales system: register installment customers (with NID/photo/guarantor), create installment sales with auto-generated payment schedules, collect payments, and generate printable agreement/invoice PDFs with product image, customer photo, and signature fields.
+When adding a purchase, if the selected product has `product_type` of "imei" or "serial", each unit should add IMEI/Serial no into a colmn named Serial/IMEI and auto increase the product number  don't create separate row in the items table with an IMEI/Serial input field (like the reference image). The page layout also gets a visual refresh — switching from sidebar layout to a wider, full-width form inspired by the reference.
 
-## Database Schema (4 new tables)
+## Key Behavior Changes
 
-### `installment_customers`
+### IMEI/Serial Product Handling
 
-Extended customer info specific to installment sales:
+- When an IMEI/Serial product is added, **each quantity = 1 row** with its own IMEI/Serial input field
+- Adding the same IMEI product again this show duplicate IMEI/Serial
+- The quantity field is **locked to 1** and non-editable for IMEI/Serial items
+- A dedicated IMEI/Serial column appears in the items table with an input field per row
+- For General/Combo/Service products, behavior stays the same but not ask for Serial/ IMEI
 
-- `id`, `customer_id` (FK to customers), `permanent_address`, `work_address`, `nid_url` (file), `photo_url` (file)
-- `guarantor_name`, `guarantor_mobile`, `guarantor_present_address`, `guarantor_permanent_address`, `guarantor_work_address`, `guarantor_nid_url`, `guarantor_photo_url`
-- `created_by`, `created_at`
+### "Add New Product Button"
 
-### `installment_sales`
+- If product is new there can be added the product calling ->Add Product
 
-- `id`, `invoice_no` (auto-increment text like "INS-000001"), `sale_date`, `customer_id` (FK customers), `installment_customer_id` (FK installment_customers)
-- `product_id` (FK products), `variation_id` (FK product_variations, nullable), `imei_serial` (text, nullable)
-- `price`, `discount`, `interest_percent`, `shipping_cost`, `total_amount`, `down_payment`, `down_payment_account` (cash/bank), `remaining_amount`
-- `num_installments`, `installment_duration_days` (default 30), `status` (active/completed/defaulted), `notes`
-- `created_by`, `created_at`
+### Supplier Opening Balance Display
 
-### `installment_schedules`
+- After selecting a supplier, show their opening balance (credit/debit) below the supplier select
 
-- `id`, `installment_sale_id` (FK), `serial_no` (int), `amount`, `due_date`, `paid_amount` (default 0), `paid_date` (nullable), `status` (pending/paid/overdue/partial)
-- `created_at`
+## Layout Redesign (Reference Image Style)
 
-### `installment_collections`
+Switch from current 2/3 + 1/3 sidebar layout to a **full-width single-column** form:
 
-- `id`, `installment_sale_id` (FK), `schedule_id` (FK), `amount`, `payment_method`, `collected_by`, `collected_at`, `notes`
+- **Top row**: Reference No (auto), Supplier select (with + button), Date — all in a 3-column grid
+- **Supplier Invoice No** field below
+- **Items section**: Product select + "Add Product" button, then the items table spanning full width
+- **Table columns**: SN, Item-Brand-Code, IMEI/Serial (conditional), Quantity, Unit Price, Total, Actions
+- **Bottom section**: Total Item count, Discount (flat/percentage), Other charges, Grand Total, Account select, Paid amount, Due (auto-calc)
 
-RLS: All tables authenticated-only, `created_by = auth.uid()` for insert, all rows visible to authenticated users.
+## Files Changed
 
-## Sidebar Navigation
+### `src/pages/PurchaseAdd.tsx` — Full rewrite
 
-Add new "Installment Sales" group between Sales and Purchase:
+- New full-width layout matching reference
+- IMEI/Serial detection: read `product_type` from product data when adding items
+- For imei/serial products: qty locked to 1, serial_number input shown, duplicate adds new row
+- Add New Product button
+- Bottom totals section with discount (supports "10" or "10%"), other charges, paid amount, due calculation
 
-- Add Installment Customer → `/installment/customers/add`
-- List Installment Customers → `/installment/customers`
-- Add Installment Sale → `/installment/sales/add`
-- List Installment Sales → `/installment/sales`
-- Installment Collection → `/installment/collections`
-- `Installment Shedule->` 
+### `src/hooks/usePurchases.ts` — Minor update
 
-## Pages (6 new pages)
+- Add `product_type` to `PurchaseItem` interface for UI tracking (not persisted, just used to control form behavior)
 
-### 1. Add Installment Customer (`InstallmentCustomerAdd.tsx`)
+### No database migration needed
 
-Full-page form (3-column grid like reference image):
-
-- Customer Name*, Phone*, Email, Present Address*, Permanent Address*, Work Address*
-- NID* (file upload), Photo* (file upload)
-- Guarantor section: Name*, Mobile*, Present/Permanent/Work Address*, NID (file), Photo (file)
-- Buttons: Submit, Save & Add More, Back
-- Storage bucket: `installment-docs` for NID/photo uploads
-
-### 2. List Installment Customers (`InstallmentCustomers.tsx`)
-
-Table with search, showing customer name, phone, guarantor name, status, actions (edit/view).
-
-### 3. Add Installment Sale (`InstallmentSaleAdd.tsx`)
-
-Two-panel layout (like reference image):
-
-- **Left**: Date, Invoice No (auto), Customer select (from installment_customers), Product select, IMEI/Serial, Price, Discount, Number of Installments*, Interest %*, Shipping, Total (auto-calc with interest), Down Payment, Down Payment Account (Cash/Bank), Remaining (auto), Installment Duration (days, default 30), Note
-- **Right**: Auto-generated installment schedule table showing SN, Amount, Payment Date, Delete button. Clicking "Next" after setting duration auto-fills the schedule. Total shown at bottom.
-- Auto-calculation: `total = (price - discount) * (1 + interest/100) + shipping`, `remaining = total - down_payment`, each installment = `remaining / num_installments`, dates spaced by `installment_duration_days`.
-
-### 4. List Installment Sales (`InstallmentSales.tsx`)
-
-Table: Invoice No, Customer, Product, Total, Down Payment, Remaining, Status, Actions (view/collect/print).
-
-### 5. Installment Collection (`InstallmentCollections.tsx`)
-
-- Select sale by invoice no or customer
-- Show schedule with paid/pending status
-- Collect payment against a specific schedule row: amount, method, notes
-- Auto-update schedule status (paid/partial)
-
-### 6. Printable Agreement/Invoice (`InstallmentAgreement.tsx`)
-
-Generates a printable document (CSS print-optimized) containing:
-
-- Company header (Prime POS branding)
-- Customer photo + details (name, phone, address, NID)
-- Product image + details (name, IMEI/Serial, price)
-- Guarantor photo + details
-- Payment schedule table (all installments with dates)
-- Financial summary (total, down payment, interest, remaining)
-- Signature lines: Customer Signature, Guarantor Signature, Authorized Signature
-- Print button triggers `window.print()`
-
-- &nbsp;
-- `Installment Shedule-> this will inform next collection date with details with filter today date, next week date, next month date, tomorrow date also have button to send SMS reminder from sms reminder`
-
-## Hook
-
-New `src/hooks/useInstallments.ts` with queries and mutations for all 4 tables.
-
-## Files
-
-- **New migration**: Create 4 tables + storage bucket + RLS policies
-- **New**: `src/hooks/useInstallments.ts`
-- **New**: 6 page components in `src/pages/`
-- **Edit**: `src/App.tsx` — add 6 routes
-- **Edit**: `src/components/layout/AppSidebar.tsx` — add Installment Sales menu group
+- `serial_number` column already exists on `purchase_items` table
+- `product_type` already exists on `products` table
