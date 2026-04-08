@@ -156,7 +156,7 @@ export default function POS() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-background flex flex-col" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Header */}
       <div className="h-14 border-b flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
