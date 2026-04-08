@@ -57,7 +57,7 @@ export default function ActivityLogPage() {
                 {logs?.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(log.created_at)}</TableCell>
-                    <TableCell className="font-medium">{(log as any).profiles?.display_name || "System"}</TableCell>
+                    <TableCell className="font-medium">{log.user_id.slice(0, 8)}</TableCell>
                     <TableCell><Badge variant="outline">{log.action}</Badge></TableCell>
                     <TableCell>{log.module ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">

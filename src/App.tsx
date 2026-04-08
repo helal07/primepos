@@ -14,6 +14,9 @@ import Categories from "./pages/Categories";
 import Sales from "./pages/Sales";
 import Customers from "./pages/Customers";
 import SettingsPage from "./pages/Settings";
+import UsersPage from "./pages/Users";
+import RolesPage from "./pages/Roles";
+import ActivityLogPage from "./pages/ActivityLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
