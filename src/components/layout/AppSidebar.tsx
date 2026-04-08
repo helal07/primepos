@@ -39,6 +39,7 @@ import {
   Banknote,
   Globe,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -66,6 +67,7 @@ const menuGroups = [
     label: "Main",
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Reports", url: "/reports", icon: BarChart3 },
     ],
   },
   {
