@@ -29,6 +29,11 @@ import ActivityLogPage from "./pages/ActivityLog";
 import Purchases from "./pages/Purchases";
 import PurchaseAdd from "./pages/PurchaseAdd";
 import PurchaseOrders from "./pages/PurchaseOrders";
+import ChartOfAccounts from "./pages/ChartOfAccounts";
+import Transactions from "./pages/Transactions";
+import JournalEntries from "./pages/JournalEntries";
+import TrialBalance from "./pages/TrialBalance";
+import CashFlow from "./pages/CashFlow";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,11 +80,11 @@ const App = () => (
                       <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/suppliers" element={<Suppliers />} />
-                      <Route path="/accounts" element={<PlaceholderPage title="Chart of Accounts" />} />
-                      <Route path="/transactions" element={<PlaceholderPage title="Transactions" />} />
-                      <Route path="/journal" element={<PlaceholderPage title="Journal Entries" />} />
-                      <Route path="/trial-balance" element={<PlaceholderPage title="Trial Balance" />} />
-                      <Route path="/cash-flow" element={<PlaceholderPage title="Cash Flow" />} />
+                      <Route path="/accounts" element={<ChartOfAccounts />} />
+                      <Route path="/transactions" element={<Transactions />} />
+                      <Route path="/journal" element={<JournalEntries />} />
+                      <Route path="/trial-balance" element={<TrialBalance />} />
+                      <Route path="/cash-flow" element={<CashFlow />} />
                       <Route path="/account-list" element={<PlaceholderPage title="Account List" />} />
                       <Route path="/employees" element={<PlaceholderPage title="Employees" />} />
                       <Route path="/attendance" element={<PlaceholderPage title="Attendance" />} />
