@@ -39,9 +39,7 @@ export default function Attendance() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Attendance" description="Track daily attendance">
-        <Button onClick={() => { setForm({ employee_id: "", date: dateFilter, status: "present", check_in: "", check_out: "", notes: "", latitude: null, longitude: null }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Mark Attendance</Button>
-      </PageHeader>
+      <PageHeader title="Attendance" description="Track daily attendance" actions={<Button onClick={() => { setForm({ employee_id: "", date: dateFilter, status: "present", check_in: "", check_out: "", notes: "", latitude: null, longitude: null }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Mark Attendance</Button>} />
       <Input type="date" className="max-w-[200px]" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
 
       <div className="rounded-md border overflow-auto">

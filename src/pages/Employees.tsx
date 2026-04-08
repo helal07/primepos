@@ -31,9 +31,7 @@ export default function Employees() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Employees" description="Manage employees">
-        <Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Employee</Button>
-      </PageHeader>
+      <PageHeader title="Employees" description="Manage employees" actions={<Button onClick={() => { setForm({ ...emptyForm }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Employee</Button>} />
       <div className="relative max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Search employees..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
 
       <div className="rounded-md border overflow-auto">

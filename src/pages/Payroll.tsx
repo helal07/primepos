@@ -36,12 +36,12 @@ export default function Payroll() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Payroll" description="Monthly payroll management">
+      <PageHeader title="Payroll" description="Monthly payroll management" actions={
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleGenerate}>Generate This Month</Button>
           <Button onClick={() => { setForm({ employee_id: "", month: now.getMonth() + 1, year: now.getFullYear(), basic_salary: 0, allowances: 0, deductions: 0, overtime: 0, net_salary: 0, status: "draft", notes: "" }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Add Entry</Button>
         </div>
-      </PageHeader>
+      } />
 
       <div className="rounded-md border overflow-auto">
         <Table>

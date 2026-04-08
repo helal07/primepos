@@ -25,9 +25,7 @@ export default function LeaveManagement() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Leave Management" description="Manage leave requests">
-        <Button onClick={() => { setForm({ employee_id: "", leave_type: "casual", start_date: "", end_date: "", days: 1, reason: "" }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Request</Button>
-      </PageHeader>
+      <PageHeader title="Leave Management" description="Manage leave requests" actions={<Button onClick={() => { setForm({ employee_id: "", leave_type: "casual", start_date: "", end_date: "", days: 1, reason: "" }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />New Request</Button>} />
 
       <div className="rounded-md border overflow-auto">
         <Table>

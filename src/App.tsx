@@ -34,6 +34,10 @@ import Transactions from "./pages/Transactions";
 import JournalEntries from "./pages/JournalEntries";
 import TrialBalance from "./pages/TrialBalance";
 import CashFlow from "./pages/CashFlow";
+import Employees from "./pages/Employees";
+import Attendance from "./pages/Attendance";
+import LeaveManagement from "./pages/LeaveManagement";
+import PayrollPage from "./pages/Payroll";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,10 +90,10 @@ const App = () => (
                       <Route path="/trial-balance" element={<TrialBalance />} />
                       <Route path="/cash-flow" element={<CashFlow />} />
                       <Route path="/account-list" element={<PlaceholderPage title="Account List" />} />
-                      <Route path="/employees" element={<PlaceholderPage title="Employees" />} />
-                      <Route path="/attendance" element={<PlaceholderPage title="Attendance" />} />
-                      <Route path="/leave" element={<PlaceholderPage title="Leave Management" />} />
-                      <Route path="/payroll" element={<PlaceholderPage title="Payroll" />} />
+                      <Route path="/employees" element={<Employees />} />
+                      <Route path="/attendance" element={<Attendance />} />
+                      <Route path="/leave" element={<LeaveManagement />} />
+                      <Route path="/payroll" element={<PayrollPage />} />
                       <Route path="/warranty-claims" element={<PlaceholderPage title="Warranty Claims" />} />
                       <Route path="/cms/pages" element={<PlaceholderPage title="CMS Pages" />} />
                       <Route path="/users" element={<UsersPage />} />
