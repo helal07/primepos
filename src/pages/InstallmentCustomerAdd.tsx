@@ -82,11 +82,11 @@ export default function InstallmentCustomerAdd() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Add Installment Customer" description="Register customer with NID, photo and guarantor details">
+      <PageHeader title="Add Installment Customer" description="Register customer with NID, photo and guarantor details" actions={
         <Button variant="outline" onClick={() => navigate("/installment/customers")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
-      </PageHeader>
+      } />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Customer Info */}

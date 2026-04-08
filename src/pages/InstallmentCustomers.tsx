@@ -25,11 +25,11 @@ export default function InstallmentCustomers() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Installment Customers" description="Manage installment customer registrations">
+      <PageHeader title="Installment Customers" description="Manage installment customer registrations" actions={
         <Button onClick={() => navigate("/installment/customers/add")}>
           <Plus className="h-4 w-4 mr-2" /> Add Customer
         </Button>
-      </PageHeader>
+      } />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

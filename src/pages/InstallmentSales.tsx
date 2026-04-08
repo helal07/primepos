@@ -23,11 +23,11 @@ export default function InstallmentSales() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Installment Sales" description="Track all installment sales">
+      <PageHeader title="Installment Sales" description="Track all installment sales" actions={
         <Button onClick={() => navigate("/installment/sales/add")}>
           <Plus className="h-4 w-4 mr-2" /> New Sale
         </Button>
-      </PageHeader>
+      } />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

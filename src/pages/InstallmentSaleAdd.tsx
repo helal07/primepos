@@ -105,11 +105,11 @@ export default function InstallmentSaleAdd() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New Installment Sale" description="Create installment sale with payment schedule">
+      <PageHeader title="New Installment Sale" description="Create installment sale with payment schedule" actions={
         <Button variant="outline" onClick={() => navigate("/installment/sales")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
-      </PageHeader>
+      } />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Left — Sale Details */}
