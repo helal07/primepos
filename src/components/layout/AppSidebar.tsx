@@ -67,7 +67,6 @@ const menuGroups = [
     label: "Main",
     items: [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Reports", url: "/reports", icon: BarChart3 },
     ],
   },
   {
@@ -144,6 +143,12 @@ const menuGroups = [
     label: "CMS",
     items: [
       { title: "Pages", url: "/cms/pages", icon: Globe },
+    ],
+  },
+  {
+    label: "Reports",
+    items: [
+      { title: "Reports", url: "/reports", icon: BarChart3 },
     ],
   },
   {
