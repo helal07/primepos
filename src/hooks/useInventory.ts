@@ -320,8 +320,7 @@ export function useStockTransferMutations() {
 
   return { create, update };
 }
-  return useQuery({
-    queryKey: ["products"],
+
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
