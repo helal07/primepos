@@ -26,6 +26,9 @@ import SettingsPage from "./pages/Settings";
 import UsersPage from "./pages/Users";
 import RolesPage from "./pages/Roles";
 import ActivityLogPage from "./pages/ActivityLog";
+import Purchases from "./pages/Purchases";
+import PurchaseAdd from "./pages/PurchaseAdd";
+import PurchaseOrders from "./pages/PurchaseOrders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,9 +69,9 @@ const App = () => (
                       <Route path="/quotations" element={<PlaceholderPage title="Quotations" />} />
                       <Route path="/sales/returns" element={<PlaceholderPage title="Sale Returns" />} />
                       <Route path="/shipments" element={<PlaceholderPage title="Shipments" />} />
-                      <Route path="/purchases/add" element={<PlaceholderPage title="Add Purchase" />} />
-                      <Route path="/purchases" element={<PlaceholderPage title="Purchase List" />} />
-                      <Route path="/purchase-orders" element={<PlaceholderPage title="Purchase Orders" />} />
+                      <Route path="/purchases/add" element={<PurchaseAdd />} />
+                      <Route path="/purchases" element={<Purchases />} />
+                      <Route path="/purchase-orders" element={<PurchaseOrders />} />
                       <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/suppliers" element={<Suppliers />} />
