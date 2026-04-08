@@ -25,12 +25,12 @@ export default function ActivityLogPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Activity Log" description="Track user actions across the system">
+      <PageHeader title="Activity Log" description="Track user actions across the system" actions={
         <Badge variant="outline" className="gap-1">
           <Activity className="h-3 w-3" />
           {logs?.length ?? 0} entries
         </Badge>
-      </PageHeader>
+      } />
 
       <Card>
         <CardContent className="p-0">
