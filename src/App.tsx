@@ -30,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/*"
@@ -37,7 +38,7 @@ const App = () => (
                 <ProtectedRoute>
                   <AppLayout>
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/brands" element={<PlaceholderPage title="Brands" />} />
