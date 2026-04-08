@@ -96,8 +96,8 @@ const App = () => (
                       <Route path="/attendance" element={<Attendance />} />
                       <Route path="/leave" element={<LeaveManagement />} />
                       <Route path="/payroll" element={<PayrollPage />} />
-                      <Route path="/warranty-claims" element={<PlaceholderPage title="Warranty Claims" />} />
-                      <Route path="/cms/pages" element={<PlaceholderPage title="CMS Pages" />} />
+                      <Route path="/warranty-claims" element={<WarrantyClaims />} />
+                      <Route path="/cms/pages" element={<CmsPages />} />
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/roles" element={<RolesPage />} />
                       <Route path="/activity-log" element={<ActivityLogPage />} />
