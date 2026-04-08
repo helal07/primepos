@@ -124,6 +124,59 @@ export type Database = {
           },
         ]
       }
+      product_variations: {
+        Row: {
+          alert_quantity: number
+          barcode: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          product_id: string
+          purchase_price: number
+          selling_price: number
+          sku: string | null
+          stock_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          alert_quantity?: number
+          barcode?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          product_id: string
+          purchase_price?: number
+          selling_price?: number
+          sku?: string | null
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_quantity?: number
+          barcode?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_id?: string
+          purchase_price?: number
+          selling_price?: number
+          sku?: string | null
+          stock_quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           alert_quantity: number
@@ -324,6 +377,114 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      stock_adjustments: {
+        Row: {
+          adjusted_by: string
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity_change: number
+          reason: string
+          type: string
+          variation_id: string | null
+        }
+        Insert: {
+          adjusted_by: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity_change: number
+          reason: string
+          type?: string
+          variation_id?: string | null
+        }
+        Update: {
+          adjusted_by?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity_change?: number
+          reason?: string
+          type?: string
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_transfers: {
+        Row: {
+          created_at: string
+          created_by: string
+          from_branch: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          status: string
+          to_branch: string
+          updated_at: string
+          variation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          from_branch?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          status?: string
+          to_branch: string
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          from_branch?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          status?: string
+          to_branch?: string
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transfers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       units: {
         Row: {
