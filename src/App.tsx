@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import ProductAdd from "./pages/ProductAdd";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import Units from "./pages/Units";
@@ -63,6 +64,8 @@ const App = () => (
                     <Routes>
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/products" element={<Products />} />
+                      <Route path="/products/add" element={<ProductAdd />} />
+                      <Route path="/products/edit/:id" element={<ProductAdd />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/brands" element={<Brands />} />
                       <Route path="/units" element={<Units />} />
