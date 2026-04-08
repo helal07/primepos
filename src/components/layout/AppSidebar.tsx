@@ -73,6 +73,8 @@ const menuGroups = [
       { title: "Brands", url: "/brands", icon: Award },
       { title: "Units", url: "/units", icon: Ruler },
       { title: "Variations", url: "/variations", icon: Shuffle },
+      { title: "Stock Adjustments", url: "/stock-adjustments", icon: ClipboardList },
+      { title: "Stock Transfers", url: "/stock-transfers", icon: Truck },
       { title: "Warranties", url: "/warranties", icon: BadgeCheck },
       { title: "Bulk Import", url: "/products/import", icon: FileUp },
       { title: "Export", url: "/products/export", icon: FileDown },
