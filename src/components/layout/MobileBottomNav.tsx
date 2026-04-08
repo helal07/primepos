@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "POS", url: "/pos", icon: MonitorSmartphone },
   { title: "Products", url: "/products", icon: Package },
   { title: "Sales", url: "/sales", icon: ListOrdered },
