@@ -19,6 +19,7 @@ import StockAdjustments from "./pages/StockAdjustments";
 import StockTransfers from "./pages/StockTransfers";
 import Sales from "./pages/Sales";
 import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
 import SettingsPage from "./pages/Settings";
 import UsersPage from "./pages/Users";
 import RolesPage from "./pages/Roles";
