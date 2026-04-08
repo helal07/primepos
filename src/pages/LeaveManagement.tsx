@@ -46,7 +46,7 @@ export default function LeaveManagement() {
                     <TableCell>
                       {l.status === "pending" && (
                         <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => updateLeaveStatus.mutate({ id: l.id, status: "approved" })}><Check className="h-4 w-4 text-green-600" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => updateLeaveStatus.mutate({ id: l.id, status: "approved" })}><Check className="h-4 w-4 text-primary" /></Button>
                           <Button size="icon" variant="ghost" onClick={() => updateLeaveStatus.mutate({ id: l.id, status: "rejected" })}><X className="h-4 w-4 text-destructive" /></Button>
                         </div>
                       )}
