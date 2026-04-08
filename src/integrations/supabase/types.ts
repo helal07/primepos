@@ -251,6 +251,81 @@ export type Database = {
           },
         ]
       }
+      cms_media: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          created_by: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      cms_pages: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string | null
+          featured_image: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          featured_image?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -1446,6 +1521,76 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          issue_description: string
+          notes: string | null
+          product_id: string | null
+          resolution: string | null
+          resolved_date: string | null
+          sale_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          claim_date?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          issue_description: string
+          notes?: string | null
+          product_id?: string | null
+          resolution?: string | null
+          resolved_date?: string | null
+          sale_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          issue_description?: string
+          notes?: string | null
+          product_id?: string | null
+          resolution?: string | null
+          resolved_date?: string | null
+          sale_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
             referencedColumns: ["id"]
           },
         ]
