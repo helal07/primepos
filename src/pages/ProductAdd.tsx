@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProducts, useProductMutations, useCategories, useBrands, useUnits } from "@/hooks/useInventory";
-import { useContacts } from "@/hooks/useContacts";
+
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -175,7 +175,7 @@ export default function ProductAdd() {
                 ))}
               </div>
               {isService && (
-                <p className="text-xs text-amber-600 mt-2">⚠ Service products won't appear on the website and have no stock tracking.</p>
+                <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">⚠ Service products won't appear on the website and have no stock tracking.</p>
               )}
             </CardContent>
           </Card>
