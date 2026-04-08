@@ -41,7 +41,7 @@ export default function ChartOfAccounts() {
     setOpen(true);
   };
   const handleSubmit = () => {
-    const payload = { ...form, parent_id: form.parent_id || null };
+    const payload = { ...form, parent_id: form.parent_id && form.parent_id !== "none" ? form.parent_id : null };
     if (editId) {
       update.mutate({ id: editId, ...payload }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
