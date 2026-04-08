@@ -193,3 +193,130 @@ export function useProductMutations() {
 
   return { create, update, remove };
 }
+
+// Product Variations
+export function useVariations(productId?: string) {
+  return useQuery({
+    queryKey: ["variations", productId],
+    queryFn: async () => {
+      let q = supabase.from("product_variations").select("*, products(name)").order("name");
+      if (productId) q = q.eq("product_id", productId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useVariationMutations() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["variations"] });
+
+  const create = useMutation({
+    mutationFn: async (v: TablesInsert<"product_variations">) => {
+      const { error } = await supabase.from("product_variations").insert(v);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast({ title: "Variation created" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, ...updates }: TablesUpdate<"product_variations"> & { id: string }) => {
+      const { error } = await supabase.from("product_variations").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast({ title: "Variation updated" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("product_variations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast({ title: "Variation deleted" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return { create, update, remove };
+}
+
+// Stock Adjustments
+export function useStockAdjustments() {
+  return useQuery({
+    queryKey: ["stock_adjustments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock_adjustments")
+        .select("*, products(name), product_variations(name)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useStockAdjustmentMutations() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const create = useMutation({
+    mutationFn: async (a: TablesInsert<"stock_adjustments">) => {
+      const { error } = await supabase.from("stock_adjustments").insert(a);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["stock_adjustments"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      toast({ title: "Stock adjusted" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return { create };
+}
+
+// Stock Transfers
+export function useStockTransfers() {
+  return useQuery({
+    queryKey: ["stock_transfers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stock_transfers")
+        .select("*, products(name), product_variations(name)")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useStockTransferMutations() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["stock_transfers"] });
+
+  const create = useMutation({
+    mutationFn: async (t: TablesInsert<"stock_transfers">) => {
+      const { error } = await supabase.from("stock_transfers").insert(t);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast({ title: "Transfer created" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const update = useMutation({
+    mutationFn: async ({ id, ...updates }: TablesUpdate<"stock_transfers"> & { id: string }) => {
+      const { error } = await supabase.from("stock_transfers").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); toast({ title: "Transfer updated" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return { create, update };
+}
