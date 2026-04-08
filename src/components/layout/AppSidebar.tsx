@@ -1,14 +1,11 @@
 import {
   LayoutDashboard,
   Package,
-  ShoppingCart,
   Truck,
   Users,
-  Landmark,
   Shield,
   Settings,
   Tags,
-  Layers,
   Award,
   Ruler,
   Shuffle,
@@ -41,6 +38,7 @@ import {
   Clock,
   Banknote,
   Globe,
+  ChevronRight,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -57,6 +55,11 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const menuGroups = [
   {
@@ -162,11 +165,11 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            E
+            P
           </div>
           {!collapsed && (
             <span className="text-lg font-bold text-sidebar-accent-foreground">
-              ERP Suite
+              Prime POS
             </span>
           )}
         </div>
@@ -174,14 +177,15 @@ export function AppSidebar() {
       <SidebarContent className="px-2">
         {menuGroups.map((group) => {
           const isGroupActive = group.items.some(
-            (item) => location.pathname === item.url || location.pathname.startsWith(item.url + "/")
+            (item) =>
+              location.pathname === item.url ||
+              location.pathname.startsWith(item.url + "/")
           );
-          return (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs uppercase tracking-wider">
-                {group.label}
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
+
+          // Single-item groups don't need folding
+          if (group.items.length === 1) {
+            return (
+              <SidebarGroup key={group.label}>
                 <SidebarMenu>
                   {group.items.map((item) => (
                     <SidebarMenuItem key={item.title}>
@@ -199,14 +203,57 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+              </SidebarGroup>
+            );
+          }
+
+          return (
+            <Collapsible
+              key={group.label}
+              defaultOpen={isGroupActive}
+              className="group/collapsible"
+            >
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  asChild
+                  className="text-sidebar-foreground/50 text-xs uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground/80 transition-colors"
+                >
+                  <CollapsibleTrigger className="flex w-full items-center justify-between">
+                    <span>{group.label}</span>
+                    {!collapsed && (
+                      <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    )}
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {group.items.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild size="sm">
+                            <NavLink
+                              to={item.url}
+                              end={item.url === "/"}
+                              className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              {!collapsed && <span>{item.title}</span>}
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
           );
         })}
       </SidebarContent>
       <SidebarFooter className="p-4">
         {!collapsed && (
-          <p className="text-xs text-sidebar-foreground/40">© 2026 ERP Suite</p>
+          <p className="text-xs text-sidebar-foreground/40">© 2026 Prime POS</p>
         )}
       </SidebarFooter>
     </Sidebar>
