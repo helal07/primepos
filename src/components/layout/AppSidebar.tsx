@@ -146,6 +146,12 @@ const menuGroups = [
     ],
   },
   {
+    label: "Reports",
+    items: [
+      { title: "Reports", url: "/reports", icon: BarChart3 },
+    ],
+  },
+  {
     label: "Admin",
     items: [
       { title: "Users", url: "/users", icon: UserCog },
