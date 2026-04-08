@@ -62,7 +62,7 @@ const menuGroups = [
   {
     label: "Main",
     items: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard },
+      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     ],
   },
   {
