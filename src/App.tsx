@@ -14,6 +14,9 @@ import Categories from "./pages/Categories";
 import Sales from "./pages/Sales";
 import Customers from "./pages/Customers";
 import SettingsPage from "./pages/Settings";
+import UsersPage from "./pages/Users";
+import RolesPage from "./pages/Roles";
+import ActivityLogPage from "./pages/ActivityLog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,8 +71,9 @@ const App = () => (
                       <Route path="/payroll" element={<PlaceholderPage title="Payroll" />} />
                       <Route path="/warranty-claims" element={<PlaceholderPage title="Warranty Claims" />} />
                       <Route path="/cms/pages" element={<PlaceholderPage title="CMS Pages" />} />
-                      <Route path="/users" element={<PlaceholderPage title="Users & Roles" />} />
-                      <Route path="/activity-log" element={<PlaceholderPage title="Activity Log" />} />
+                      <Route path="/users" element={<UsersPage />} />
+                      <Route path="/roles" element={<RolesPage />} />
+                      <Route path="/activity-log" element={<ActivityLogPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
