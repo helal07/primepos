@@ -40,6 +40,7 @@ import LeaveManagement from "./pages/LeaveManagement";
 import PayrollPage from "./pages/Payroll";
 import WarrantyClaims from "./pages/WarrantyClaims";
 import CmsPages from "./pages/CmsPages";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,7 @@ const App = () => (
                       <Route path="/payroll" element={<PayrollPage />} />
                       <Route path="/warranty-claims" element={<WarrantyClaims />} />
                       <Route path="/cms/pages" element={<CmsPages />} />
+                      <Route path="/reports" element={<Reports />} />
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/roles" element={<RolesPage />} />
                       <Route path="/activity-log" element={<ActivityLogPage />} />
