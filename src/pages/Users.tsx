@@ -27,14 +27,12 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Users" description="Manage user accounts and their roles">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1">
-            <UsersIcon className="h-3 w-3" />
-            {users?.length ?? 0} users
-          </Badge>
-        </div>
-      </PageHeader>
+      <PageHeader title="Users" description="Manage user accounts and their roles" actions={
+        <Badge variant="outline" className="gap-1">
+          <UsersIcon className="h-3 w-3" />
+          {users?.length ?? 0} users
+        </Badge>
+      } />
 
       <Card>
         <CardContent className="p-0">

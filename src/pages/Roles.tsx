@@ -34,9 +34,9 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Roles & Permissions" description="Create custom roles and configure module access">
+      <PageHeader title="Roles & Permissions" description="Create custom roles and configure module access" actions={
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New Role</Button>
-      </PageHeader>
+      } />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Roles List */}

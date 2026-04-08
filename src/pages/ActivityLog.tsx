@@ -7,37 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity } from "lucide-react";
 
-interface LogEntry {
-  id: string;
-  user_id: string;
-  action: string;
-  module: string | null;
-  entity_type: string | null;
-  details: any;
-  created_at: string;
-  profiles: { display_name: string | null } | null;
-}
-
 export default function ActivityLogPage() {
   const { data: logs, isLoading } = useQuery({
     queryKey: ["activity_log"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("activity_log")
-        .select("*, profiles!activity_log_user_id_fkey(display_name)")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
-      if (error) {
-        // If join fails (no FK), try without join
-        const { data: d2, error: e2 } = await supabase
-          .from("activity_log")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(100);
-        if (e2) throw e2;
-        return d2 as LogEntry[];
-      }
-      return data as LogEntry[];
+      if (error) throw error;
+      return data;
     },
   });
 
