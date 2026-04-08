@@ -174,7 +174,7 @@ export function AppSidebar() {
             (item) => location.pathname === item.url || location.pathname.startsWith(item.url + "/")
           );
           return (
-            <SidebarGroup key={group.label} defaultOpen={isGroupActive}>
+            <SidebarGroup key={group.label}>
               <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs uppercase tracking-wider">
                 {group.label}
               </SidebarGroupLabel>
