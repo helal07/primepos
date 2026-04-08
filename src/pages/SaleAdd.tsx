@@ -296,12 +296,15 @@ export default function SaleAdd() {
               <CardTitle className="text-base">Customer</CardTitle>
             </CardHeader>
             <CardContent>
-              <Select value={customerId} onValueChange={setCustomerId}>
+              <Select
+                value={customerSelectValue}
+                onValueChange={(value) => setCustomerId(value === "walk-in" ? "" : value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Walk-in Customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Walk-in Customer</SelectItem>
+                  <SelectItem value="walk-in">Walk-in Customer</SelectItem>
                   {(customers ?? []).map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
