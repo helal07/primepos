@@ -63,18 +63,26 @@ export function useUsersWithRoles() {
   return useQuery({
     queryKey: ["users_with_roles"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch user_roles with role name
+      const { data: userRoles, error: urError } = await supabase
         .from("user_roles")
-        .select("user_id, role_id, roles(name), profiles(display_name, avatar_url)")
-        ;
-      if (error) throw error;
-      // Flatten joined data
-      return (data as any[]).map((d) => ({
+        .select("user_id, role_id, roles(name)");
+      if (urError) throw urError;
+
+      // Fetch all profiles
+      const { data: profiles, error: pError } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, avatar_url");
+      if (pError) throw pError;
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) ?? []);
+
+      return (userRoles as any[]).map((d) => ({
         user_id: d.user_id,
         role_id: d.role_id,
-        role_name: d.roles?.name ?? "Unknown",
-        display_name: d.profiles?.display_name ?? null,
-        avatar_url: d.profiles?.avatar_url ?? null,
+        role_name: (d.roles as any)?.name ?? "Unknown",
+        display_name: profileMap.get(d.user_id)?.display_name ?? null,
+        avatar_url: profileMap.get(d.user_id)?.avatar_url ?? null,
       }));
     },
   });
