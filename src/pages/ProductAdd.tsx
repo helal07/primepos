@@ -44,12 +44,18 @@ export default function ProductAdd() {
   const { data: units } = useUnits();
   const { create, update } = useProductMutations();
   const { toast } = useToast();
+  const { data: variations } = useVariations(editId);
+  const varMutations = useVariationMutations();
 
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [showVarForm, setShowVarForm] = useState(false);
+  const [varEditId, setVarEditId] = useState<string | null>(null);
+  const defaultVar = { name: "", sku: "", barcode: "", purchase_price: "0", selling_price: "0", stock_quantity: "0", alert_quantity: "5" };
+  const [varForm, setVarForm] = useState(defaultVar);
 
   // Load product for editing
   useEffect(() => {
