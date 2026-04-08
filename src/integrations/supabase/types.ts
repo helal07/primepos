@@ -697,9 +697,11 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           name: string
+          product_type: string
           purchase_price: number
           selling_price: number
           serial_tracking: boolean
+          show_on_website: boolean
           sku: string | null
           stock_quantity: number
           tax_percent: number
@@ -721,9 +723,11 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name: string
+          product_type?: string
           purchase_price?: number
           selling_price?: number
           serial_tracking?: boolean
+          show_on_website?: boolean
           sku?: string | null
           stock_quantity?: number
           tax_percent?: number
@@ -745,9 +749,11 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name?: string
+          product_type?: string
           purchase_price?: number
           selling_price?: number
           serial_tracking?: boolean
+          show_on_website?: boolean
           sku?: string | null
           stock_quantity?: number
           tax_percent?: number
