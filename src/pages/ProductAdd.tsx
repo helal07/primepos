@@ -346,6 +346,116 @@ export default function ProductAdd() {
               </CardContent>
             </Card>
           )}
+
+          {/* Product Variations — only in edit mode */}
+          {editId && (
+            <Card>
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-base">Product Variations</CardTitle>
+                <Button size="sm" variant="outline" onClick={() => { setShowVarForm(true); setVarEditId(null); setVarForm(defaultVar); }}>
+                  <Plus className="mr-1 h-3 w-3" /> Add Variation
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {showVarForm && (
+                  <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Name *</Label>
+                        <Input value={varForm.name} onChange={e => setVarForm({ ...varForm, name: e.target.value })} placeholder="e.g. Red / 128GB" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">SKU</Label>
+                        <Input value={varForm.sku} onChange={e => setVarForm({ ...varForm, sku: e.target.value })} placeholder="SKU" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Barcode</Label>
+                        <Input value={varForm.barcode} onChange={e => setVarForm({ ...varForm, barcode: e.target.value })} placeholder="Barcode" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Purchase Price</Label>
+                        <Input type="number" step="0.01" value={varForm.purchase_price} onChange={e => setVarForm({ ...varForm, purchase_price: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Selling Price</Label>
+                        <Input type="number" step="0.01" value={varForm.selling_price} onChange={e => setVarForm({ ...varForm, selling_price: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Stock</Label>
+                        <Input type="number" value={varForm.stock_quantity} onChange={e => setVarForm({ ...varForm, stock_quantity: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" disabled={!varForm.name} onClick={() => {
+                        const payload = {
+                          product_id: editId,
+                          name: varForm.name,
+                          sku: varForm.sku || null,
+                          barcode: varForm.barcode || null,
+                          purchase_price: parseFloat(varForm.purchase_price) || 0,
+                          selling_price: parseFloat(varForm.selling_price) || 0,
+                          stock_quantity: parseInt(varForm.stock_quantity) || 0,
+                          alert_quantity: parseInt(varForm.alert_quantity) || 5,
+                        };
+                        if (varEditId) {
+                          varMutations.update.mutate({ id: varEditId, ...payload }, { onSuccess: () => { setShowVarForm(false); setVarEditId(null); } });
+                        } else {
+                          varMutations.create.mutate(payload, { onSuccess: () => { setShowVarForm(false); } });
+                        }
+                      }}>
+                        {varEditId ? "Update" : "Add"}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setShowVarForm(false); setVarEditId(null); }}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+
+                {variations && variations.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead className="hidden sm:table-cell">SKU</TableHead>
+                          <TableHead className="text-right">Price</TableHead>
+                          <TableHead className="text-right">Stock</TableHead>
+                          <TableHead className="text-right w-20">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {variations.map((v: any) => (
+                          <TableRow key={v.id}>
+                            <TableCell className="font-medium">{v.name}</TableCell>
+                            <TableCell className="hidden sm:table-cell text-muted-foreground">{v.sku || "—"}</TableCell>
+                            <TableCell className="text-right">৳{Number(v.selling_price).toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{v.stock_quantity}</TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                                setVarEditId(v.id);
+                                setVarForm({
+                                  name: v.name, sku: v.sku || "", barcode: v.barcode || "",
+                                  purchase_price: String(v.purchase_price), selling_price: String(v.selling_price),
+                                  stock_quantity: String(v.stock_quantity), alert_quantity: String(v.alert_quantity),
+                                });
+                                setShowVarForm(true);
+                              }}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => varMutations.remove.mutate(v.id)}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : !showVarForm && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No variations yet. Add one above.</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column — Image & Options */}
