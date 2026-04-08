@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useWarrantyClaims, useWarrantyMutations } from "@/hooks/useWarrantyCms";
-import { useContacts } from "@/hooks/useContacts";
-import { useInventory } from "@/hooks/useInventory";
+import { useCustomers } from "@/hooks/useContacts";
+import { useProducts } from "@/hooks/useInventory";
 
 const statusColor: Record<string, string> = { pending: "secondary", in_progress: "default", resolved: "outline", rejected: "destructive" };
 
