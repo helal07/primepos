@@ -33,6 +33,7 @@ export default function SaleAdd() {
   const { createSale } = useSaleMutations();
 
   const [customerId, setCustomerId] = useState<string>("");
+  const customerSelectValue = customerId || "walk-in";
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountType, setDiscountType] = useState("fixed");
   const [discountValue, setDiscountValue] = useState(0);

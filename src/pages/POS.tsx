@@ -46,6 +46,7 @@ export default function POS() {
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [customerId, setCustomerId] = useState("");
+  const customerSelectValue = customerId || "walk-in";
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountValue, setDiscountValue] = useState(0);
   const [discountType, setDiscountType] = useState("fixed");
