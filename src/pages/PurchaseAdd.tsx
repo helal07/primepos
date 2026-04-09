@@ -10,13 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Search, ArrowLeft, PackagePlus, AlertTriangle, ScanBarcode } from "lucide-react";
+import { Plus, Trash2, Search, ArrowLeft, PackagePlus, AlertTriangle, ScanBarcode, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
 import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, type PurchaseItem } from "@/hooks/usePurchases";
+
+interface PurchaseItemWithSerials extends PurchaseItem {
+  serials: string[];
+}
 
 export default function PurchaseAdd() {
   const navigate = useNavigate();
@@ -33,7 +37,7 @@ export default function PurchaseAdd() {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentStatus, setPaymentStatus] = useState("unpaid");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<PurchaseItem[]>([]);
+  const [items, setItems] = useState<PurchaseItemWithSerials[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [discountInput, setDiscountInput] = useState("");
@@ -41,11 +45,10 @@ export default function PurchaseAdd() {
   const [paidAmount, setPaidAmount] = useState(0);
   const [scannerIdx, setScannerIdx] = useState<number | null>(null);
   const [selectedPOId, setSelectedPOId] = useState<string>("");
+  const [serialInput, setSerialInput] = useState<Record<number, string>>({});
 
-  // Fetch PO items when a PO is selected
   const { data: poItems } = usePurchaseOrderItems(selectedPOId || null);
 
-  // When PO is selected, populate form
   const handlePOSelect = (poId: string) => {
     setSelectedPOId(poId);
     if (poId && purchaseOrders) {
@@ -57,10 +60,9 @@ export default function PurchaseAdd() {
     }
   };
 
-  // Load PO items into the items table
   useMemo(() => {
     if (poItems && poItems.length > 0 && selectedPOId) {
-      const mapped: PurchaseItem[] = poItems.map((pi: any) => ({
+      const mapped: PurchaseItemWithSerials[] = poItems.map((pi: any) => ({
         product_id: pi.product_id,
         product_name: pi.products?.name || "",
         product_type: pi.products?.product_type || "general",
@@ -72,21 +74,43 @@ export default function PurchaseAdd() {
         tax_percent: Number(pi.products?.tax_percent || 0),
         total: pi.total,
         serial_number: "",
+        serials: [],
       }));
       setItems(mapped);
     }
   }, [poItems, selectedPOId]);
 
   const handleSerialScan = (code: string, idx: number) => {
-    updateItem(idx, "serial_number", code);
+    if (!code.trim()) return;
+    addSerialToItem(idx, code.trim());
     setScannerIdx(null);
-    const product = (products as any[])?.find((p: any) => p.id === items[idx]?.product_id);
-    if (product) {
-      addProduct(product);
-      setTimeout(() => {
-        document.getElementById(`serial-input-${idx + 1}`)?.focus();
-      }, 50);
-    }
+  };
+
+  const addSerialToItem = (idx: number, serial: string) => {
+    if (!serial) return;
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      if (item.serials.includes(serial)) return item; // duplicate check
+      const newSerials = [...item.serials, serial];
+      const qty = newSerials.length;
+      const base = qty * item.unit_cost;
+      const afterDiscount = base - item.discount;
+      const total = afterDiscount + afterDiscount * (item.tax_percent / 100);
+      return { ...item, serials: newSerials, quantity: qty, total };
+    }));
+    setSerialInput(prev => ({ ...prev, [idx]: "" }));
+  };
+
+  const removeSerialFromItem = (idx: number, serial: string) => {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item;
+      const newSerials = item.serials.filter(s => s !== serial);
+      const qty = Math.max(1, newSerials.length);
+      const base = qty * item.unit_cost;
+      const afterDiscount = base - item.discount;
+      const total = afterDiscount + afterDiscount * (item.tax_percent / 100);
+      return { ...item, serials: newSerials, quantity: qty, total };
+    }));
   };
 
   const selectedSupplier = useMemo(() => {
@@ -104,7 +128,6 @@ export default function PurchaseAdd() {
 
   const hasSerialItems = items.some((i) => i.product_type === "imei" || i.product_type === "serial");
 
-  // Available POs (draft or approved)
   const availablePOs = useMemo(() => {
     if (!purchaseOrders) return [];
     return (purchaseOrders as any[]).filter((po: any) => po.status === "draft" || po.status === "approved");
@@ -112,43 +135,33 @@ export default function PurchaseAdd() {
 
   const addProduct = (product: any) => {
     const isSerial = product.product_type === "imei" || product.product_type === "serial";
+    const exists = items.find((i) => i.product_id === product.id);
 
-    if (isSerial) {
+    if (exists) {
+      if (!isSerial) {
+        // Non-serial: just increment quantity
+        setItems(items.map((i) =>
+          i.product_id === product.id
+            ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_cost }
+            : i
+        ));
+      }
+      // For serial items, user adds IMEIs via the serial input field - no row duplication
+    } else {
       setItems((prev) => [...prev, {
         product_id: product.id,
         product_name: product.name,
         product_type: product.product_type,
         brand_name: product.brands?.name || "",
         sku: product.sku || "",
-        quantity: 1,
+        quantity: isSerial ? 0 : 1,
         unit_cost: Number(product.purchase_price),
         discount: 0,
         tax_percent: Number(product.tax_percent),
-        total: Number(product.purchase_price),
+        total: isSerial ? 0 : Number(product.purchase_price),
         serial_number: "",
+        serials: [],
       }]);
-    } else {
-      const exists = items.find((i) => i.product_id === product.id);
-      if (exists) {
-        setItems(items.map((i) =>
-          i.product_id === product.id
-            ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_cost }
-            : i
-        ));
-      } else {
-        setItems((prev) => [...prev, {
-          product_id: product.id,
-          product_name: product.name,
-          product_type: product.product_type,
-          brand_name: product.brands?.name || "",
-          sku: product.sku || "",
-          quantity: 1,
-          unit_cost: Number(product.purchase_price),
-          discount: 0,
-          tax_percent: Number(product.tax_percent),
-          total: Number(product.purchase_price),
-        }]);
-      }
     }
     setProductSearch("");
     setShowSearch(false);
@@ -159,10 +172,12 @@ export default function PurchaseAdd() {
       if (i !== idx) return item;
       const updated = { ...item, [field]: value };
       if (field !== "serial_number") {
-        const qty = typeof updated.quantity === "number" ? updated.quantity : 1;
+        const isSerial = updated.product_type === "imei" || updated.product_type === "serial";
+        const qty = isSerial ? updated.serials.length : (typeof updated.quantity === "number" ? updated.quantity : 1);
         const base = qty * updated.unit_cost;
         const afterDiscount = base - (typeof updated.discount === "number" ? updated.discount : 0);
         updated.total = afterDiscount + afterDiscount * (updated.tax_percent / 100);
+        if (isSerial) updated.quantity = qty;
       }
       return updated;
     }));
@@ -187,8 +202,47 @@ export default function PurchaseAdd() {
   const dueAmount = Math.max(0, grandTotal - paidAmount);
   const totalItemCount = items.reduce((s, i) => s + i.quantity, 0);
 
+  // Check for duplicate serials across all items
+  const getAllSerials = () => {
+    const all: string[] = [];
+    items.forEach(item => all.push(...item.serials));
+    return all;
+  };
+  const allSerials = getAllSerials();
+  const duplicateSerials = new Set(allSerials.filter((s, i) => allSerials.indexOf(s) !== i));
+
   const handleSubmit = async () => {
     if (items.length === 0) return;
+
+    // For serial items, expand each serial into its own purchase_item row
+    const expandedItems: PurchaseItem[] = [];
+    for (const item of items) {
+      const isSerial = item.product_type === "imei" || item.product_type === "serial";
+      if (isSerial && item.serials.length > 0) {
+        for (const serial of item.serials) {
+          expandedItems.push({
+            product_id: item.product_id,
+            quantity: 1,
+            unit_cost: item.unit_cost,
+            discount: 0,
+            tax_percent: item.tax_percent,
+            total: item.unit_cost + item.unit_cost * (item.tax_percent / 100),
+            serial_number: serial,
+          });
+        }
+      } else {
+        expandedItems.push({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_cost: item.unit_cost,
+          discount: item.discount,
+          tax_percent: item.tax_percent,
+          total: item.total,
+          serial_number: item.serial_number || null,
+        });
+      }
+    }
+
     await createPurchase.mutateAsync({
       supplier_id: supplierId || null,
       purchase_date: purchaseDate,
@@ -202,22 +256,10 @@ export default function PurchaseAdd() {
       payment_status: paidAmount >= grandTotal ? "paid" : paidAmount > 0 ? "partial" : "unpaid",
       payment_method: paymentMethod,
       notes,
-      items,
+      items: expandedItems,
     });
     navigate("/purchases");
   };
-
-  const getDuplicateSerials = () => {
-    const serials = items.filter((i) => i.serial_number).map((i) => i.serial_number!);
-    const seen = new Set<string>();
-    const dupes = new Set<string>();
-    for (const s of serials) {
-      if (s && seen.has(s)) dupes.add(s);
-      seen.add(s);
-    }
-    return dupes;
-  };
-  const duplicateSerials = getDuplicateSerials();
 
   return (
     <div className="space-y-4">
@@ -227,7 +269,7 @@ export default function PurchaseAdd() {
         </Button>
       } />
 
-      {/* Top Section — Reference, Supplier, Date, Status */}
+      {/* Top Section */}
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -348,7 +390,7 @@ export default function PurchaseAdd() {
                   <TableRow className="bg-muted/50">
                     <TableHead className="w-10">SN</TableHead>
                     <TableHead>Item / Brand / Code</TableHead>
-                    {hasSerialItems && <TableHead className="w-40">IMEI/Serial</TableHead>}
+                    {hasSerialItems && <TableHead>IMEI/Serial Numbers</TableHead>}
                     <TableHead className="w-20">Qty</TableHead>
                     <TableHead className="w-28">Unit Cost</TableHead>
                     <TableHead className="w-24">Discount</TableHead>
@@ -360,9 +402,9 @@ export default function PurchaseAdd() {
                 <TableBody>
                   {items.map((item, idx) => {
                     const isSerial = item.product_type === "imei" || item.product_type === "serial";
-                    const isDupe = isSerial && item.serial_number && duplicateSerials.has(item.serial_number);
+                    const hasAnyDupe = isSerial && item.serials.some(s => duplicateSerials.has(s));
                     return (
-                      <TableRow key={idx} className={isDupe ? "bg-destructive/5" : ""}>
+                      <TableRow key={idx} className={hasAnyDupe ? "bg-destructive/5" : ""}>
                         <TableCell className="text-muted-foreground text-center">{idx + 1}</TableCell>
                         <TableCell>
                           <div className="font-medium">{item.product_name}</div>
@@ -373,42 +415,59 @@ export default function PurchaseAdd() {
                           </div>
                         </TableCell>
                         {hasSerialItems && (
-                          <TableCell>
+                          <TableCell className="min-w-[250px]">
                             {isSerial ? (
-                              <div>
+                              <div className="space-y-1.5">
+                                {/* Serial tags */}
+                                {item.serials.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.serials.map((sn, si) => (
+                                      <Badge
+                                        key={si}
+                                        variant={duplicateSerials.has(sn) ? "destructive" : "secondary"}
+                                        className="text-xs font-mono pr-1 gap-1"
+                                      >
+                                        {sn}
+                                        <button
+                                          type="button"
+                                          onClick={() => removeSerialFromItem(idx, sn)}
+                                          className="ml-0.5 hover:bg-destructive/20 rounded-full p-0.5"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Input for adding new serial */}
                                 <div className="flex gap-1">
                                   <Input
                                     id={`serial-input-${idx}`}
-                                    value={item.serial_number || ""}
-                                    onChange={(e) => updateItem(idx, "serial_number", e.target.value)}
+                                    value={serialInput[idx] || ""}
+                                    onChange={(e) => setSerialInput(prev => ({ ...prev, [idx]: e.target.value }))}
                                     onKeyDown={(e) => {
-                                      if (e.key === "Enter" && item.serial_number?.trim()) {
+                                      if (e.key === "Enter") {
                                         e.preventDefault();
-                                        const product = (products as any[])?.find((p: any) => p.id === item.product_id);
-                                        if (product) {
-                                          addProduct(product);
-                                          setTimeout(() => {
-                                            document.getElementById(`serial-input-${idx + 1}`)?.focus();
-                                          }, 50);
-                                        }
+                                        const val = (serialInput[idx] || "").trim();
+                                        if (val) addSerialToItem(idx, val);
                                       }
                                     }}
-                                    placeholder={item.product_type === "imei" ? "IMEI" : "Serial"}
-                                    className={`h-8 text-sm ${isDupe ? "border-destructive" : ""}`}
+                                    placeholder={`Type ${item.product_type === "imei" ? "IMEI" : "Serial"} & press Enter`}
+                                    className="h-7 text-xs font-mono"
                                   />
                                   <Button
                                     type="button"
                                     variant="outline"
                                     size="icon"
-                                    className="h-8 w-8 shrink-0"
+                                    className="h-7 w-7 shrink-0"
                                     onClick={() => setScannerIdx(idx)}
                                   >
-                                    <ScanBarcode className="h-4 w-4" />
+                                    <ScanBarcode className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
-                                {isDupe && (
-                                  <p className="text-[10px] text-destructive flex items-center gap-1 mt-0.5">
-                                    <AlertTriangle className="h-3 w-3" /> Duplicate
+                                {hasAnyDupe && (
+                                  <p className="text-[10px] text-destructive flex items-center gap-1">
+                                    <AlertTriangle className="h-3 w-3" /> Duplicate serial found
                                   </p>
                                 )}
                               </div>
@@ -418,9 +477,9 @@ export default function PurchaseAdd() {
                         <TableCell>
                           <Input
                             type="number"
-                            min={1}
+                            min={isSerial ? 0 : 1}
                             value={item.quantity}
-                            onChange={(e) => updateItem(idx, "quantity", parseInt(e.target.value) || 1)}
+                            onChange={(e) => updateItem(idx, "quantity", parseInt(e.target.value) || (isSerial ? 0 : 1))}
                             className="h-8 w-16"
                             disabled={isSerial}
                           />
@@ -460,7 +519,6 @@ export default function PurchaseAdd() {
       {/* Bottom — Payment & Totals */}
       <Card>
         <CardContent className="pt-6">
-          {/* Payment Section */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
               <Label>Payment Method</Label>
@@ -490,7 +548,6 @@ export default function PurchaseAdd() {
 
           <Separator className="my-4" />
 
-          {/* Totals */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
             <div>
               <Label className="text-xs text-muted-foreground">Total Items</Label>
@@ -531,7 +588,7 @@ export default function PurchaseAdd() {
         </CardContent>
       </Card>
 
-      {/* Barcode Scanner Dialog for IMEI/Serial */}
+      {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>

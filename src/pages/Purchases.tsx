@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Search, Trash2, Eye } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Trash2, Eye, MoreHorizontal, Pencil } from "lucide-react";
 import { usePurchases, usePurchaseMutations } from "@/hooks/usePurchases";
 
 const statusVariant = (s: string) => {
@@ -56,7 +57,7 @@ export default function Purchases() {
                 <TableHead>Status</TableHead>
                 <TableHead>Payment</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead className="w-[80px]" />
+                <TableHead className="w-[60px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -80,9 +81,24 @@ export default function Purchases() {
                     <TableCell><Badge variant={p.payment_status === "paid" ? "default" : "outline"}>{p.payment_status}</Badge></TableCell>
                     <TableCell className="text-right font-medium">৳{Number(p.total_amount).toLocaleString()}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deletePurchase.mutate(p.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/purchases/${p.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" /> View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/purchases/${p.id}/edit`)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => deletePurchase.mutate(p.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
