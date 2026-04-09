@@ -32,7 +32,11 @@ import {
   Smartphone,
   Receipt,
   Percent,
+  ScanBarcode,
 } from "lucide-react";
+import { lazy, Suspense } from "react";
+
+const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
 import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
@@ -53,6 +57,26 @@ export default function POS() {
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastInvoice, setLastInvoice] = useState<string>("");
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleBarcodeScan = (code: string) => {
+    setShowScanner(false);
+    if (!products) return;
+    const q = code.toLowerCase();
+    const match = products.find(
+      (p: any) =>
+        p.barcode?.toLowerCase() === q ||
+        p.sku?.toLowerCase() === q ||
+        p.name.toLowerCase() === q
+    );
+    if (match) {
+      addToCart(match);
+      import("sonner").then(({ toast }) => toast.success(`Added: ${match.name}`));
+    } else {
+      setSearch(code);
+      import("sonner").then(({ toast }) => toast.error("Product not found for scanned code"));
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -189,15 +213,20 @@ export default function POS() {
         {/* Products Grid */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="p-3 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products by name, SKU, barcode..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-                autoFocus
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, SKU, barcode, IMEI..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
+              <Button variant="outline" size="icon" onClick={() => setShowScanner(true)} title="Scan Barcode">
+                <ScanBarcode className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           <ScrollArea className="flex-1 p-3">
