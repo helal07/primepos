@@ -13,7 +13,6 @@ export interface SaleItem {
   tax_percent: number;
   total: number;
   serial_number?: string | null;
-  // UI helpers
   product_name?: string;
   variation_name?: string;
 }
@@ -80,6 +79,22 @@ export function useSaleItems(saleId: string | null) {
   });
 }
 
+export function useSalePayments(saleId: string | null) {
+  return useQuery({
+    queryKey: ["sale_payments", saleId],
+    enabled: !!saleId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sale_payments")
+        .select("*")
+        .eq("sale_id", saleId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useSaleMutations() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -120,6 +135,19 @@ export function useSaleMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const createSalePayments = useMutation({
+    mutationFn: async ({ saleId, payments }: { saleId: string; payments: { amount: number; payment_method: string; payment_note: string }[] }) => {
+      if (payments.length === 0) return;
+      const rows = payments.map(p => ({ sale_id: saleId, amount: p.amount, payment_method: p.payment_method, payment_note: p.payment_note || null }));
+      const { error } = await supabase.from("sale_payments").insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sale_payments"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const updateSaleStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
@@ -144,7 +172,6 @@ export function useSaleMutations() {
         .eq("id", id);
       if (saleError) throw saleError;
 
-      // Delete old items then insert new
       const { error: delError } = await supabase
         .from("sale_items")
         .delete()
@@ -190,5 +217,5 @@ export function useSaleMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { createSale, updateSaleStatus, updateSale, deleteSale };
+  return { createSale, createSalePayments, updateSaleStatus, updateSale, deleteSale };
 }

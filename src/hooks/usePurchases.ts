@@ -81,6 +81,22 @@ export function usePurchaseItems(purchaseId: string | null) {
   });
 }
 
+export function usePurchasePayments(purchaseId: string | null) {
+  return useQuery({
+    queryKey: ["purchase_payments", purchaseId],
+    enabled: !!purchaseId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("purchase_payments")
+        .select("*")
+        .eq("purchase_id", purchaseId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function usePurchaseOrders() {
   return useQuery({
     queryKey: ["purchase_orders"],
