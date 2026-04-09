@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SuperadminRoute } from "@/components/admin/SuperadminRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import Login from "./pages/Login";
@@ -49,6 +50,12 @@ import InstallmentSales from "./pages/InstallmentSales";
 import InstallmentCollections from "./pages/InstallmentCollections";
 import InstallmentSchedule from "./pages/InstallmentSchedule";
 import InstallmentAgreement from "./pages/InstallmentAgreement";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import TenantManagement from "./pages/admin/TenantManagement";
+import PackageManagement from "./pages/admin/PackageManagement";
+import LandingCms from "./pages/admin/LandingCms";
+import AdminTransactions from "./pages/admin/AdminTransactions";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -117,6 +124,13 @@ const App = () => (
                       <Route path="/installment/collections" element={<InstallmentCollections />} />
                       <Route path="/installment/schedule" element={<InstallmentSchedule />} />
                       <Route path="/installment/agreement/:id" element={<InstallmentAgreement />} />
+                      {/* SaaS Admin routes */}
+                      <Route path="/admin" element={<SuperadminRoute><AdminDashboard /></SuperadminRoute>} />
+                      <Route path="/admin/tenants" element={<SuperadminRoute><TenantManagement /></SuperadminRoute>} />
+                      <Route path="/admin/packages" element={<SuperadminRoute><PackageManagement /></SuperadminRoute>} />
+                      <Route path="/admin/cms" element={<SuperadminRoute><LandingCms /></SuperadminRoute>} />
+                      <Route path="/admin/transactions" element={<SuperadminRoute><AdminTransactions /></SuperadminRoute>} />
+                      <Route path="/admin/settings" element={<SuperadminRoute><AdminSettings /></SuperadminRoute>} />
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/roles" element={<RolesPage />} />
                       <Route path="/activity-log" element={<ActivityLogPage />} />
