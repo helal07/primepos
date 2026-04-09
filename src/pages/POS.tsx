@@ -47,6 +47,7 @@ const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
 import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
+import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 
 // Extended cart item with serial tracking
@@ -61,7 +62,7 @@ export default function POS() {
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
-  const { createSale } = useSaleMutations();
+  const { createSale, createSalePayments } = useSaleMutations();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
