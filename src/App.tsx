@@ -143,6 +143,9 @@ const App = () => (
                       <Route path="/warranty-claims" element={<WarrantyClaims />} />
                       <Route path="/cms/pages" element={<CmsPages />} />
                       <Route path="/reports" element={<Reports />} />
+                      <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
+                      <Route path="/reports/stock" element={<StockReport />} />
+                      <Route path="/reports/tax" element={<TaxReport />} />
                       <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
                       <Route path="/installment/customers" element={<InstallmentCustomers />} />
                       <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
