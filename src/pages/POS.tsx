@@ -79,20 +79,56 @@ export default function POS() {
   const dateStr = format(saleDate, "dd/MM/yyyy");
   const timeStr = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 
-  const handleBarcodeScan = (code: string) => {
+  const handleBarcodeScan = async (code: string) => {
     setShowScanner(false);
     if (!products) return;
     const q = code.toLowerCase();
-    const match = products.find(
+    const match = (products as any[]).find(
       (p: any) => p.barcode?.toLowerCase() === q || p.sku?.toLowerCase() === q || p.name.toLowerCase() === q
     );
     if (match) {
       addToCart(match);
-      import("sonner").then(({ toast }) => toast.success(`Added: ${match.name}`));
+      toast.success(`Added: ${match.name}`);
     } else {
+      // Try IMEI search
+      const imeiMatch = await searchImeiInPurchases(code);
+      if (imeiMatch) {
+        const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
+        if (product) {
+          addSerialToCart(imeiMatch.product_id, imeiMatch.serial_number);
+          toast.success(`Added IMEI: ${imeiMatch.serial_number} (${product.name})`);
+          return;
+        }
+      }
       setSearch(code);
-      import("sonner").then(({ toast }) => toast.error("Product not found"));
+      toast.error("Product not found");
     }
+  };
+
+  // IMEI search in search bar - triggered on Enter
+  const handleSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter" || !search.trim() || !products) return;
+    const q = search.toLowerCase();
+    const match = (products as any[]).find(
+      (p: any) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+    );
+    if (match) {
+      addToCart(match);
+      setSearch("");
+      return;
+    }
+    // Try IMEI search
+    const imeiMatch = await searchImeiInPurchases(search.trim());
+    if (imeiMatch) {
+      const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
+      if (product) {
+        addSerialToCart(imeiMatch.product_id, imeiMatch.serial_number);
+        toast.success(`Added IMEI: ${imeiMatch.serial_number} (${product.name})`);
+        setSearch("");
+        return;
+      }
+    }
+    toast.error("No product or IMEI found");
   };
 
   const filteredProducts = useMemo(() => {
