@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,16 +11,9 @@ import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface PkgForm {
-  name: string;
-  price: number;
-  duration_days: number;
-  max_users: number;
-  max_business_location: number;
-  max_invoice: number;
-  features: string;
-  is_popular: boolean;
-  is_active: boolean;
-  sort_order: number;
+  name: string; price: number; duration_days: number; max_users: number;
+  max_business_location: number; max_invoice: number; features: string;
+  is_popular: boolean; is_active: boolean; sort_order: number;
 }
 
 const emptyForm: PkgForm = {
@@ -46,127 +38,110 @@ export default function PackageManagement() {
       features: (p.features as string[])?.join(", ") ?? "",
       is_popular: p.is_popular, is_active: p.is_active, sort_order: p.sort_order,
     });
-    setEditId(p.id);
-    setOpen(true);
+    setEditId(p.id); setOpen(true);
   };
 
   const handleSave = () => {
-    const payload = {
-      ...form,
-      features: form.features.split(",").map((f) => f.trim()).filter(Boolean),
-    };
-    if (editId) {
-      update.mutate({ id: editId, ...payload }, { onSuccess: () => setOpen(false) });
-    } else {
-      create.mutate(payload, { onSuccess: () => setOpen(false) });
-    }
+    const payload = { ...form, features: form.features.split(",").map((f) => f.trim()).filter(Boolean) };
+    if (editId) update.mutate({ id: editId, ...payload }, { onSuccess: () => setOpen(false) });
+    else create.mutate(payload, { onSuccess: () => setOpen(false) });
   };
 
   return (
     <div className="space-y-6">
       <PageHeader title="Package Management" subtitle="Manage subscription plans">
-        <Button onClick={openNew} size="sm"><Plus className="h-4 w-4 mr-1" /> Add Package</Button>
+        <Button onClick={openNew} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white"><Plus className="h-4 w-4 mr-1" /> Add Package</Button>
       </PageHeader>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Max Users</TableHead>
-                <TableHead>Locations</TableHead>
-                <TableHead>Invoices</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+      <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-slate-800 bg-slate-900">
+              <TableHead className="text-slate-400">Name</TableHead>
+              <TableHead className="text-slate-400">Price</TableHead>
+              <TableHead className="text-slate-400">Duration</TableHead>
+              <TableHead className="text-slate-400">Max Users</TableHead>
+              <TableHead className="text-slate-400">Locations</TableHead>
+              <TableHead className="text-slate-400">Invoices</TableHead>
+              <TableHead className="text-slate-400">Status</TableHead>
+              <TableHead className="text-right text-slate-400">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-400">Loading…</TableCell></TableRow>
+            ) : !packages?.length ? (
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">No packages</TableCell></TableRow>
+            ) : packages.map((p) => (
+              <TableRow key={p.id} className="border-slate-800 hover:bg-slate-800/50">
+                <TableCell className="font-medium text-white">
+                  {p.name} {p.is_popular && <Star className="inline h-3 w-3 text-yellow-500 ml-1" />}
+                </TableCell>
+                <TableCell className="text-slate-300">৳{p.price}</TableCell>
+                <TableCell className="text-slate-300">{p.duration_days} days</TableCell>
+                <TableCell className="text-slate-300">{p.max_users}</TableCell>
+                <TableCell className="text-slate-300">{p.max_business_location}</TableCell>
+                <TableCell className="text-slate-300">{p.max_invoice || "∞"}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={p.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-slate-700 text-slate-400 border-slate-600"}>
+                    {p.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right space-x-1">
+                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove.mutate(p.id)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8">Loading…</TableCell></TableRow>
-              ) : !packages?.length ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No packages</TableCell></TableRow>
-              ) : packages.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">
-                    {p.name} {p.is_popular && <Star className="inline h-3 w-3 text-yellow-500 ml-1" />}
-                  </TableCell>
-                  <TableCell>৳{p.price}</TableCell>
-                  <TableCell>{p.duration_days} days</TableCell>
-                  <TableCell>{p.max_users}</TableCell>
-                  <TableCell>{p.max_business_location}</TableCell>
-                  <TableCell>{p.max_invoice || "∞"}</TableCell>
-                  <TableCell>
-                    <Badge variant={p.is_active ? "default" : "secondary"}>
-                      {p.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove.mutate(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Preview */}
       {packages && packages.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold mb-3">Landing Page Preview</h3>
+          <h3 className="text-sm font-semibold text-white mb-3">Landing Page Preview</h3>
           <div className="grid md:grid-cols-3 gap-4">
             {packages.filter((p) => p.is_active).map((p) => (
-              <Card key={p.id} className={p.is_popular ? "border-primary ring-2 ring-primary/20" : ""}>
-                <CardContent className="p-5 text-center space-y-2">
-                  {p.is_popular && <Badge className="mb-1">Popular</Badge>}
-                  <h4 className="font-bold text-lg">{p.name}</h4>
-                  <p className="text-2xl font-bold">৳{p.price}<span className="text-sm text-muted-foreground">/{p.duration_days}d</span></p>
-                  <ul className="text-sm text-left space-y-1">
-                    {(p.features as string[])?.map((f, i) => (
-                      <li key={i} className="flex items-center gap-1"><span className="text-green-500">✓</span> {f}</li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+              <div key={p.id} className={`rounded-xl border p-5 text-center space-y-2 ${p.is_popular ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-slate-800" : "border-slate-800 bg-slate-900/50"}`}>
+                {p.is_popular && <Badge className="bg-emerald-600 text-white mb-1">Popular</Badge>}
+                <h4 className="font-bold text-lg text-white">{p.name}</h4>
+                <p className="text-2xl font-bold text-white">৳{p.price}<span className="text-sm text-slate-400">/{p.duration_days}d</span></p>
+                <ul className="text-sm text-left space-y-1">
+                  {(p.features as string[])?.map((f, i) => (
+                    <li key={i} className="flex items-center gap-1 text-slate-300"><span className="text-emerald-400">✓</span> {f}</li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         </div>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editId ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg bg-slate-900 border-slate-800 text-white">
+          <DialogHeader><DialogTitle className="text-white">{editId ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>Price (৳)</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
+              <div><Label className="text-slate-300">Name</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div><Label className="text-slate-300">Price (৳)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>Duration (days)</Label><Input type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
-              <div><Label>Max Users</Label><Input type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: +e.target.value })} /></div>
-              <div><Label>Max Locations</Label><Input type="number" value={form.max_business_location} onChange={(e) => setForm({ ...form, max_business_location: +e.target.value })} /></div>
+              <div><Label className="text-slate-300">Duration (days)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
+              <div><Label className="text-slate-300">Max Users</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: +e.target.value })} /></div>
+              <div><Label className="text-slate-300">Max Locations</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_business_location} onChange={(e) => setForm({ ...form, max_business_location: +e.target.value })} /></div>
             </div>
-            <div>
-              <Label>Max Invoices (0 = unlimited)</Label>
-              <Input type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} />
-            </div>
-            <div>
-              <Label>Features (comma-separated)</Label>
-              <Input value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" />
-            </div>
-            <div><Label>Sort Order</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
+            <div><Label className="text-slate-300">Max Invoices (0 = unlimited)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} /></div>
+            <div><Label className="text-slate-300">Features (comma-separated)</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" /></div>
+            <div><Label className="text-slate-300">Sort Order</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label>Popular</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label>Active</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-slate-300">Popular</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-slate-300">Active</Label></div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
+            <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
               {editId ? "Update" : "Create"}
             </Button>
           </DialogFooter>
