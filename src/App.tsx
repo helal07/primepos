@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SuperadminRoute } from "@/components/admin/SuperadminRoute";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import Login from "./pages/Login";
@@ -70,6 +71,28 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
+            {/* SaaS Admin — separate layout */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute>
+                  <SuperadminRoute>
+                    <AdminLayout>
+                      <Routes>
+                        <Route path="/" element={<AdminDashboard />} />
+                        <Route path="/tenants" element={<TenantManagement />} />
+                        <Route path="/packages" element={<PackageManagement />} />
+                        <Route path="/cms" element={<LandingCms />} />
+                        <Route path="/transactions" element={<AdminTransactions />} />
+                        <Route path="/settings" element={<AdminSettings />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AdminLayout>
+                  </SuperadminRoute>
+                </ProtectedRoute>
+              }
+            />
+            {/* Tenant routes */}
             <Route
               path="/*"
               element={
@@ -124,13 +147,6 @@ const App = () => (
                       <Route path="/installment/collections" element={<InstallmentCollections />} />
                       <Route path="/installment/schedule" element={<InstallmentSchedule />} />
                       <Route path="/installment/agreement/:id" element={<InstallmentAgreement />} />
-                      {/* SaaS Admin routes */}
-                      <Route path="/admin" element={<SuperadminRoute><AdminDashboard /></SuperadminRoute>} />
-                      <Route path="/admin/tenants" element={<SuperadminRoute><TenantManagement /></SuperadminRoute>} />
-                      <Route path="/admin/packages" element={<SuperadminRoute><PackageManagement /></SuperadminRoute>} />
-                      <Route path="/admin/cms" element={<SuperadminRoute><LandingCms /></SuperadminRoute>} />
-                      <Route path="/admin/transactions" element={<SuperadminRoute><AdminTransactions /></SuperadminRoute>} />
-                      <Route path="/admin/settings" element={<SuperadminRoute><AdminSettings /></SuperadminRoute>} />
                       <Route path="/users" element={<UsersPage />} />
                       <Route path="/roles" element={<RolesPage />} />
                       <Route path="/activity-log" element={<ActivityLogPage />} />
