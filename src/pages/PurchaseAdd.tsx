@@ -1,5 +1,5 @@
-import { useState, useMemo, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
-import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, type PurchaseItem } from "@/hooks/usePurchases";
+import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, usePurchase, usePurchaseItems, type PurchaseItem } from "@/hooks/usePurchases";
+import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 
 interface PurchaseItemWithSerials extends PurchaseItem {
   serials: string[];
@@ -24,10 +25,16 @@ interface PurchaseItemWithSerials extends PurchaseItem {
 
 export default function PurchaseAdd() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditMode = !!editId;
+
   const { data: products } = useProducts();
   const { data: suppliers } = useSuppliers();
   const { data: purchaseOrders } = usePurchaseOrders();
-  const { createPurchase } = usePurchaseMutations();
+  const { createPurchase, createPurchasePayments, updatePurchase } = usePurchaseMutations();
+  const { data: existingPurchase } = usePurchase(editId);
+  const { data: existingItems } = usePurchaseItems(editId);
 
   const [supplierId, setSupplierId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
@@ -46,6 +53,39 @@ export default function PurchaseAdd() {
   const [scannerIdx, setScannerIdx] = useState<number | null>(null);
   const [selectedPOId, setSelectedPOId] = useState<string>("");
   const [serialInput, setSerialInput] = useState<Record<number, string>>({});
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [editInitialized, setEditInitialized] = useState(false);
+
+  // Pre-populate in edit mode
+  useEffect(() => {
+    if (isEditMode && existingPurchase && existingItems && !editInitialized) {
+      setSupplierId(existingPurchase.supplier_id || "");
+      setPurchaseDate(existingPurchase.purchase_date || new Date().toISOString().split("T")[0]);
+      setReferenceNumber(existingPurchase.reference_number || "");
+      setPurchaseStatus(existingPurchase.status || "received");
+      setPaymentMethod(existingPurchase.payment_method || "cash");
+      setPaymentStatus(existingPurchase.payment_status || "unpaid");
+      setNotes(existingPurchase.notes || "");
+      setOtherCharges(Number(existingPurchase.shipping_cost) || 0);
+
+      const mapped: PurchaseItemWithSerials[] = existingItems.map((item: any) => ({
+        product_id: item.product_id,
+        product_name: item.products?.name || "Unknown",
+        product_type: "general",
+        brand_name: "",
+        sku: "",
+        quantity: item.quantity,
+        unit_cost: Number(item.unit_cost),
+        discount: Number(item.discount),
+        tax_percent: Number(item.tax_percent),
+        total: Number(item.total),
+        serial_number: item.serial_number || "",
+        serials: item.serial_number ? [item.serial_number] : [],
+      }));
+      setItems(mapped);
+      setEditInitialized(true);
+    }
+  }, [isEditMode, existingPurchase, existingItems, editInitialized]);
 
   const { data: poItems } = usePurchaseOrderItems(selectedPOId || null);
 
@@ -211,60 +251,56 @@ export default function PurchaseAdd() {
   const allSerials = getAllSerials();
   const duplicateSerials = new Set(allSerials.filter((s, i) => allSerials.indexOf(s) !== i));
 
-  const handleSubmit = async () => {
-    if (items.length === 0) return;
-
-    // For serial items, expand each serial into its own purchase_item row
+  const buildExpandedItems = (): PurchaseItem[] => {
     const expandedItems: PurchaseItem[] = [];
     for (const item of items) {
       const isSerial = item.product_type === "imei" || item.product_type === "serial";
       if (isSerial && item.serials.length > 0) {
         for (const serial of item.serials) {
           expandedItems.push({
-            product_id: item.product_id,
-            quantity: 1,
-            unit_cost: item.unit_cost,
-            discount: 0,
-            tax_percent: item.tax_percent,
-            total: item.unit_cost + item.unit_cost * (item.tax_percent / 100),
-            serial_number: serial,
+            product_id: item.product_id, quantity: 1, unit_cost: item.unit_cost,
+            discount: 0, tax_percent: item.tax_percent,
+            total: item.unit_cost + item.unit_cost * (item.tax_percent / 100), serial_number: serial,
           });
         }
       } else {
         expandedItems.push({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_cost: item.unit_cost,
-          discount: item.discount,
-          tax_percent: item.tax_percent,
-          total: item.total,
+          product_id: item.product_id, quantity: item.quantity, unit_cost: item.unit_cost,
+          discount: item.discount, tax_percent: item.tax_percent, total: item.total,
           serial_number: item.serial_number || null,
         });
       }
     }
+    return expandedItems;
+  };
 
-    await createPurchase.mutateAsync({
-      supplier_id: supplierId || null,
-      purchase_date: purchaseDate,
-      reference_number: referenceNumber,
-      status: purchaseStatus,
-      subtotal,
-      discount_amount: itemDiscount + overallDiscount,
-      tax_amount: totalTax,
-      shipping_cost: otherCharges,
-      total_amount: grandTotal,
-      payment_status: paidAmount >= grandTotal ? "paid" : paidAmount > 0 ? "partial" : "unpaid",
-      payment_method: paymentMethod,
-      notes,
-      items: expandedItems,
-    });
-    navigate("/purchases");
+  const handleFinalizePayment = async (payments: PaymentRow[], paymentStatus: string) => {
+    if (items.length === 0) return;
+    const expandedItems = buildExpandedItems();
+    const formData = {
+      supplier_id: supplierId || null, purchase_date: purchaseDate, reference_number: referenceNumber,
+      status: purchaseStatus, subtotal, discount_amount: itemDiscount + overallDiscount,
+      tax_amount: totalTax, shipping_cost: otherCharges, total_amount: grandTotal,
+      payment_status: paymentStatus, payment_method: payments[0]?.payment_method || "cash",
+      notes, items: expandedItems,
+    };
+
+    if (isEditMode) {
+      await updatePurchase.mutateAsync({ id: editId!, formData });
+      await createPurchasePayments.mutateAsync({ purchaseId: editId!, payments });
+      navigate(`/purchases/${editId}`);
+    } else {
+      const purchase = await createPurchase.mutateAsync(formData);
+      await createPurchasePayments.mutateAsync({ purchaseId: purchase.id, payments });
+      navigate("/purchases");
+    }
+    setShowPaymentDialog(false);
   };
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Add Purchase" description="Record a new purchase from supplier" actions={
-        <Button variant="outline" onClick={() => navigate("/purchases")}>
+      <PageHeader title={isEditMode ? "Edit Purchase" : "Add Purchase"} description={isEditMode ? "Edit purchase details" : "Record a new purchase from supplier"} actions={
+        <Button variant="outline" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
       } />
@@ -579,14 +615,24 @@ export default function PurchaseAdd() {
             <Button variant="outline" onClick={() => navigate("/purchases")}>Cancel</Button>
             <Button
               size="lg"
-              disabled={items.length === 0 || createPurchase.isPending || duplicateSerials.size > 0}
-              onClick={handleSubmit}
+              disabled={items.length === 0 || createPurchase.isPending || updatePurchase.isPending || duplicateSerials.size > 0}
+              onClick={() => setShowPaymentDialog(true)}
             >
-              {createPurchase.isPending ? "Saving..." : "Save Purchase"}
+              {isEditMode ? "Update & Pay" : "Save Purchase"}
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        totalAmount={grandTotal}
+        onFinalize={handleFinalizePayment}
+        isPending={createPurchase.isPending || updatePurchase.isPending}
+        title={isEditMode ? "Update Payment" : "Purchase Payment"}
+      />
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>

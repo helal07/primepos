@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,50 +7,74 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Trash2, Search, Save, ArrowLeft } from "lucide-react";
+import { Trash2, Search, Save, ArrowLeft } from "lucide-react";
 import { useProducts } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
-import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
+import { useSale, useSaleItems, useSaleMutations, type SaleItem } from "@/hooks/useSales";
+import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 
 export default function SaleAdd() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditMode = !!editId;
+
   const { data: products } = useProducts();
   const { data: customers } = useCustomers();
-  const { createSale } = useSaleMutations();
+  const { createSale, createSalePayments, updateSale } = useSaleMutations();
+
+  const { data: existingSale } = useSale(editId);
+  const { data: existingItems } = useSaleItems(editId);
 
   const [customerId, setCustomerId] = useState<string>("");
   const customerSelectValue = customerId || "walk-in";
-  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountType, setDiscountType] = useState("fixed");
   const [discountValue, setDiscountValue] = useState(0);
   const [shippingCost, setShippingCost] = useState(0);
   const [notes, setNotes] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  // Pre-populate in edit mode
+  useEffect(() => {
+    if (isEditMode && existingSale && existingItems && !initialized) {
+      setCustomerId(existingSale.customer_id || "");
+      setDiscountType(existingSale.discount_type || "fixed");
+      setDiscountValue(Number(existingSale.discount_value) || 0);
+      setShippingCost(Number(existingSale.shipping_cost) || 0);
+      setNotes(existingSale.notes || "");
+      setItems(
+        existingItems.map((item: any) => ({
+          product_id: item.product_id,
+          product_name: item.products?.name || "Unknown",
+          variation_id: item.variation_id,
+          quantity: item.quantity,
+          unit_price: Number(item.unit_price),
+          discount: Number(item.discount),
+          tax_percent: Number(item.tax_percent),
+          total: Number(item.total),
+          serial_number: item.serial_number,
+        }))
+      );
+      setInitialized(true);
+    }
+  }, [isEditMode, existingSale, existingItems, initialized]);
 
   const filteredProducts = useMemo(() => {
     if (!productSearch || !products) return [];
     const q = productSearch.toLowerCase();
     return products
-      .filter(
-        (p: any) =>
-          p.name.toLowerCase().includes(q) ||
-          p.sku?.toLowerCase().includes(q) ||
-          p.barcode?.toLowerCase().includes(q)
+      .filter((p: any) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q)
       )
       .slice(0, 8);
   }, [productSearch, products]);
@@ -58,84 +82,52 @@ export default function SaleAdd() {
   const addProduct = (product: any) => {
     const exists = items.find((i) => i.product_id === product.id);
     if (exists) {
-      setItems(
-        items.map((i) =>
-          i.product_id === product.id
-            ? {
-                ...i,
-                quantity: i.quantity + 1,
-                total: (i.quantity + 1) * i.unit_price * (1 - i.discount / 100) * (1 + i.tax_percent / 100),
-              }
-            : i
-        )
-      );
+      setItems(items.map((i) =>
+        i.product_id === product.id
+          ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_price * (1 - i.discount / 100) * (1 + i.tax_percent / 100) }
+          : i
+      ));
     } else {
       const price = Number(product.selling_price);
       const tax = Number(product.tax_percent);
-      setItems([
-        ...items,
-        {
-          product_id: product.id,
-          product_name: product.name,
-          quantity: 1,
-          unit_price: price,
-          discount: 0,
-          tax_percent: tax,
-          total: price * (1 + tax / 100),
-        },
-      ]);
+      setItems([...items, {
+        product_id: product.id,
+        product_name: product.name,
+        quantity: 1, unit_price: price, discount: 0, tax_percent: tax,
+        total: price * (1 + tax / 100),
+      }]);
     }
     setProductSearch("");
   };
 
   const updateItem = (index: number, field: keyof SaleItem, value: any) => {
-    setItems(
-      items.map((item, i) => {
-        if (i !== index) return item;
-        const updated = { ...item, [field]: value };
-        const qty = Number(updated.quantity);
-        const price = Number(updated.unit_price);
-        const disc = Number(updated.discount);
-        const tax = Number(updated.tax_percent);
-        updated.total = qty * price * (1 - disc / 100) * (1 + tax / 100);
-        return updated;
-      })
-    );
+    setItems(items.map((item, i) => {
+      if (i !== index) return item;
+      const updated = { ...item, [field]: value };
+      const qty = Number(updated.quantity);
+      const price = Number(updated.unit_price);
+      const disc = Number(updated.discount);
+      const tax = Number(updated.tax_percent);
+      updated.total = qty * price * (1 - disc / 100) * (1 + tax / 100);
+      return updated;
+    }));
   };
 
   const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
 
-  const subtotal = items.reduce(
-    (sum, i) => sum + Number(i.quantity) * Number(i.unit_price),
-    0
-  );
-  const itemDiscountTotal = items.reduce(
-    (sum, i) =>
-      sum +
-      Number(i.quantity) * Number(i.unit_price) * (Number(i.discount) / 100),
-    0
-  );
-  const discountAmount =
-    discountType === "percentage"
-      ? (subtotal - itemDiscountTotal) * (discountValue / 100)
-      : discountValue;
+  const subtotal = items.reduce((sum, i) => sum + Number(i.quantity) * Number(i.unit_price), 0);
+  const itemDiscountTotal = items.reduce((sum, i) => sum + Number(i.quantity) * Number(i.unit_price) * (Number(i.discount) / 100), 0);
+  const discountAmount = discountType === "percentage" ? (subtotal - itemDiscountTotal) * (discountValue / 100) : discountValue;
   const afterDiscount = subtotal - itemDiscountTotal - discountAmount;
-  const taxAmount = items.reduce(
-    (sum, i) =>
-      sum +
-      Number(i.quantity) *
-        Number(i.unit_price) *
-        (1 - Number(i.discount) / 100) *
-        (Number(i.tax_percent) / 100),
-    0
-  );
+  const taxAmount = items.reduce((sum, i) => sum + Number(i.quantity) * Number(i.unit_price) * (1 - Number(i.discount) / 100) * (Number(i.tax_percent) / 100), 0);
   const totalAmount = afterDiscount + taxAmount + shippingCost;
 
-  const handleSubmit = async (status: string = "completed") => {
+  const handleFinalize = async (payments: PaymentRow[], paymentStatus: string) => {
     if (items.length === 0) return;
-    await createSale.mutateAsync({
+
+    const formData = {
       customer_id: customerId || null,
-      status,
+      status: "completed",
       subtotal,
       discount_type: discountType,
       discount_value: discountValue,
@@ -143,54 +135,69 @@ export default function SaleAdd() {
       tax_amount: taxAmount,
       shipping_cost: shippingCost,
       total_amount: totalAmount,
-      payment_method: paymentMethod,
-      payment_status: status === "draft" ? "unpaid" : "paid",
+      payment_method: payments[0]?.payment_method || "cash",
+      payment_status: paymentStatus,
       notes: notes || undefined,
       items,
-    });
-    navigate("/sales");
+    };
+
+    if (isEditMode) {
+      await updateSale.mutateAsync({ id: editId!, formData });
+      await createSalePayments.mutateAsync({ saleId: editId!, payments });
+      navigate(`/sales/${editId}`);
+    } else {
+      const sale = await createSale.mutateAsync(formData);
+      await createSalePayments.mutateAsync({ saleId: sale.id, payments });
+      navigate("/sales");
+    }
+    setShowPayment(false);
+  };
+
+  const handleDraft = async () => {
+    if (items.length === 0) return;
+    const formData = {
+      customer_id: customerId || null,
+      status: "draft",
+      subtotal, discount_type: discountType, discount_value: discountValue,
+      discount_amount: discountAmount + itemDiscountTotal,
+      tax_amount: taxAmount, shipping_cost: shippingCost, total_amount: totalAmount,
+      payment_method: "cash", payment_status: "unpaid",
+      notes: notes || undefined, items,
+    };
+    if (isEditMode) {
+      await updateSale.mutateAsync({ id: editId!, formData });
+      navigate(`/sales/${editId}`);
+    } else {
+      await createSale.mutateAsync(formData);
+      navigate("/sales");
+    }
   };
 
   return (
     <div>
       <PageHeader
-        title="New Sale"
+        title={isEditMode ? "Edit Sale" : "New Sale"}
         actions={
-          <Button variant="outline" size="sm" onClick={() => navigate("/sales")}>
+          <Button variant="outline" size="sm" onClick={() => navigate(isEditMode ? `/sales/${editId}` : "/sales")}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
         }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Items */}
         <div className="lg:col-span-2 space-y-4">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Add Products</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Add Products</CardTitle></CardHeader>
             <CardContent>
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, SKU, or barcode..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  className="pl-9"
-                />
+                <Input placeholder="Search by name, SKU, or barcode..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="pl-9" />
                 {filteredProducts.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {filteredProducts.map((p: any) => (
-                      <button
-                        key={p.id}
-                        className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between"
-                        onClick={() => addProduct(p)}
-                      >
+                      <button key={p.id} className="w-full text-left px-3 py-2 hover:bg-muted text-sm flex justify-between" onClick={() => addProduct(p)}>
                         <span>{p.name}</span>
-                        <span className="text-muted-foreground">
-                          ৳{Number(p.selling_price).toLocaleString()} | Stock:{" "}
-                          {p.stock_quantity}
-                        </span>
+                        <span className="text-muted-foreground">৳{Number(p.selling_price).toLocaleString()} | Stock: {p.stock_quantity}</span>
                       </button>
                     ))}
                   </div>
@@ -198,9 +205,7 @@ export default function SaleAdd() {
               </div>
 
               {items.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Search and add products to the sale
-                </div>
+                <div className="text-center py-8 text-muted-foreground">Search and add products to the sale</div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
@@ -218,66 +223,22 @@ export default function SaleAdd() {
                     <TableBody>
                       {items.map((item, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-medium text-sm">
-                            {item.product_name}
+                          <TableCell className="font-medium text-sm">{item.product_name}</TableCell>
+                          <TableCell>
+                            <Input type="number" min={1} value={item.quantity} onChange={(e) => updateItem(idx, "quantity", parseInt(e.target.value) || 1)} className="h-8 w-16" />
                           </TableCell>
                           <TableCell>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={item.quantity}
-                              onChange={(e) =>
-                                updateItem(idx, "quantity", parseInt(e.target.value) || 1)
-                              }
-                              className="h-8 w-16"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min={0}
-                              value={item.unit_price}
-                              onChange={(e) =>
-                                updateItem(idx, "unit_price", parseFloat(e.target.value) || 0)
-                              }
-                              className="h-8 w-20"
-                            />
+                            <Input type="number" min={0} value={item.unit_price} onChange={(e) => updateItem(idx, "unit_price", parseFloat(e.target.value) || 0)} className="h-8 w-20" />
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            <Input
-                              type="number"
-                              min={0}
-                              max={100}
-                              value={item.discount}
-                              onChange={(e) =>
-                                updateItem(idx, "discount", parseFloat(e.target.value) || 0)
-                              }
-                              className="h-8 w-16"
-                            />
+                            <Input type="number" min={0} max={100} value={item.discount} onChange={(e) => updateItem(idx, "discount", parseFloat(e.target.value) || 0)} className="h-8 w-16" />
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            <Input
-                              type="number"
-                              min={0}
-                              value={item.tax_percent}
-                              onChange={(e) =>
-                                updateItem(idx, "tax_percent", parseFloat(e.target.value) || 0)
-                              }
-                              className="h-8 w-16"
-                            />
+                            <Input type="number" min={0} value={item.tax_percent} onChange={(e) => updateItem(idx, "tax_percent", parseFloat(e.target.value) || 0)} className="h-8 w-16" />
                           </TableCell>
-                          <TableCell className="text-right font-medium">
-                            ৳{item.total.toFixed(2)}
-                          </TableCell>
+                          <TableCell className="text-right font-medium">৳{item.total.toFixed(2)}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive"
-                              onClick={() => removeItem(idx)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(idx)}><Trash2 className="h-4 w-4" /></Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -289,67 +250,32 @@ export default function SaleAdd() {
           </Card>
         </div>
 
-        {/* Right: Summary */}
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Customer</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Customer</CardTitle></CardHeader>
             <CardContent>
-              <Select
-                value={customerSelectValue}
-                onValueChange={(value) => setCustomerId(value === "walk-in" ? "" : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Walk-in Customer" />
-                </SelectTrigger>
+              <Select value={customerSelectValue} onValueChange={(value) => setCustomerId(value === "walk-in" ? "" : value)}>
+                <SelectTrigger><SelectValue placeholder="Walk-in Customer" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                  {(customers ?? []).map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
+                  {(customers ?? []).map((c: any) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
                 </SelectContent>
               </Select>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Payment</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Discount & Shipping</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <Label className="text-xs">Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bkash">bKash</SelectItem>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Label className="text-xs">Discount</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                  />
+                  <Input type="number" min={0} value={discountValue} onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div className="w-24">
                   <Label className="text-xs">Type</Label>
                   <Select value={discountType} onValueChange={setDiscountType}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fixed">৳</SelectItem>
                       <SelectItem value="percentage">%</SelectItem>
@@ -359,81 +285,44 @@ export default function SaleAdd() {
               </div>
               <div>
                 <Label className="text-xs">Shipping</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={shippingCost}
-                  onChange={(e) => setShippingCost(parseFloat(e.target.value) || 0)}
-                />
+                <Input type="number" min={0} value={shippingCost} onChange={(e) => setShippingCost(parseFloat(e.target.value) || 0)} />
               </div>
               <div>
                 <Label className="text-xs">Notes</Label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                />
+                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>৳{subtotal.toFixed(2)}</span>
-              </div>
-              {itemDiscountTotal > 0 && (
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Item Discounts</span>
-                  <span>-৳{itemDiscountTotal.toFixed(2)}</span>
-                </div>
-              )}
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>
-                    Order Discount{" "}
-                    {discountType === "percentage" ? `(${discountValue}%)` : ""}
-                  </span>
-                  <span>-৳{discountAmount.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Tax</span>
-                <span>+৳{taxAmount.toFixed(2)}</span>
-              </div>
-              {shippingCost > 0 && (
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Shipping</span>
-                  <span>+৳{shippingCost.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                <span>Total</span>
-                <span>৳{totalAmount.toFixed(2)}</span>
-              </div>
+              <div className="flex justify-between text-sm"><span>Subtotal</span><span>৳{subtotal.toFixed(2)}</span></div>
+              {itemDiscountTotal > 0 && <div className="flex justify-between text-sm text-muted-foreground"><span>Item Discounts</span><span>-৳{itemDiscountTotal.toFixed(2)}</span></div>}
+              {discountAmount > 0 && <div className="flex justify-between text-sm text-muted-foreground"><span>Order Discount {discountType === "percentage" ? `(${discountValue}%)` : ""}</span><span>-৳{discountAmount.toFixed(2)}</span></div>}
+              <div className="flex justify-between text-sm text-muted-foreground"><span>Tax</span><span>+৳{taxAmount.toFixed(2)}</span></div>
+              {shippingCost > 0 && <div className="flex justify-between text-sm text-muted-foreground"><span>Shipping</span><span>+৳{shippingCost.toFixed(2)}</span></div>}
+              <div className="border-t pt-2 flex justify-between font-bold text-lg"><span>Total</span><span>৳{totalAmount.toFixed(2)}</span></div>
             </CardContent>
           </Card>
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => handleSubmit("draft")}
-              disabled={items.length === 0 || createSale.isPending}
-            >
+            <Button variant="outline" className="flex-1" onClick={handleDraft} disabled={items.length === 0 || createSale.isPending}>
               Save Draft
             </Button>
-            <Button
-              className="flex-1"
-              onClick={() => handleSubmit("completed")}
-              disabled={items.length === 0 || createSale.isPending}
-            >
-              <Save className="h-4 w-4 mr-1" /> Complete Sale
+            <Button className="flex-1" onClick={() => setShowPayment(true)} disabled={items.length === 0}>
+              <Save className="h-4 w-4 mr-1" /> {isEditMode ? "Update & Pay" : "Complete Sale"}
             </Button>
           </div>
         </div>
       </div>
+
+      <PaymentDialog
+        open={showPayment}
+        onOpenChange={setShowPayment}
+        totalAmount={totalAmount}
+        onFinalize={handleFinalize}
+        isPending={createSale.isPending || updateSale.isPending}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,7 +23,6 @@ import StockTransfers from "./pages/StockTransfers";
 import Sales from "./pages/Sales";
 import SaleAdd from "./pages/SaleAdd";
 import SaleView from "./pages/SaleView";
-import SaleEdit from "./pages/SaleEdit";
 import POS from "./pages/POS";
 import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
@@ -34,7 +33,6 @@ import ActivityLogPage from "./pages/ActivityLog";
 import Purchases from "./pages/Purchases";
 import PurchaseAdd from "./pages/PurchaseAdd";
 import PurchaseView from "./pages/PurchaseView";
-import PurchaseEdit from "./pages/PurchaseEdit";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import ChartOfAccounts from "./pages/ChartOfAccounts";
 import Transactions from "./pages/Transactions";
@@ -75,6 +73,9 @@ import LandingCms from "./pages/admin/LandingCms";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
+
+const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
+const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
 
 const queryClient = new QueryClient();
 
@@ -134,7 +135,7 @@ const App = () => (
                       <Route path="/sales" element={<Sales />} />
                       <Route path="/sales/add" element={<SaleAdd />} />
                       <Route path="/sales/:id" element={<SaleView />} />
-                      <Route path="/sales/:id/edit" element={<SaleEdit />} />
+                      <Route path="/sales/:id/edit" element={<SaleEditRedirect />} />
                       <Route path="/invoices" element={<PlaceholderPage title="Invoices" />} />
                       <Route path="/sales/drafts" element={<PlaceholderPage title="Drafts" />} />
                       <Route path="/quotations" element={<PlaceholderPage title="Quotations" />} />
@@ -143,7 +144,7 @@ const App = () => (
                       <Route path="/purchases/add" element={<PurchaseAdd />} />
                       <Route path="/purchases" element={<Purchases />} />
                       <Route path="/purchases/:id" element={<PurchaseView />} />
-                      <Route path="/purchases/:id/edit" element={<PurchaseEdit />} />
+                      <Route path="/purchases/:id/edit" element={<PurchaseEditRedirect />} />
                       <Route path="/purchase-orders" element={<PurchaseOrders />} />
                       <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
                       <Route path="/customers" element={<Customers />} />

@@ -81,6 +81,22 @@ export function usePurchaseItems(purchaseId: string | null) {
   });
 }
 
+export function usePurchasePayments(purchaseId: string | null) {
+  return useQuery({
+    queryKey: ["purchase_payments", purchaseId],
+    enabled: !!purchaseId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("purchase_payments")
+        .select("*")
+        .eq("purchase_id", purchaseId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function usePurchaseOrders() {
   return useQuery({
     queryKey: ["purchase_orders"],
@@ -259,5 +275,18 @@ export function usePurchaseMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { createPurchase, updatePurchaseStatus, updatePurchase, receivePurchase, deletePurchase };
+  const createPurchasePayments = useMutation({
+    mutationFn: async ({ purchaseId, payments }: { purchaseId: string; payments: { amount: number; payment_method: string; payment_note: string }[] }) => {
+      if (payments.length === 0) return;
+      const rows = payments.map(p => ({ purchase_id: purchaseId, amount: p.amount, payment_method: p.payment_method, payment_note: p.payment_note || null }));
+      const { error } = await supabase.from("purchase_payments").insert(rows);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchase_payments"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return { createPurchase, createPurchasePayments, updatePurchaseStatus, updatePurchase, receivePurchase, deletePurchase };
 }

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, Pencil, Printer } from "lucide-react";
-import { useSale, useSaleItems } from "@/hooks/useSales";
+import { useSale, useSaleItems, useSalePayments } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 
@@ -23,6 +23,7 @@ export default function SaleView() {
   const navigate = useNavigate();
   const { data: sale, isLoading } = useSale(id || null);
   const { data: items, isLoading: itemsLoading } = useSaleItems(id || null);
+  const { data: payments } = useSalePayments(id || null);
   const { data: settings } = useSettings();
   const [showInvoice, setShowInvoice] = useState(false);
 
@@ -121,6 +122,37 @@ export default function SaleView() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment History */}
+      {payments && payments.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Payment History</CardTitle></CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Note</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((p: any, idx: number) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{idx + 1}</TableCell>
+                    <TableCell className="capitalize">{p.payment_method}</TableCell>
+                    <TableCell className="text-right font-medium">৳{Number(p.amount).toLocaleString()}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.payment_note || "—"}</TableCell>
+                    <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="pt-6">

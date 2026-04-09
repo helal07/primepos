@@ -47,6 +47,7 @@ const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
 import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
+import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 
 // Extended cart item with serial tracking
@@ -61,7 +62,7 @@ export default function POS() {
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
-  const { createSale } = useSaleMutations();
+  const { createSale, createSalePayments } = useSaleMutations();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -249,50 +250,35 @@ export default function POS() {
   const discountAmount = discountType === "percentage" ? subtotal * (discountValue / 100) : discountValue;
   const totalAmount = subtotal - discountAmount + taxAmount;
 
-  const handleComplete = async () => {
+  const handleCompleteWithPayments = async (payments: PaymentRow[], paymentStatus: string) => {
     if (cart.length === 0) return;
 
-    // Expand serial items into individual sale_items
     const expandedItems: SaleItem[] = [];
     for (const item of cart) {
       if (item.serial_tracking && item.selected_serials?.length) {
         for (const sn of item.selected_serials) {
           expandedItems.push({
-            product_id: item.product_id,
-            quantity: 1,
-            unit_price: item.unit_price,
-            discount: item.discount,
-            tax_percent: item.tax_percent,
-            total: item.unit_price * (1 + item.tax_percent / 100),
-            serial_number: sn,
+            product_id: item.product_id, quantity: 1, unit_price: item.unit_price,
+            discount: item.discount, tax_percent: item.tax_percent,
+            total: item.unit_price * (1 + item.tax_percent / 100), serial_number: sn,
           });
         }
       } else {
         expandedItems.push({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          discount: item.discount,
-          tax_percent: item.tax_percent,
-          total: item.total,
+          product_id: item.product_id, quantity: item.quantity, unit_price: item.unit_price,
+          discount: item.discount, tax_percent: item.tax_percent, total: item.total,
         });
       }
     }
 
     const result = await createSale.mutateAsync({
-      customer_id: customerId || null,
-      status: "completed",
-      subtotal,
-      discount_type: discountType,
-      discount_value: discountValue,
-      discount_amount: discountAmount,
-      tax_amount: taxAmount,
-      shipping_cost: 0,
-      total_amount: totalAmount,
-      payment_method: paymentMethod,
-      payment_status: "paid",
-      items: expandedItems,
+      customer_id: customerId || null, status: "completed", subtotal,
+      discount_type: discountType, discount_value: discountValue,
+      discount_amount: discountAmount, tax_amount: taxAmount, shipping_cost: 0,
+      total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
+      payment_status: paymentStatus, items: expandedItems,
     });
+    await createSalePayments.mutateAsync({ saleId: result.id, payments });
     setLastInvoice(result.invoice_number);
     setShowPayment(false);
     setShowMobileCart(false);
@@ -707,68 +693,13 @@ export default function POS() {
       </Dialog>
 
       {/* Payment Dialog */}
-      <Dialog open={showPayment} onOpenChange={setShowPayment}>
-        <DialogContent className="max-w-[90vw] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Complete Payment</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">৳{totalAmount.toFixed(2)}</div>
-              <div className="text-sm text-muted-foreground mt-1">{cart.reduce((s, i) => s + i.quantity, 0)} items</div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: "cash", label: "Cash", icon: Banknote },
-                { value: "card", label: "Card", icon: CreditCard },
-                { value: "bkash", label: "bKash", icon: Smartphone },
-                { value: "bank", label: "Bank", icon: CreditCard },
-              ].map((m) => (
-                <Button
-                  key={m.value}
-                  variant={paymentMethod === m.value ? "default" : "outline"}
-                  className="h-14 flex-col gap-1"
-                  onClick={() => setPaymentMethod(m.value)}
-                >
-                  <m.icon className="h-5 w-5" />
-                  <span className="text-xs">{m.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPayment(false)}>Cancel</Button>
-            <Button onClick={handleComplete} disabled={createSale.isPending}>
-              {createSale.isPending ? "Processing..." : "Complete Sale"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Receipt Dialog */}
-      <Dialog open={showReceipt} onOpenChange={() => {}}>
-        <DialogContent className="max-w-[90vw] sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-center">Sale Complete!</DialogTitle>
-          </DialogHeader>
-          <div className="text-center space-y-3">
-            <div className="mx-auto w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-              <Receipt className="h-7 w-7 text-green-600" />
-            </div>
-            <div className="text-2xl font-bold text-primary">৳{totalAmount.toFixed(2)}</div>
-            <div className="text-sm text-muted-foreground">Invoice: {lastInvoice}</div>
-            <div className="text-sm text-muted-foreground capitalize">Paid via {paymentMethod}</div>
-          </div>
-          <DialogFooter className="flex-col gap-2 sm:flex-col">
-            <Button className="w-full" onClick={handleNewSale}>
-              <Plus className="h-4 w-4 mr-2" /> New Sale
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => navigate("/sales")}>
-              View Sales
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PaymentDialog
+        open={showPayment}
+        onOpenChange={setShowPayment}
+        totalAmount={totalAmount}
+        onFinalize={handleCompleteWithPayments}
+        isPending={createSale.isPending}
+      />
     </div>
   );
 }
