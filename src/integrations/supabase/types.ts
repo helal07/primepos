@@ -1382,6 +1382,54 @@ export type Database = {
         }
         Relationships: []
       }
+      saas_packages: {
+        Row: {
+          created_at: string
+          duration_days: number
+          features: Json
+          id: string
+          is_active: boolean
+          is_popular: boolean
+          max_business_location: number
+          max_invoice: number
+          max_users: number
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days?: number
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          max_business_location?: number
+          max_invoice?: number
+          max_users?: number
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          max_business_location?: number
+          max_invoice?: number
+          max_users?: number
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sale_items: {
         Row: {
           created_at: string
@@ -1672,6 +1720,97 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tenant_actions_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          performed_by: string
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          performed_by: string
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          performed_by?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_actions_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          owner_user_id: string
+          package_id: string | null
+          phone: string | null
+          status: string
+          subscription_end: string | null
+          subscription_start: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          owner_user_id: string
+          package_id?: string | null
+          phone?: string | null
+          status?: string
+          subscription_end?: string | null
+          subscription_start?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          owner_user_id?: string
+          package_id?: string | null
+          phone?: string | null
+          status?: string
+          subscription_end?: string | null
+          subscription_start?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "saas_packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
