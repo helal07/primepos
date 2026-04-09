@@ -50,7 +50,7 @@ export default function POS() {
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
   const { createSale, createSalePayments } = useSaleMutations();
-  const { settings } = useSettings();
+  const { data: settings } = useSettings();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
