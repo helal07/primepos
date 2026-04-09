@@ -188,6 +188,24 @@ export function AppSidebar() {
   const { user } = useAuth();
   const [isSuperadmin, setIsSuperadmin] = useState(false);
 
+  // Find which group is active based on current route
+  const activeGroupLabel = menuGroups.find((group) =>
+    group.items.some(
+      (item) =>
+        location.pathname === item.url ||
+        location.pathname.startsWith(item.url + "/")
+    )
+  )?.label ?? null;
+
+  const [openGroup, setOpenGroup] = useState<string | null>(activeGroupLabel);
+
+  // Update open group when route changes
+  useEffect(() => {
+    if (activeGroupLabel) {
+      setOpenGroup(activeGroupLabel);
+    }
+  }, [activeGroupLabel]);
+
   useEffect(() => {
     if (!user) return;
     supabase.rpc("is_superadmin", { _user_id: user.id }).then(({ data }) => {
