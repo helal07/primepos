@@ -667,15 +667,32 @@ export default function POS() {
         </DialogContent>
       </Dialog>
 
-      {/* Receipt Dialog */}
+      {/* Receipt / Invoice Dialog */}
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="max-w-xs text-center">
-          <DialogHeader><DialogTitle>Sale Complete!</DialogTitle></DialogHeader>
-          <div className="py-4 space-y-2">
-            <div className="text-4xl">✅</div>
-            <p className="text-sm text-muted-foreground">Invoice: <strong>{lastInvoice}</strong></p>
-            <p className="text-lg font-bold">৳{totalAmount.toFixed(2)}</p>
-          </div>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
+          <DialogHeader><DialogTitle>Sale Complete — Invoice {lastInvoice}</DialogTitle></DialogHeader>
+          {lastSaleData && lastSaleItems ? (
+            <SaleInvoice
+              sale={lastSaleData}
+              items={lastSaleItems}
+              settings={settings || {}}
+              onPrint={() => {
+                const printArea = document.getElementById("invoice-print-area");
+                if (!printArea) return;
+                const w = window.open("", "_blank");
+                if (!w) return;
+                w.document.write(`<html><head><title>Invoice ${lastInvoice}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left}th{border-bottom:2px solid #d1d5db;font-size:12px;background:#f3f4f6}td{border-bottom:1px solid #e5e7eb;font-size:12px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}</style></head><body>${printArea.innerHTML}</body></html>`);
+                w.document.close();
+                w.print();
+              }}
+            />
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-2">✅</div>
+              <p className="text-muted-foreground">Invoice: <strong>{lastInvoice}</strong></p>
+              <p className="text-lg font-bold">৳{totalAmount.toFixed(2)}</p>
+            </div>
+          )}
           <DialogFooter className="flex-col gap-2">
             <Button onClick={handleNewSale} className="w-full">New Sale</Button>
             <Button variant="outline" onClick={() => navigate("/sales")} className="w-full">View Sales</Button>
