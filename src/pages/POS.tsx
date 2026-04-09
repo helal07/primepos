@@ -309,9 +309,7 @@ export default function POS() {
                             ))}
                           </div>
                         )}
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {item.stock_quantity !== undefined && `${item.stock_quantity} Pcs in stock`}
-                        </div>
+                        
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
@@ -489,10 +487,10 @@ export default function POS() {
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleCardSale} disabled={cart.length === 0 || createSale.isPending}>
           <CreditCard className="h-3.5 w-3.5" /> Card
         </Button>
-        <Button size="sm" className="gap-1 text-xs bg-blue-600 hover:bg-blue-700" onClick={() => setShowPayment(true)} disabled={cart.length === 0}>
+        <Button size="sm" className="gap-1 text-xs bg-primary hover:bg-primary/90" onClick={() => setShowPayment(true)} disabled={cart.length === 0}>
           <Banknote className="h-3.5 w-3.5" /> Multiple Pay
         </Button>
-        <Button size="sm" className="gap-1 text-xs bg-green-600 hover:bg-green-700" onClick={handleQuickCash} disabled={cart.length === 0 || createSale.isPending}>
+        <Button size="sm" className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleQuickCash} disabled={cart.length === 0 || createSale.isPending}>
           💵 Cash
         </Button>
         <Button variant="destructive" size="sm" className="gap-1 text-xs" onClick={handleCancel} disabled={cart.length === 0}>
