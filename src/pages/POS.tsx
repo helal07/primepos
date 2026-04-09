@@ -274,7 +274,8 @@ export default function POS() {
 
   const handleNewSale = () => {
     setCart([]); setCustomerId(""); setDiscountValue(0); setShippingCost(0);
-    setShowReceipt(false); setLastInvoice("");
+    setShowReceipt(false); setLastInvoice(""); setLastSaleId(null);
+    setSaleDate(new Date());
   };
 
   const handleCancel = () => {
