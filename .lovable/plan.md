@@ -1,44 +1,101 @@
-# Tenant Isolation, Accordion Sidebar & Detailed Reports
+# Enhanced Reports — Filters, Export & Print
 
-## Three Changes
+## Overview
 
-### 1. Tenant Data Isolation (Database-level)
+Add a shared `ReportToolbar` component used by all 12 report pages, providing consistent date/payment/status filters and Export (CSV, Excel, PDF) + Print buttons. Each report will be updated to use this toolbar and pass its table data for export.
 
-**Problem**: All 30+ data tables have `USING condition: true` for SELECT — any authenticated user sees ALL data across all tenants. This is a critical security gap for a SaaS product.
+## Shared Component
 
-**Solution**: Add a `tenant_id` column to every tenant-scoped table, link users to tenants via `profiles.tenant_id`, and enforce isolation through RLS policies.
+### `src/components/reports/ReportToolbar.tsx` (new)
 
-**All Tables needing** `tenant_id`:  
-`products`, `product_variations`, `categories`, `brands`, `units`, `sales`, `sale_items`, `customers`, `suppliers`, `purchases`, `purchase_items`, `purchase_orders`, `purchase_order_items`, `stock_adjustments`, `stock_transfers`, `employees`, `attendance`, `leave_requests`, `payroll`, `accounts`, `transactions`, `journal_entries`, `journal_entry_lines`, `warranty_claims`, `cms_pages`, `cms_media`, `business_settings`, `roles`, `role_permissions`, `user_roles`, `activity_log`, `installment_customers`, `installment_sales`, `installment_schedules`, `installment_collections`
+A reusable toolbar with:
 
-**Database changes**:
+- **Date range**: From/To date inputs (optional, some reports use single date)
+- **Payment method filter**: Select dropdown (Cash, Card, Bank Transfer, Mobile, All)
+- **Payment status filter**: Select dropdown (Paid, Due, Partial, All)
+- **Export buttons**: CSV, Excel, PDF — each takes `columns[]` and `rows[][]` props
+- **Print button**: Opens `window.print()` with a print-friendly stylesheet
 
-1. Add `tenant_id UUID REFERENCES tenants(id)` to `profiles` table
-2. Add `tenant_id UUID` to all 30+ data tables (nullable initially to not break existing data)
-3. Create a `SECURITY DEFINER` function `get_user_tenant_id(uid)` that returns the tenant_id for a given user
-4. Replace all `USING (true)` SELECT policies with `USING (tenant_id = get_user_tenant_id(auth.uid()))` — superadmins bypass with `OR is_superadmin(auth.uid())`
-5. Add `WITH CHECK (tenant_id = get_user_tenant_id(auth.uid()))` on INSERT policies
-6. Auto-set `tenant_id` via trigger on insert (so app code doesn't need to change immediately)
+Props interface:
 
-**App code changes**:
+```ts
+interface ReportToolbarProps {
+  from?: string; to?: string;
+  onFromChange?: (v: string) => void; onToChange?: (v: string) => void;
+  singleDate?: string; onDateChange?: (v: string) => void;
+  showPaymentFilter?: boolean;
+  paymentMethod?: string; onPaymentMethodChange?: (v: string) => void;
+  showStatusFilter?: boolean;
+  paymentStatus?: string; onPaymentStatusChange?: (v: string) => void;
+  exportData: { columns: string[]; rows: (string | number)[][]; filename: string };
+}
+```
 
-- When creating a tenant via the admin panel, set `profiles.tenant_id` for the owner user
-- No changes needed in hooks/queries — RLS handles filtering automatically
+**Export logic** (inline in toolbar):
 
-**This is a large migration and will be done in phases during implementation.**
+- **CSV**: Build CSV string from columns/rows, create Blob, trigger download
+- **Excel**: Use `xlsx` — `XLSX.utils.aoa_to_sheet`, `writeFile`
+- **PDF**: Use `jspdf` + `jspdf-autotable` — create table PDF with title and date
+- **Print**: `window.print()` — wrap report content in a `print:` Tailwind class area
 
----
+## Report Page Updates (all 12 files)
 
-### 2. Sidebar Accordion (One Group Open at a Time)
+Each report page will:
 
-**Problem**: Multiple sidebar groups can expand simultaneously, creating inconsistent spacing.
+1. Replace inline date inputs with `<ReportToolbar>`
+2. Add payment method / status filters where relevant (sales-based reports)
+3. Apply filters in the query or client-side `.filter()`
+4. Pass formatted table data to `exportData` prop
+5. Wrap the main content in a `print:block` div with `@media print` styles
 
-**Solution**: Track `openGroup` state in `AppSidebar`. When a group label is clicked, close all others. Use controlled `open` prop on each `Collapsible` instead of `defaultOpen`.
+### Per-report filter mapping:
 
-**File**: `src/components/layout/AppSidebar.tsx`
 
-- Add `const [openGroup, setOpenGroup] = useState<string | null>(activeGroupLabel)`
-- Each `Collapsible` gets `open={openGroup === group.label}` and `onOpenChange`
-- Add consistent `py-1` spacing between groups
+| Report            | Date Type | Payment Method | Payment Status          |
+| ----------------- | --------- | -------------- | ----------------------- |
+| Profit/Loss       | range     | no             | no                      |
+| Daily Summary     | single    | yes            | yes                     |
+| Due Sale          | none      | no             | no (fixed: due/partial) |
+| Product Profit    | range     | no             | no                      |
+| Purchase & Sale   | range     | yes            | yes                     |
+| Tax               | range     | no             | no                      |
+| Contacts          | none      | no             | no                      |
+| Stock             | none      | no             | no                      |
+| Items             | none      | no             | no                      |
+| Trending Products | range     | no             | no                      |
+| Installment       | none      | no             | no                      |
+| Expense           | range     | no             | no                      |
+| Register          | single    | yes            | no                      |
 
----
+
+### Filter logic for sales-based reports:
+
+- Payment method filter: `.eq("payment_method", value)` when not "all"
+- Payment status filter: `.eq("payment_status", value)` when not "all"
+
+## Print Styles
+
+Add to `src/index.css`:
+
+```css
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  .no-print { display: none !important; }
+}
+```
+
+## Files
+
+- **New**: `src/components/reports/ReportToolbar.tsx`
+- **Edit**: `src/index.css` (print styles)
+- **Edit**: All 12 report pages in `src/pages/reports/`
+
+## Implementation Order
+
+1. Create `ReportToolbar` component with export/print logic
+2. Add print CSS
+3. Update each report page (batch of 4 at a time)
+
+See image refferance and gate more plan
