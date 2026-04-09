@@ -1,5 +1,5 @@
-import { useState, useMemo, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
-import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, type PurchaseItem } from "@/hooks/usePurchases";
+import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, usePurchase, usePurchaseItems, type PurchaseItem } from "@/hooks/usePurchases";
+import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 
 interface PurchaseItemWithSerials extends PurchaseItem {
   serials: string[];
