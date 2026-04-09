@@ -50,6 +50,22 @@ export function usePurchases() {
   });
 }
 
+export function usePurchase(id: string | null) {
+  return useQuery({
+    queryKey: ["purchase", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("*, suppliers(name, phone, address, email)")
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function usePurchaseItems(purchaseId: string | null) {
   return useQuery({
     queryKey: ["purchase_items", purchaseId],
@@ -188,6 +204,49 @@ export function usePurchaseMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updatePurchase = useMutation({
+    mutationFn: async ({ id, formData }: { id: string; formData: PurchaseFormData }) => {
+      const { items, ...purchaseData } = formData;
+      const { error: pError } = await supabase
+        .from("purchases")
+        .update(purchaseData)
+        .eq("id", id);
+      if (pError) throw pError;
+
+      const { error: delError } = await supabase
+        .from("purchase_items")
+        .delete()
+        .eq("purchase_id", id);
+      if (delError) throw delError;
+
+      if (items.length > 0) {
+        const purchaseItems = items.map((item) => ({
+          purchase_id: id,
+          product_id: item.product_id,
+          variation_id: item.variation_id || null,
+          quantity: item.quantity,
+          received_quantity: item.received_quantity || 0,
+          unit_cost: item.unit_cost,
+          discount: item.discount,
+          tax_percent: item.tax_percent,
+          total: item.total,
+          serial_number: item.serial_number || null,
+        }));
+        const { error: itemsError } = await supabase
+          .from("purchase_items")
+          .insert(purchaseItems);
+        if (itemsError) throw itemsError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["purchases"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase_items"] });
+      toast.success("Purchase updated successfully");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deletePurchase = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("purchases").delete().eq("id", id);
@@ -200,5 +259,5 @@ export function usePurchaseMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { createPurchase, updatePurchaseStatus, receivePurchase, deletePurchase };
+  return { createPurchase, updatePurchaseStatus, updatePurchase, receivePurchase, deletePurchase };
 }
