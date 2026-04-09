@@ -79,6 +79,21 @@ export function usePurchaseOrders() {
   });
 }
 
+export function usePurchaseOrderItems(poId: string | null) {
+  return useQuery({
+    queryKey: ["purchase_order_items", poId],
+    enabled: !!poId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("purchase_order_items")
+        .select("*, products(name, purchase_price, tax_percent, product_type, sku, brands(name))")
+        .eq("purchase_order_id", poId!);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function usePurchaseMutations() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

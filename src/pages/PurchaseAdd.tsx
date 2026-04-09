@@ -16,18 +16,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
-import { usePurchaseMutations, type PurchaseItem } from "@/hooks/usePurchases";
+import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, type PurchaseItem } from "@/hooks/usePurchases";
 
 export default function PurchaseAdd() {
   const navigate = useNavigate();
   const { data: products } = useProducts();
   const { data: suppliers } = useSuppliers();
+  const { data: purchaseOrders } = usePurchaseOrders();
   const { createPurchase } = usePurchaseMutations();
 
   const [supplierId, setSupplierId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [referenceNumber, setReferenceNumber] = useState(`PUR-${Date.now().toString().slice(-6)}`);
   const [supplierInvoice, setSupplierInvoice] = useState("");
+  const [purchaseStatus, setPurchaseStatus] = useState("received");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentStatus, setPaymentStatus] = useState("unpaid");
   const [notes, setNotes] = useState("");
@@ -38,11 +40,46 @@ export default function PurchaseAdd() {
   const [otherCharges, setOtherCharges] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [scannerIdx, setScannerIdx] = useState<number | null>(null);
+  const [selectedPOId, setSelectedPOId] = useState<string>("");
+
+  // Fetch PO items when a PO is selected
+  const { data: poItems } = usePurchaseOrderItems(selectedPOId || null);
+
+  // When PO is selected, populate form
+  const handlePOSelect = (poId: string) => {
+    setSelectedPOId(poId);
+    if (poId && purchaseOrders) {
+      const po = (purchaseOrders as any[]).find((o: any) => o.id === poId);
+      if (po) {
+        setSupplierId(po.supplier_id || "");
+        setReferenceNumber(po.reference_number || referenceNumber);
+      }
+    }
+  };
+
+  // Load PO items into the items table
+  useMemo(() => {
+    if (poItems && poItems.length > 0 && selectedPOId) {
+      const mapped: PurchaseItem[] = poItems.map((pi: any) => ({
+        product_id: pi.product_id,
+        product_name: pi.products?.name || "",
+        product_type: pi.products?.product_type || "general",
+        brand_name: pi.products?.brands?.name || "",
+        sku: pi.products?.sku || "",
+        quantity: pi.quantity,
+        unit_cost: Number(pi.unit_cost),
+        discount: 0,
+        tax_percent: Number(pi.products?.tax_percent || 0),
+        total: pi.total,
+        serial_number: "",
+      }));
+      setItems(mapped);
+    }
+  }, [poItems, selectedPOId]);
 
   const handleSerialScan = (code: string, idx: number) => {
     updateItem(idx, "serial_number", code);
     setScannerIdx(null);
-    // Auto-add next row
     const product = (products as any[])?.find((p: any) => p.id === items[idx]?.product_id);
     if (product) {
       addProduct(product);
@@ -67,11 +104,16 @@ export default function PurchaseAdd() {
 
   const hasSerialItems = items.some((i) => i.product_type === "imei" || i.product_type === "serial");
 
+  // Available POs (draft or approved)
+  const availablePOs = useMemo(() => {
+    if (!purchaseOrders) return [];
+    return (purchaseOrders as any[]).filter((po: any) => po.status === "draft" || po.status === "approved");
+  }, [purchaseOrders]);
+
   const addProduct = (product: any) => {
     const isSerial = product.product_type === "imei" || product.product_type === "serial";
 
     if (isSerial) {
-      // Always add a new row for serial/IMEI products (qty locked to 1)
       setItems((prev) => [...prev, {
         product_id: product.id,
         product_name: product.name,
@@ -128,12 +170,10 @@ export default function PurchaseAdd() {
 
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
-  // Calculate totals
   const subtotal = items.reduce((s, i) => s + i.quantity * i.unit_cost, 0);
   const itemDiscount = items.reduce((s, i) => s + i.discount, 0);
   const totalTax = items.reduce((s, i) => s + (i.quantity * i.unit_cost - i.discount) * (i.tax_percent / 100), 0);
 
-  // Parse discount input — supports "10" (flat) or "10%" (percentage)
   const overallDiscount = useMemo(() => {
     if (!discountInput) return 0;
     if (discountInput.endsWith("%")) {
@@ -153,7 +193,7 @@ export default function PurchaseAdd() {
       supplier_id: supplierId || null,
       purchase_date: purchaseDate,
       reference_number: referenceNumber,
-      status: "pending",
+      status: purchaseStatus,
       subtotal,
       discount_amount: itemDiscount + overallDiscount,
       tax_amount: totalTax,
@@ -167,7 +207,6 @@ export default function PurchaseAdd() {
     navigate("/purchases");
   };
 
-  // Check for duplicate serials
   const getDuplicateSerials = () => {
     const serials = items.filter((i) => i.serial_number).map((i) => i.serial_number!);
     const seen = new Set<string>();
@@ -188,10 +227,10 @@ export default function PurchaseAdd() {
         </Button>
       } />
 
-      {/* Top Section — Reference, Supplier, Date */}
+      {/* Top Section — Reference, Supplier, Date, Status */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label>Reference No</Label>
               <Input value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} />
@@ -223,6 +262,20 @@ export default function PurchaseAdd() {
               <Label>Purchase Date</Label>
               <Input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
             </div>
+            <div>
+              <Label>Purchase Status</Label>
+              <Select value={purchaseStatus} onValueChange={setPurchaseStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="received">Received (+ Stock)</SelectItem>
+                  <SelectItem value="ordered">Ordered</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {purchaseStatus === "received" ? "Items added to stock immediately" : "Items NOT added to stock"}
+              </p>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div>
@@ -230,20 +283,24 @@ export default function PurchaseAdd() {
               <Input value={supplierInvoice} onChange={(e) => setSupplierInvoice(e.target.value)} placeholder="Supplier invoice reference" />
             </div>
             <div>
-              <Label>Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label>Notes</Label>
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={1} placeholder="Optional notes" />
+            </div>
+            <div>
+              <Label>Import from Purchase Order</Label>
+              <Select value={selectedPOId} onValueChange={handlePOSelect}>
+                <SelectTrigger><SelectValue placeholder="Select PO to import..." /></SelectTrigger>
+                <SelectContent>
+                  {availablePOs.map((po: any) => (
+                    <SelectItem key={po.id} value={po.id}>
+                      {po.reference_number} — {po.suppliers?.name || "No supplier"} ({po.status})
+                    </SelectItem>
+                  ))}
+                  {availablePOs.length === 0 && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">No pending orders</div>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
@@ -345,7 +402,6 @@ export default function PurchaseAdd() {
                                     size="icon"
                                     className="h-8 w-8 shrink-0"
                                     onClick={() => setScannerIdx(idx)}
-                                    title="Scan barcode"
                                   >
                                     <ScanBarcode className="h-4 w-4" />
                                   </Button>
@@ -401,10 +457,41 @@ export default function PurchaseAdd() {
         </CardContent>
       </Card>
 
-      {/* Bottom Totals */}
+      {/* Bottom — Payment & Totals */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end">
+          {/* Payment Section */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <Label>Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Paid Amount</Label>
+              <Input type="number" min={0} value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)} />
+            </div>
+            <div>
+              <Label>Discount (৳ or %)</Label>
+              <Input value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} placeholder="0 or 10%" />
+            </div>
+            <div>
+              <Label>Other Charges</Label>
+              <Input type="number" min={0} value={otherCharges} onChange={(e) => setOtherCharges(parseFloat(e.target.value) || 0)} />
+            </div>
+          </div>
+
+          <Separator className="my-4" />
+
+          {/* Totals */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
             <div>
               <Label className="text-xs text-muted-foreground">Total Items</Label>
               <div className="text-lg font-bold">{totalItemCount}</div>
@@ -414,20 +501,12 @@ export default function PurchaseAdd() {
               <div className="text-lg font-bold">৳{subtotal.toFixed(2)}</div>
             </div>
             <div>
-              <Label className="text-xs">Discount (₹ or %)</Label>
-              <Input value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} placeholder="0 or 10%" className="h-9" />
-            </div>
-            <div>
-              <Label className="text-xs">Other Charges</Label>
-              <Input type="number" min={0} value={otherCharges} onChange={(e) => setOtherCharges(parseFloat(e.target.value) || 0)} className="h-9" />
+              <Label className="text-xs text-muted-foreground">Tax</Label>
+              <div className="text-lg font-bold">৳{totalTax.toFixed(2)}</div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Grand Total</Label>
               <div className="text-xl font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label className="text-xs">Paid Amount</Label>
-              <Input type="number" min={0} value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)} className="h-9" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Due</Label>
