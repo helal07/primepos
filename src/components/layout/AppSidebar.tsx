@@ -167,7 +167,10 @@ const menuGroups = [
   {
     label: "Reports",
     items: [
-      { title: "Reports", url: "/reports", icon: BarChart3 },
+      { title: "Overview", url: "/reports", icon: BarChart3 },
+      { title: "Profit / Loss", url: "/reports/profit-loss", icon: TrendingUp },
+      { title: "Stock Report", url: "/reports/stock", icon: Package },
+      { title: "Tax Report", url: "/reports/tax", icon: Scale },
     ],
   },
   {
