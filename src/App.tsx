@@ -133,6 +133,8 @@ const App = () => (
                       <Route path="/pos" element={<POS />} />
                       <Route path="/sales" element={<Sales />} />
                       <Route path="/sales/add" element={<SaleAdd />} />
+                      <Route path="/sales/:id" element={<SaleView />} />
+                      <Route path="/sales/:id/edit" element={<SaleEdit />} />
                       <Route path="/invoices" element={<PlaceholderPage title="Invoices" />} />
                       <Route path="/sales/drafts" element={<PlaceholderPage title="Drafts" />} />
                       <Route path="/quotations" element={<PlaceholderPage title="Quotations" />} />
@@ -140,6 +142,8 @@ const App = () => (
                       <Route path="/shipments" element={<PlaceholderPage title="Shipments" />} />
                       <Route path="/purchases/add" element={<PurchaseAdd />} />
                       <Route path="/purchases" element={<Purchases />} />
+                      <Route path="/purchases/:id" element={<PurchaseView />} />
+                      <Route path="/purchases/:id/edit" element={<PurchaseEdit />} />
                       <Route path="/purchase-orders" element={<PurchaseOrders />} />
                       <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
                       <Route path="/customers" element={<Customers />} />
