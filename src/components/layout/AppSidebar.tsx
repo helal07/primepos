@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -43,9 +44,12 @@ import {
   CreditCard,
   UserPlus,
   CalendarCheck,
+  Crown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
