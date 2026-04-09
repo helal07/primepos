@@ -265,7 +265,8 @@ export function AppSidebar() {
           return (
             <Collapsible
               key={group.label}
-              defaultOpen={isGroupActive}
+              open={openGroup === group.label}
+              onOpenChange={(isOpen) => setOpenGroup(isOpen ? group.label : null)}
               className="group/collapsible"
             >
               <SidebarGroup>
