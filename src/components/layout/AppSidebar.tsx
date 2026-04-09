@@ -45,6 +45,15 @@ import {
   UserPlus,
   CalendarCheck,
   Crown,
+  CalendarRange,
+  AlertCircle,
+  ShoppingBag,
+  Receipt,
+  Contact,
+  Layers,
+  Flame,
+  Wallet,
+  CashRegister,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
