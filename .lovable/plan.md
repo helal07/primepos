@@ -1,114 +1,77 @@
-# SaaS Admin Panel — Tenant & Package Management
+# **Devide this in to phase to make it more acurate Make it phase by phase and complete one by one.**
 
-## Overview
+# Enhanced SaaS Admin Panel — Reference Image Inspired Redesign
 
-Build a Superadmin-only panel for managing tenants (businesses using the platform), subscription packages, and billing. Inspired by the Mess Khata reference images — a clean dashboard with tenant CRUD, package management, and CMS-style content editing.
+## What We're Building
 
-## Architecture
-
-Since this is a single-database SaaS (not multi-tenant with separate DBs), tenants are represented as rows in new tables. The Superadmin role already exists in the system.
-
-## Database Schema (3 new tables)
-
-### `saas_packages`
-
-Subscription plans that tenants can subscribe to.
-
-- `id`, `name`, `price`, `duration_days`, `max_business_location,max_invoice`, `features` (jsonb array of strings), `is_popular` (boolean), `is_active`, `sort_order`, `created_at`, `updated_at`
-
-### `tenants`
-
-Each business/client using the platform.
-
-- `id`, `name`, `phone`, `email`, `address`, `owner_user_id` (references profiles.user_id), `package_id` (FK to saas_packages), `subscription_start`, `subscription_end`, `status` (active/trial/suspended/expired), `notes`, `created_at`, `updated_at`
-
-### `tenant_actions_log`
-
-Audit trail for superadmin actions on tenants.
-
-- `id`, `tenant_id`, `action` (e.g. "password_reset", "package_change", "extend", "suspend"), `details` (jsonb), `performed_by`, `created_at`
-
-RLS: All three tables restricted to superadmin only for write operations. Select on packages is public (for landing page pricing).
-
-## New Pages
-
-### 1. Superadmin Dashboard (`/admin`)
-
-- Summary cards: Total Tenants (active count), Total Members (across all), Analytics link, Transactions link, CMS link
-- Quick stats with icons (inspired by reference image 1)
-- Only visible to Superadmin role
-
-### 2. Tenant Management (`/admin/tenants`)
-
-- Searchable table: Name, Phone, Members count, Package, Days Left, Status badges (active/trial/expired)
-- "Incomplete registrations" section below (users registered but no tenant created)
-- Row action menu (three-dot): Edit Details, Billing Settings, Extend Period, Block/Unblock, Reset Password, Delete Tenant
-- Add Tenant dialog
-
-### 3. Package Management (`/admin/packages`)
-
-- CRUD for subscription packages
-- Fields: Name, Price, Duration, Max Users,Max_business_location, Features (comma-separated), Popular toggle
-- Drag-to-reorder or sort_order field
-- Preview card showing how it appears on landing page
-
-### 4. CMS for Landing Page (`/admin/cms`)
-
-- Tab-based editor (inspired by reference images 2-3): Branding, Hero, Features & Icons, Testimonials, CTA Banner, Pricing Plans, Contact, Footer
-- Each tab saves to `business_settings` with keys like `cms_hero`, `cms_features`, `cms_pricing`, etc.
-- Landing page reads from these settings dynamically instead of hardcoded content
-
-**There will be another CMS for ecommerce website building for tenant's maybe there is already have functionality.**
-
-### 4.  Settings (`Setting`)
-
-- Payment Getway setting like bkash, ssl Commerz, EPS to receive payment from tenant 
-- Also tenant can receive payment from his customer from website (available at Tenant Dashboard Setting)  
-- SMS getway setting-> Bulksms BD, MIM SMS to sending tenant sms.
--  also indevidual settings in Admin Dashboard of tenant so Tenant can send sms to his customers (greetings, Payment Reminder) .
-  &nbsp;
-
-# **5. Transation** (available SaaS Panel)
-
-- Transation history
-- manualy receive transation from tenant
+A comprehensive redesign of the SaaS admin panel inspired by the reference image (PrimePos-style admin), making it visually distinct from the tenant-side dashboard. Key additions:
 
 &nbsp;
 
-## Sidebar Changes
+1. **Tenant table with more columns** matching the reference: Name, DB, Domain, Package, Subscription Type (yearly/monthly/free trial), Company Name, Phone Number, Email, Created At, Expiry Date (color-coded badges), Last Login, Action dropdown
+2. **Add Tenant dialog asks for admin username + password** — the superadmin creates the tenant's owner account (via edge function using service role key to call `auth.admin.createUser`)
+3. **If any client subscribe** from online/landing page if paid then auto activate package if not paid only registration Superadmin can manualy approve or extend plan duration.
+  &nbsp;
+4. **Filters row** above the table: Select Domain, Select Package, Select Type dropdowns
+5. **Export buttons** (Excel, CSV, PDF, Print) in the header area
+6. **Records per page** selector
+7. **Distinct dark-themed admin layout** differentiating SaaS admin pages from tenant pages
 
-New "SaaS Admin" group at top of sidebar (only shown when user has Superadmin role):
+## Database Changes
 
-- Dashboard → `/admin`
-- Tenants → `/admin/tenants`
-- Packages → `/admin/packages`
-- CMS → `/admin/cms`
-- `Settings`
-- `Transation` 
+### Migration: Add columns to `tenants` table
 
-## Route Protection
+```sql
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS domain text;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS db_name text;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS company_name text;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_type text NOT NULL DEFAULT 'monthly';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS last_login_at timestamptz;
+```
 
-A `SuperadminRoute` wrapper component that checks `is_superadmin` role before rendering. Non-superadmins get redirected to `/dashboard`.
+No new tables needed.
 
-## Hook
+## Edge Function: `create-tenant-user`
 
-New `src/hooks/useSaasAdmin.ts`:
+A new edge function that:
 
-- `useTenants()` — list all tenants with package join
-- `useTenantMutations()` — CRUD, suspend, extend, password reset (via edge function for auth operations)
-- `usePackages()` — list packages
-- `usePackageMutations()` — CRUD for packages
-- `useLandingCms()` — read/write CMS sections from business_settings
+- Receives `{ email, password, display_name }` from the superadmin
+- Uses the `SUPABASE_SERVICE_ROLE_KEY` to call `auth.admin.createUser()`
+- Returns the created user's `id` (to be set as `owner_user_id`)
+- Only callable by superadmins (verified via JWT check inside function)
 
-## Files
+## UI Changes
 
-- **New migration**: Create `saas_packages`, `tenants`, `tenant_actions_log` tables with RLS
-- **New**: `src/hooks/useSaasAdmin.ts`
-- **New**: `src/pages/admin/AdminDashboard.tsx`
-- **New**: `src/pages/admin/TenantManagement.tsx`
-- **New**: `src/pages/admin/PackageManagement.tsx`
-- **New**: `src/pages/admin/LandingCms.tsx`
-- **New**: `src/components/admin/SuperadminRoute.tsx`
-- **Edit**: `src/App.tsx` — add `/admin/*` routes
-- **Edit**: `src/components/layout/AppSidebar.tsx` — add SaaS Admin group (conditional on superadmin role)
-- **Edit**: `src/pages/LandingPage.tsx` — read CMS content from settings instead of hardcoded values
+### `TenantManagement.tsx` — Full Redesign
+
+- **Header**: "Add Client" button (green), export buttons (Excel/CSV/PDF/Print icons)
+- **Filters row**: Records per page dropdown, Search input, Select Domain / Select Package / Select Type filter dropdowns
+- **Table columns**: Checkbox, Name, DB, Domain (link), Package, Subscription Type, Company Name, Phone Number, Email, Created At, Expiry Date (color-coded badge — green if future, red if past), Last Login at, Action dropdown
+- **Add Tenant dialog expanded**:
+  - Section 1 — Admin Account: Display Name, Email, Password (creates auth user via edge function)
+  - Section 2 — Business Info: Business Name, Company Name, Phone, Email, Address, 
+  - Section 3 — Subscription: Package select, Subscription Type (monthly/yearly/free trial), Start Date, End Date
+  - Notes textarea
+  - payment 4 -- option payment method- Online/ Manual--> Amount.
+- **Action menu**: Edit, Billing, Extend, Suspend/Activate, Reset Password, Delete
+
+### `AdminDashboard.tsx` — Enhanced
+
+- Add more summary cards: Suspended count, Monthly Revenue estimate
+- Add "Payments" and "Support Tickets" navigation cards
+- Style with a slightly different color scheme (darker card backgrounds) to distinguish from tenant dashboard
+
+### `useSaasAdmin.ts` — Updates
+
+- New `createTenantWithUser` mutation that:
+  1. Calls `create-tenant-user` edge function to create auth user
+  2. Uses returned `user_id` as `owner_user_id` to insert tenant record
+- Add `domain`, `db_name`, `company_name`, `subscription_type` to tenant mutations
+
+## Files Changed
+
+- **New migration**: Add `domain`, `db_name`, `company_name`, `subscription_type`, `last_login_at` to tenants
+- **New edge function**: `supabase/functions/create-tenant-user/index.ts`
+- **Edit**: `src/pages/admin/TenantManagement.tsx` — full redesign with reference-image columns, filters, expanded add form
+- **Edit**: `src/pages/admin/AdminDashboard.tsx` — more stats, distinct styling
+- **Edit**: `src/hooks/useSaasAdmin.ts` — add `createTenantWithUser`, update tenant interfaces
