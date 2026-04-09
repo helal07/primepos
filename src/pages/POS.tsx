@@ -243,6 +243,7 @@ export default function POS() {
     }
     const result = await createSale.mutateAsync({
       customer_id: customerId || null, status: "completed", subtotal,
+      sale_date: format(saleDate, "yyyy-MM-dd"),
       discount_type: discountType, discount_value: discountValue,
       discount_amount: discountAmount, tax_amount: taxAmount, shipping_cost: shippingCost,
       total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
@@ -250,6 +251,7 @@ export default function POS() {
     });
     await createSalePayments.mutateAsync({ saleId: result.id, payments });
     setLastInvoice(result.invoice_number);
+    setLastSaleId(result.id);
     setShowPayment(false);
     setShowMobileCart(false);
     setShowReceipt(true);
