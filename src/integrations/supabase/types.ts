@@ -1759,9 +1759,13 @@ export type Database = {
       tenants: {
         Row: {
           address: string | null
+          company_name: string | null
           created_at: string
+          db_name: string | null
+          domain: string | null
           email: string | null
           id: string
+          last_login_at: string | null
           name: string
           notes: string | null
           owner_user_id: string
@@ -1770,13 +1774,18 @@ export type Database = {
           status: string
           subscription_end: string | null
           subscription_start: string
+          subscription_type: string
           updated_at: string
         }
         Insert: {
           address?: string | null
+          company_name?: string | null
           created_at?: string
+          db_name?: string | null
+          domain?: string | null
           email?: string | null
           id?: string
+          last_login_at?: string | null
           name: string
           notes?: string | null
           owner_user_id: string
@@ -1785,13 +1794,18 @@ export type Database = {
           status?: string
           subscription_end?: string | null
           subscription_start?: string
+          subscription_type?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
+          company_name?: string | null
           created_at?: string
+          db_name?: string | null
+          domain?: string | null
           email?: string | null
           id?: string
+          last_login_at?: string | null
           name?: string
           notes?: string | null
           owner_user_id?: string
@@ -1800,6 +1814,7 @@ export type Database = {
           status?: string
           subscription_end?: string | null
           subscription_start?: string
+          subscription_type?: string
           updated_at?: string
         }
         Relationships: [
