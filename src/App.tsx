@@ -156,6 +156,16 @@ const App = () => (
                       <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
                       <Route path="/reports/stock" element={<StockReport />} />
                       <Route path="/reports/tax" element={<TaxReport />} />
+                      <Route path="/reports/daily-summary" element={<DailySummaryReport />} />
+                      <Route path="/reports/due-sales" element={<DueSaleReport />} />
+                      <Route path="/reports/product-profit" element={<ProductProfitReport />} />
+                      <Route path="/reports/purchase-sale" element={<PurchaseSaleReport />} />
+                      <Route path="/reports/contacts" element={<ContactsReport />} />
+                      <Route path="/reports/items" element={<ItemsReport />} />
+                      <Route path="/reports/trending" element={<TrendingProductsReport />} />
+                      <Route path="/reports/installment" element={<InstallmentReport />} />
+                      <Route path="/reports/expense" element={<ExpenseReport />} />
+                      <Route path="/reports/register" element={<RegisterReport />} />
                       <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
                       <Route path="/installment/customers" element={<InstallmentCustomers />} />
                       <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
