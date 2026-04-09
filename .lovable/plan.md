@@ -1,101 +1,83 @@
-# Enhanced Reports — Filters, Export & Print
+# POS Redesign + Purchase Screen Enhancement — Phased Plan
 
-## Overview
+## Phase 1: POS Screen Redesign (Inspired by Reference Image)
 
-Add a shared `ReportToolbar` component used by all 12 report pages, providing consistent date/payment/status filters and Export (CSV, Excel, PDF) + Print buttons. Each report will be updated to use this toolbar and pass its table data for export.
+### What Changes
 
-## Shared Component
+Redesign the POS page to match the reference layout:
 
-### `src/components/reports/ReportToolbar.tsx` (new)
+- **Left side**: Cart area with product table (Product, Quantity, Subtotal columns), customer select, search bar with barcode scan
+- **Right side**: Product grid with **Category** and **Brand** tab filters at top, product cards showing image/name/SKU/stock
+- **Bottom bar**: Payment action buttons (Multiple Pay, Cash, Card, Cancel) + Total Payable display
+- **IMEI/Serial products**: When an IMEI/serial-tracked product is clicked, instead of a popup, show an **inline IMEI selector** directly in the cart row — a dropdown of available IMEI numbers from purchase records for that product. User must pick which specific unit to sell.
 
-A reusable toolbar with:
+Make UI mobile frist friendly as like android or iOS app so retailer can easily and speedly sale think more about it.
 
-- **Date range**: From/To date inputs (optional, some reports use single date)
-- **Payment method filter**: Select dropdown (Cash, Card, Bank Transfer, Mobile, All)
-- **Payment status filter**: Select dropdown (Paid, Due, Partial, All)
-- **Export buttons**: CSV, Excel, PDF — each takes `columns[]` and `rows[][]` props
-- **Print button**: Opens `window.print()` with a print-friendly stylesheet
+### Key UI Elements
 
-Props interface:
-
-```ts
-interface ReportToolbarProps {
-  from?: string; to?: string;
-  onFromChange?: (v: string) => void; onToChange?: (v: string) => void;
-  singleDate?: string; onDateChange?: (v: string) => void;
-  showPaymentFilter?: boolean;
-  paymentMethod?: string; onPaymentMethodChange?: (v: string) => void;
-  showStatusFilter?: boolean;
-  paymentStatus?: string; onPaymentStatusChange?: (v: string) => void;
-  exportData: { columns: string[]; rows: (string | number)[][]; filename: string };
-}
+```text
+┌──────────────────────────────┬──────────────────────────┐
+│  Customer Select  │ Search + Scan            │  [Category] [Brands]     │
+├──────────────────────────────┤                          │
+│  Product │ Qty │ Subtotal │ X │  ┌──────┐ ┌──────┐      │
+│  ────────────────────────────│  │ Prod │ │ Prod │      │
+│  (IMEI row: Select IMEI ▼)  │  │ Card │ │ Card │      │
+│                              │  └──────┘ └──────┘      │
+│                              │  ┌──────┐ ┌──────┐      │
+│                              │  │      │ │      │      │
+├──────────────────────────────┴──────────────────────────┤
+│ Items: 0  Discount  Shipping  Total: ৳0  [Cash] [Card] │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Export logic** (inline in toolbar):
+### IMEI Selection Logic (No Popup)
 
-- **CSV**: Build CSV string from columns/rows, create Blob, trigger download
-- **Excel**: Use `xlsx` — `XLSX.utils.aoa_to_sheet`, `writeFile`
-- **PDF**: Use `jspdf` + `jspdf-autotable` — create table PDF with title and date
-- **Print**: `window.print()` — wrap report content in a `print:` Tailwind class area
+- When a serial-tracked product is added, the cart row shows a `<Select>` dropdown listing available IMEI/serial numbers (from `purchase_items` where `product_id` matches and `serial_number` is not null)
+- Query: fetch purchase_items with serial_numbers for that product, exclude already-sold serials (from sale_items)
+- User selects the IMEI inline; quantity is locked to 1 per IMEI
+- Multiple IMEIs = For Same Product Dont increse  cart rows, increse number only with amount.
+  &nbsp;
+- Files
 
-## Report Page Updates (all 12 files)
+- **Edit**: `src/pages/POS.tsx` — full redesign
+- **Edit**: `src/hooks/useInventory.ts` — add `useCategories` already exists, add `useBrands` already exists
+- **New hook or inline query**: fetch available serials per product from `purchase_items` minus `sale_items`
 
-Each report page will:
+---
 
-1. Replace inline date inputs with `<ReportToolbar>`
-2. Add payment method / status filters where relevant (sales-based reports)
-3. Apply filters in the query or client-side `.filter()`
-4. Pass formatted table data to `exportData` prop
-5. Wrap the main content in a `print:block` div with `@media print` styles
+## Phase 2: Purchase Screen Enhancement
 
-### Per-report filter mapping:
+### 2A: Payment Section Moved to Bottom
 
+Move payment method, paid amount, and payment recording to the bottom totals section (below the items table), not in the top form. The top form keeps only: Reference, Supplier, Date, Supplier Invoice, Notes.
 
-| Report            | Date Type | Payment Method | Payment Status          |
-| ----------------- | --------- | -------------- | ----------------------- |
-| Profit/Loss       | range     | no             | no                      |
-| Daily Summary     | single    | yes            | yes                     |
-| Due Sale          | none      | no             | no (fixed: due/partial) |
-| Product Profit    | range     | no             | no                      |
-| Purchase & Sale   | range     | yes            | yes                     |
-| Tax               | range     | no             | no                      |
-| Contacts          | none      | no             | no                      |
-| Stock             | none      | no             | no                      |
-| Items             | none      | no             | no                      |
-| Trending Products | range     | no             | no                      |
-| Installment       | none      | no             | no                      |
-| Expense           | range     | no             | no                      |
-| Register          | single    | yes            | no                      |
+### 2B: Purchase Status Dropdown
 
+Add a **Purchase Status** select at the top with options:
 
-### Filter logic for sales-based reports:
+- **Received** — items go directly into stock (current behavior)
+- **Ordered** — creates a purchase order, does NOT add to stock
+- **Pending** — saved but not finalized, does NOT add to stock
 
-- Payment method filter: `.eq("payment_method", value)` when not "all"
-- Payment status filter: `.eq("payment_status", value)` when not "all"
+### 2C: Purchase Order Integration
 
-## Print Styles
+Add a **Purchase Order** search/dropdown field below the top form:
 
-Add to `src/index.css`:
+- Fetches from `purchase_orders` table (status = 'draft' or 'approved')
+- When user selects a PO, auto-populate:
+  - Supplier from the PO
+  - All PO items (from `purchase_order_items`) into the items table
+  - Reference linked to the PO
+- User can then review, add serials, adjust quantities, and mark as final purchase (Received)
 
-```css
-@media print {
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
-  .no-print { display: none !important; }
-}
-```
+### Files
 
-## Files
+- **Edit**: `src/pages/PurchaseAdd.tsx` — restructure layout, add PO dropdown, status select
+- **Edit**: `src/hooks/usePurchases.ts` — add `usePurchaseOrderItems(poId)` query hook
 
-- **New**: `src/components/reports/ReportToolbar.tsx`
-- **Edit**: `src/index.css` (print styles)
-- **Edit**: All 12 report pages in `src/pages/reports/`
+---
 
 ## Implementation Order
 
-1. Create `ReportToolbar` component with export/print logic
-2. Add print CSS
-3. Update each report page (batch of 4 at a time)
-
-See image refferance and gate more plan
+1. Phase 1: POS redesign with category/brand tabs, inline IMEI selection
+2. Phase 2: Purchase screen restructure with payment at bottom + PO integration
