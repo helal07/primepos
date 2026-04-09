@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp } from "lucide-react";
+import ReportToolbar from "@/components/reports/ReportToolbar";
 
 export default function TrendingProductsReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
@@ -30,21 +29,27 @@ export default function TrendingProductsReport() {
 
   const fmt = (n: number) => n.toLocaleString("en", { minimumFractionDigits: 2 });
 
+  const exportData = useMemo(() => ({
+    columns: ["#", "Product", "Qty Sold", "Revenue"],
+    rows: (data ?? []).map((p, i) => [i + 1, p.name, p.qty, fmt(p.revenue)]),
+    filename: `trending-products-${from}-to-${to}`,
+    title: "Trending Products Report",
+  }), [data, from, to]);
+
   return (
     <div className="space-y-6">
       <PageHeader title="Trending Products" subtitle="Most sold products by quantity" />
-      <div className="flex flex-wrap gap-3 items-end">
-        <div><Label>From</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="w-44" /></div>
-        <div><Label>To</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="w-44" /></div>
+      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo} exportData={exportData} />
+      <div className="print-area space-y-6">
+        {isLoading ? <Skeleton className="h-60 w-full" /> : (
+          <Card><CardContent className="pt-4">
+            <Table><TableHeader><TableRow><TableHead>#</TableHead><TableHead>Product</TableHead><TableHead className="text-right">Qty Sold</TableHead><TableHead className="text-right">Revenue</TableHead></TableRow></TableHeader>
+            <TableBody>{(data ?? []).map((p, i) => (
+              <TableRow key={p.id}><TableCell>{i < 3 ? <TrendingUp className="h-4 w-4 text-emerald-600 inline mr-1" /> : null}{i + 1}</TableCell><TableCell className="font-medium">{p.name}</TableCell><TableCell className="text-right">{p.qty}</TableCell><TableCell className="text-right">৳ {fmt(p.revenue)}</TableCell></TableRow>
+            ))}{(data ?? []).length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No data</TableCell></TableRow>}</TableBody></Table>
+          </CardContent></Card>
+        )}
       </div>
-      {isLoading ? <Skeleton className="h-60 w-full" /> : (
-        <Card><CardContent className="pt-4">
-          <Table><TableHeader><TableRow><TableHead>#</TableHead><TableHead>Product</TableHead><TableHead className="text-right">Qty Sold</TableHead><TableHead className="text-right">Revenue</TableHead></TableRow></TableHeader>
-          <TableBody>{(data ?? []).map((p, i) => (
-            <TableRow key={p.id}><TableCell>{i < 3 ? <TrendingUp className="h-4 w-4 text-emerald-600 inline mr-1" /> : null}{i + 1}</TableCell><TableCell className="font-medium">{p.name}</TableCell><TableCell className="text-right">{p.qty}</TableCell><TableCell className="text-right">৳ {fmt(p.revenue)}</TableCell></TableRow>
-          ))}{(data ?? []).length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">No data</TableCell></TableRow>}</TableBody></Table>
-        </CardContent></Card>
-      )}
     </div>
   );
 }
