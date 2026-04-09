@@ -288,7 +288,17 @@ export function AppSidebar() {
           );
         })}
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-2">
+        {!collapsed && isSuperadmin && (
+          <NavLink
+            to="/admin"
+            className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors font-medium"
+            activeClassName=""
+          >
+            <Crown className="h-3.5 w-3.5" />
+            SaaS Admin Panel
+          </NavLink>
+        )}
         {!collapsed && (
           <p className="text-xs text-sidebar-foreground/40">© 2026 Prime POS</p>
         )}
