@@ -50,6 +50,7 @@ export default function POS() {
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
   const { createSale, createSalePayments } = useSaleMutations();
+  const { settings } = useSettings();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -60,6 +61,7 @@ export default function POS() {
   const [shippingCost, setShippingCost] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [lastSaleId, setLastSaleId] = useState<string | null>(null);
   const [lastInvoice, setLastInvoice] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
@@ -68,10 +70,14 @@ export default function POS() {
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [imeiProductId, setImeiProductId] = useState<string | null>(null);
   const { data: availableSerials } = useAvailableSerials(imeiProductId);
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
 
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  // Fetch last sale for invoice printing
+  const { data: lastSaleData } = useSale(lastSaleId);
+  const { data: lastSaleItems } = useSaleItems(lastSaleId);
+
+  const dateStr = format(saleDate, "dd/MM/yyyy");
+  const timeStr = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const handleBarcodeScan = (code: string) => {
     setShowScanner(false);
