@@ -404,6 +404,18 @@ export default function POS() {
         )}
       </div>
 
+      {/* Barcode Scanner Dialog */}
+      <Dialog open={showScanner} onOpenChange={setShowScanner}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Scan Barcode / IMEI</DialogTitle>
+          </DialogHeader>
+          <Suspense fallback={<div className="text-center py-8 text-muted-foreground">Loading scanner...</div>}>
+            {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
+          </Suspense>
+        </DialogContent>
+      </Dialog>
+
       {/* Payment Dialog */}
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
         <DialogContent className="sm:max-w-md">
