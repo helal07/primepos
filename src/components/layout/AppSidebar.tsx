@@ -196,6 +196,17 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user } = useAuth();
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_superadmin", { _user_id: user.id }).then(({ data }) => {
+      setIsSuperadmin(!!data);
+    });
+  }, [user]);
+
+  const allGroups = isSuperadmin ? [saasAdminGroup, ...menuGroups] : menuGroups;
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
