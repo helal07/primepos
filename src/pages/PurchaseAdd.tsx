@@ -451,6 +451,23 @@ export default function PurchaseAdd() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Barcode Scanner Dialog for IMEI/Serial */}
+      <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan IMEI / Serial</DialogTitle>
+          </DialogHeader>
+          <Suspense fallback={<div className="text-center py-8">Loading scanner...</div>}>
+            {scannerIdx !== null && (
+              <BarcodeScanner
+                onScan={(code) => handleSerialScan(code, scannerIdx)}
+                onClose={() => setScannerIdx(null)}
+              />
+            )}
+          </Suspense>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
