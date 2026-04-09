@@ -48,8 +48,6 @@ import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
 import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
 // Extended cart item with serial tracking
 interface CartItem extends SaleItem {
