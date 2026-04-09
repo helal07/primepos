@@ -303,9 +303,22 @@ export default function PurchaseAdd() {
                             {isSerial ? (
                               <div>
                                 <Input
+                                  id={`serial-input-${idx}`}
                                   value={item.serial_number || ""}
                                   onChange={(e) => updateItem(idx, "serial_number", e.target.value)}
-                                  placeholder={item.product_type === "imei" ? "Enter IMEI" : "Enter Serial"}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && item.serial_number?.trim()) {
+                                      e.preventDefault();
+                                      const product = (products as any[])?.find((p: any) => p.id === item.product_id);
+                                      if (product) {
+                                        addProduct(product);
+                                        setTimeout(() => {
+                                          document.getElementById(`serial-input-${idx + 1}`)?.focus();
+                                        }, 50);
+                                      }
+                                    }
+                                  }}
+                                  placeholder={item.product_type === "imei" ? "Enter IMEI & press Enter" : "Enter Serial & press Enter"}
                                   className={`h-8 text-sm ${isDupe ? "border-destructive" : ""}`}
                                 />
                                 {isDupe && (
