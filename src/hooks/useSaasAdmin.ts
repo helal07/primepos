@@ -111,6 +111,11 @@ export function useTenantMutations() {
     }) => {
       const { data, error } = await supabase.from("tenants").insert(t).select().single();
       if (error) throw error;
+      // Set tenant_id on the owner's profile for data isolation
+      await supabase
+        .from("profiles")
+        .update({ tenant_id: data.id } as any)
+        .eq("user_id", t.owner_user_id);
       // Log action
       await supabase.from("tenant_actions_log").insert({
         tenant_id: data.id,

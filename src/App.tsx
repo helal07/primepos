@@ -44,6 +44,9 @@ import PayrollPage from "./pages/Payroll";
 import WarrantyClaims from "./pages/WarrantyClaims";
 import CmsPages from "./pages/CmsPages";
 import Reports from "./pages/Reports";
+import ProfitLossReport from "./pages/reports/ProfitLossReport";
+import StockReport from "./pages/reports/StockReport";
+import TaxReport from "./pages/reports/TaxReport";
 import InstallmentCustomerAdd from "./pages/InstallmentCustomerAdd";
 import InstallmentCustomers from "./pages/InstallmentCustomers";
 import InstallmentSaleAdd from "./pages/InstallmentSaleAdd";
@@ -140,6 +143,9 @@ const App = () => (
                       <Route path="/warranty-claims" element={<WarrantyClaims />} />
                       <Route path="/cms/pages" element={<CmsPages />} />
                       <Route path="/reports" element={<Reports />} />
+                      <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
+                      <Route path="/reports/stock" element={<StockReport />} />
+                      <Route path="/reports/tax" element={<TaxReport />} />
                       <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
                       <Route path="/installment/customers" element={<InstallmentCustomers />} />
                       <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />

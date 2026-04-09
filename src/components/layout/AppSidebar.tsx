@@ -167,7 +167,10 @@ const menuGroups = [
   {
     label: "Reports",
     items: [
-      { title: "Reports", url: "/reports", icon: BarChart3 },
+      { title: "Overview", url: "/reports", icon: BarChart3 },
+      { title: "Profit / Loss", url: "/reports/profit-loss", icon: TrendingUp },
+      { title: "Stock Report", url: "/reports/stock", icon: Package },
+      { title: "Tax Report", url: "/reports/tax", icon: Scale },
     ],
   },
   {
@@ -187,6 +190,24 @@ export function AppSidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+
+  // Find which group is active based on current route
+  const activeGroupLabel = menuGroups.find((group) =>
+    group.items.some(
+      (item) =>
+        location.pathname === item.url ||
+        location.pathname.startsWith(item.url + "/")
+    )
+  )?.label ?? null;
+
+  const [openGroup, setOpenGroup] = useState<string | null>(activeGroupLabel);
+
+  // Update open group when route changes
+  useEffect(() => {
+    if (activeGroupLabel) {
+      setOpenGroup(activeGroupLabel);
+    }
+  }, [activeGroupLabel]);
 
   useEffect(() => {
     if (!user) return;
@@ -247,7 +268,8 @@ export function AppSidebar() {
           return (
             <Collapsible
               key={group.label}
-              defaultOpen={isGroupActive}
+              open={openGroup === group.label}
+              onOpenChange={(isOpen) => setOpenGroup(isOpen ? group.label : null)}
               className="group/collapsible"
             >
               <SidebarGroup>
