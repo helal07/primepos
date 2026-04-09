@@ -223,7 +223,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        {menuGroups.map((group) => {
+        {allGroups.map((group) => {
           const isGroupActive = group.items.some(
             (item) =>
               location.pathname === item.url ||
