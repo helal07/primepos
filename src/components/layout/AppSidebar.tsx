@@ -53,7 +53,7 @@ import {
   Layers,
   Flame,
   Wallet,
-  CashRegister,
+  Calculator,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
