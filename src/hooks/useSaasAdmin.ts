@@ -46,7 +46,11 @@ export function usePackageMutations() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...rest }: { id: string; [key: string]: any }) => {
+    mutationFn: async ({ id, ...rest }: { id: string } & Partial<{
+      name: string; price: number; duration_days: number; max_users: number;
+      max_business_location: number; max_invoice: number; features: string[];
+      is_popular: boolean; is_active: boolean; sort_order: number;
+    }>) => {
       const { error } = await supabase.from("saas_packages").update(rest).eq("id", id);
       if (error) throw error;
     },
@@ -123,13 +127,17 @@ export function useTenantMutations() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...rest }: { id: string; [key: string]: any }) => {
+    mutationFn: async ({ id, ...rest }: { id: string } & Partial<{
+      name: string; phone: string; email: string; address: string;
+      owner_user_id: string; package_id: string; subscription_start: string;
+      subscription_end: string; status: string; notes: string;
+    }>) => {
       const { error } = await supabase.from("tenants").update(rest).eq("id", id);
       if (error) throw error;
       await supabase.from("tenant_actions_log").insert({
         tenant_id: id,
         action: "updated",
-        details: rest,
+        details: rest as any,
         performed_by: user!.id,
       });
     },
