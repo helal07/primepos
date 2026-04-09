@@ -1,83 +1,123 @@
-# POS Redesign + Purchase Screen Enhancement — Phased Plan
 
-## Phase 1: POS Screen Redesign (Inspired by Reference Image)
 
-### What Changes
+# Sale/Purchase Edit → Full Form + Multi-Payment System
 
-Redesign the POS page to match the reference layout:
+## Overview
 
-- **Left side**: Cart area with product table (Product, Quantity, Subtotal columns), customer select, search bar with barcode scan
-- **Right side**: Product grid with **Category** and **Brand** tab filters at top, product cards showing image/name/SKU/stock
-- **Bottom bar**: Payment action buttons (Multiple Pay, Cash, Card, Cancel) + Total Payable display
-- **IMEI/Serial products**: When an IMEI/serial-tracked product is clicked, instead of a popup, show an **inline IMEI selector** directly in the cart row — a dropdown of available IMEI numbers from purchase records for that product. User must pick which specific unit to sell.
+Three changes: (1) Edit buttons redirect to full add/POS forms pre-populated with existing data instead of the simplified edit pages, (2) a new `sale_payments` and `purchase_payments` database table for recording multiple payment rows per transaction, (3) a payment dialog (inspired by the reference image) supporting split/fragmented and credit payments.
 
-Make UI mobile frist friendly as like android or iOS app so retailer can easily and speedly sale think more about it.
+## Phase 1: Database — Payment Tables
 
-### Key UI Elements
+Create two new tables via migration:
 
-```text
-┌──────────────────────────────┬──────────────────────────┐
-│  Customer Select  │ Search + Scan            │  [Category] [Brands]     │
-├──────────────────────────────┤                          │
-│  Product │ Qty │ Subtotal │ X │  ┌──────┐ ┌──────┐      │
-│  ────────────────────────────│  │ Prod │ │ Prod │      │
-│  (IMEI row: Select IMEI ▼)  │  │ Card │ │ Card │      │
-│                              │  └──────┘ └──────┘      │
-│                              │  ┌──────┐ ┌──────┐      │
-│                              │  │      │ │      │      │
-├──────────────────────────────┴──────────────────────────┤
-│ Items: 0  Discount  Shipping  Total: ৳0  [Cash] [Card] │
-└─────────────────────────────────────────────────────────┘
+```sql
+CREATE TABLE sale_payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sale_id uuid NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+  amount numeric NOT NULL DEFAULT 0,
+  payment_method text NOT NULL DEFAULT 'cash',
+  payment_note text,
+  tenant_id uuid,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE purchase_payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  purchase_id uuid NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
+  amount numeric NOT NULL DEFAULT 0,
+  payment_method text NOT NULL DEFAULT 'cash',
+  payment_note text,
+  tenant_id uuid,
+  created_at timestamptz DEFAULT now()
+);
 ```
 
-### IMEI Selection Logic (No Popup)
+Enable RLS, add tenant isolation policies, and add `set_tenant_id` triggers (same pattern as other tables).
 
-- When a serial-tracked product is added, the cart row shows a `<Select>` dropdown listing available IMEI/serial numbers (from `purchase_items` where `product_id` matches and `serial_number` is not null)
-- Query: fetch purchase_items with serial_numbers for that product, exclude already-sold serials (from sale_items)
-- User selects the IMEI inline; quantity is locked to 1 per IMEI
-- Multiple IMEIs = For Same Product Dont increse  cart rows, increse number only with amount.
-  &nbsp;
-- Files
+## Phase 2: Payment Dialog Component
 
-- **Edit**: `src/pages/POS.tsx` — full redesign
-- **Edit**: `src/hooks/useInventory.ts` — add `useCategories` already exists, add `useBrands` already exists
-- **New hook or inline query**: fetch available serials per product from `purchase_items` minus `sale_items`
+**New**: `src/components/payments/PaymentDialog.tsx`
 
----
+A reusable dialog matching the reference image layout:
+- Shows **Total Payable** (from sale/purchase total), **Total Paying** (sum of payment rows), **Change Return** or **Balance** (remaining due)
+- Payment rows: each row has Amount, Payment Method (Cash/Card/bKash/Bank), Payment Note
+- **"Add Payment Row"** button to add split payments
+- **Payment status logic**: if total paying >= total payable → "paid"; if total paying > 0 but < total → "partial"; if 0 → "unpaid" (credit)
+- **Credit payment**: user can finalize with 0 or partial amount → sets payment_status to "unpaid" or "partial"
+- On "Finalize Payment", inserts all payment rows into `sale_payments` or `purchase_payments` and updates the parent record's `payment_status`
 
-## Phase 2: Purchase Screen Enhancement
+## Phase 3: Edit Routes → Redirect to Full Forms
 
-### 2A: Payment Section Moved to Bottom
+### Sale Edit
+- Change `/sales/:id/edit` route to load the **SaleAdd** page in "edit mode"
+- Pass sale ID via route param or query string (e.g., `/sales/add?edit=<id>`)
+- `SaleAdd.tsx` detects the `edit` param, fetches existing sale + items via `useSale(id)` + `useSaleItems(id)`, pre-populates all fields (customer, items, discount, notes)
+- Items are fully editable (add/remove/change quantities)
+- On submit, calls `updateSale` mutation instead of `createSale`
 
-Move payment method, paid amount, and payment recording to the bottom totals section (below the items table), not in the top form. The top form keeps only: Reference, Supplier, Date, Supplier Invoice, Notes.
+### Purchase Edit
+- Same pattern: `/purchases/:id/edit` → redirects to `/purchases/add?edit=<id>`
+- `PurchaseAdd.tsx` detects edit mode, pre-populates from existing purchase data
+- On submit, calls `updatePurchase` instead of `createPurchase`
 
-### 2B: Purchase Status Dropdown
+### POS Edit (for sales created via POS)
+- Optionally, sale edit could redirect to `/pos?edit=<id>` for POS-created sales
+- For simplicity, use `SaleAdd` page for all sale edits initially
 
-Add a **Purchase Status** select at the top with options:
+**Files changed**:
+- `src/pages/SaleAdd.tsx` — add edit mode detection, data pre-population, conditional mutation
+- `src/pages/PurchaseAdd.tsx` — same edit mode logic
+- `src/App.tsx` — update edit routes to redirect to add pages with query params (or keep routes and add redirects)
+- Delete or repurpose `src/pages/SaleEdit.tsx` and `src/pages/PurchaseEdit.tsx`
 
-- **Received** — items go directly into stock (current behavior)
-- **Ordered** — creates a purchase order, does NOT add to stock
-- **Pending** — saved but not finalized, does NOT add to stock
+## Phase 4: Integrate Payment Dialog
 
-### 2C: Purchase Order Integration
+### In POS (`src/pages/POS.tsx`)
+- Replace the current simple payment dialog with the new `PaymentDialog`
+- After "Finalize Payment", create the sale + insert payment rows
 
-Add a **Purchase Order** search/dropdown field below the top form:
+### In SaleAdd (`src/pages/SaleAdd.tsx`)
+- Add a "Complete Sale" button that opens `PaymentDialog`
+- On finalize, create/update sale + insert payment rows
 
-- Fetches from `purchase_orders` table (status = 'draft' or 'approved')
-- When user selects a PO, auto-populate:
-  - Supplier from the PO
-  - All PO items (from `purchase_order_items`) into the items table
-  - Reference linked to the PO
-- User can then review, add serials, adjust quantities, and mark as final purchase (Received)
+### In PurchaseAdd (`src/pages/PurchaseAdd.tsx`)
+- Add payment dialog at the bottom payment section
+- On save, create/update purchase + insert payment rows
 
-### Files
+### In View Pages
+- `SaleView.tsx` and `PurchaseView.tsx` — show payment history (list of payment rows from `sale_payments`/`purchase_payments`)
 
-- **Edit**: `src/pages/PurchaseAdd.tsx` — restructure layout, add PO dropdown, status select
-- **Edit**: `src/hooks/usePurchases.ts` — add `usePurchaseOrderItems(poId)` query hook
+## Phase 5: Hooks Update
 
----
+**Edit**: `src/hooks/useSales.ts`
+- Add `useSalePayments(saleId)` query
+- Add `createSalePayments` mutation (bulk insert)
+
+**Edit**: `src/hooks/usePurchases.ts`
+- Add `usePurchasePayments(purchaseId)` query
+- Add `createPurchasePayments` mutation (bulk insert)
+
+## Files Summary
+
+- **Migration**: Create `sale_payments` and `purchase_payments` tables with RLS
+- **New**: `src/components/payments/PaymentDialog.tsx`
+- **Edit**: `src/pages/SaleAdd.tsx` (edit mode + payment dialog)
+- **Edit**: `src/pages/PurchaseAdd.tsx` (edit mode + payment dialog)
+- **Edit**: `src/pages/POS.tsx` (use new PaymentDialog)
+- **Edit**: `src/pages/SaleView.tsx` (show payment rows)
+- **Edit**: `src/pages/PurchaseView.tsx` (show payment rows)
+- **Edit**: `src/hooks/useSales.ts` (payment queries/mutations)
+- **Edit**: `src/hooks/usePurchases.ts` (payment queries/mutations)
+- **Edit**: `src/App.tsx` (update edit routes)
+- **Remove/Simplify**: `src/pages/SaleEdit.tsx`, `src/pages/PurchaseEdit.tsx`
 
 ## Implementation Order
 
-1. Phase 1: POS redesign with category/brand tabs, inline IMEI selection
-2. Phase 2: Purchase screen restructure with payment at bottom + PO integration
+1. Database migration (payment tables)
+2. Payment hooks
+3. PaymentDialog component
+4. Edit mode in SaleAdd + PurchaseAdd
+5. Integrate PaymentDialog in POS, SaleAdd, PurchaseAdd
+6. Update view pages with payment history
+7. Route cleanup
+
