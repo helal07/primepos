@@ -316,9 +316,10 @@ export default function POS() {
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Enter Product name / SKU / Scan bar code"
+                  placeholder="Enter Product name / SKU / IMEI / Scan barcode"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
                   className="pl-8 h-9 text-sm"
                   autoFocus
                 />
@@ -328,7 +329,23 @@ export default function POS() {
               </Button>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">{dateStr} {timeStr}</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("h-7 gap-1 text-xs", "bg-primary/10 text-primary border-primary/20")}>
+                    <CalendarIcon className="h-3 w-3" />
+                    {dateStr} {timeStr}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={saleDate}
+                    onSelect={(d) => d && setSaleDate(d)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
