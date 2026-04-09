@@ -1,9 +1,13 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -21,13 +25,18 @@ import {
   ScanBarcode, FileText, Clock, Pencil,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
-import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
+import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
+import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
+import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
+import { SaleInvoice } from "@/components/sales/SaleInvoice";
 
 interface CartItem extends SaleItem {
   serial_tracking?: boolean;
@@ -41,6 +50,7 @@ export default function POS() {
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
   const { createSale, createSalePayments } = useSaleMutations();
+  const { data: settings } = useSettings();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -51,6 +61,7 @@ export default function POS() {
   const [shippingCost, setShippingCost] = useState(0);
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [lastSaleId, setLastSaleId] = useState<string | null>(null);
   const [lastInvoice, setLastInvoice] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
@@ -59,25 +70,65 @@ export default function POS() {
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [imeiProductId, setImeiProductId] = useState<string | null>(null);
   const { data: availableSerials } = useAvailableSerials(imeiProductId);
+  const [saleDate, setSaleDate] = useState<Date>(new Date());
 
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  // Fetch last sale for invoice printing
+  const { data: lastSaleData } = useSale(lastSaleId);
+  const { data: lastSaleItems } = useSaleItems(lastSaleId);
 
-  const handleBarcodeScan = (code: string) => {
+  const dateStr = format(saleDate, "dd/MM/yyyy");
+  const timeStr = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+
+  const handleBarcodeScan = async (code: string) => {
     setShowScanner(false);
     if (!products) return;
     const q = code.toLowerCase();
-    const match = products.find(
+    const match = (products as any[]).find(
       (p: any) => p.barcode?.toLowerCase() === q || p.sku?.toLowerCase() === q || p.name.toLowerCase() === q
     );
     if (match) {
       addToCart(match);
-      import("sonner").then(({ toast }) => toast.success(`Added: ${match.name}`));
+      toast.success(`Added: ${match.name}`);
     } else {
+      // Try IMEI search
+      const imeiMatch = await searchImeiInPurchases(code);
+      if (imeiMatch) {
+        const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
+        if (product) {
+          addSerialToCart(imeiMatch.product_id, imeiMatch.serial_number);
+          toast.success(`Added IMEI: ${imeiMatch.serial_number} (${product.name})`);
+          return;
+        }
+      }
       setSearch(code);
-      import("sonner").then(({ toast }) => toast.error("Product not found"));
+      toast.error("Product not found");
     }
+  };
+
+  // IMEI search in search bar - triggered on Enter
+  const handleSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter" || !search.trim() || !products) return;
+    const q = search.toLowerCase();
+    const match = (products as any[]).find(
+      (p: any) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+    );
+    if (match) {
+      addToCart(match);
+      setSearch("");
+      return;
+    }
+    // Try IMEI search
+    const imeiMatch = await searchImeiInPurchases(search.trim());
+    if (imeiMatch) {
+      const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
+      if (product) {
+        addSerialToCart(imeiMatch.product_id, imeiMatch.serial_number);
+        toast.success(`Added IMEI: ${imeiMatch.serial_number} (${product.name})`);
+        setSearch("");
+        return;
+      }
+    }
+    toast.error("No product or IMEI found");
   };
 
   const filteredProducts = useMemo(() => {
@@ -192,6 +243,7 @@ export default function POS() {
     }
     const result = await createSale.mutateAsync({
       customer_id: customerId || null, status: "completed", subtotal,
+      sale_date: format(saleDate, "yyyy-MM-dd"),
       discount_type: discountType, discount_value: discountValue,
       discount_amount: discountAmount, tax_amount: taxAmount, shipping_cost: shippingCost,
       total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
@@ -199,6 +251,7 @@ export default function POS() {
     });
     await createSalePayments.mutateAsync({ saleId: result.id, payments });
     setLastInvoice(result.invoice_number);
+    setLastSaleId(result.id);
     setShowPayment(false);
     setShowMobileCart(false);
     setShowReceipt(true);
@@ -221,7 +274,8 @@ export default function POS() {
 
   const handleNewSale = () => {
     setCart([]); setCustomerId(""); setDiscountValue(0); setShippingCost(0);
-    setShowReceipt(false); setLastInvoice("");
+    setShowReceipt(false); setLastInvoice(""); setLastSaleId(null);
+    setSaleDate(new Date());
   };
 
   const handleCancel = () => {
@@ -262,9 +316,10 @@ export default function POS() {
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Enter Product name / SKU / Scan bar code"
+                  placeholder="Enter Product name / SKU / IMEI / Scan barcode"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
                   className="pl-8 h-9 text-sm"
                   autoFocus
                 />
@@ -274,7 +329,23 @@ export default function POS() {
               </Button>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">{dateStr} {timeStr}</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("h-7 gap-1 text-xs", "bg-primary/10 text-primary border-primary/20")}>
+                    <CalendarIcon className="h-3 w-3" />
+                    {dateStr} {timeStr}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={saleDate}
+                    onSelect={(d) => d && setSaleDate(d)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -596,15 +667,32 @@ export default function POS() {
         </DialogContent>
       </Dialog>
 
-      {/* Receipt Dialog */}
+      {/* Receipt / Invoice Dialog */}
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
-        <DialogContent className="max-w-xs text-center">
-          <DialogHeader><DialogTitle>Sale Complete!</DialogTitle></DialogHeader>
-          <div className="py-4 space-y-2">
-            <div className="text-4xl">✅</div>
-            <p className="text-sm text-muted-foreground">Invoice: <strong>{lastInvoice}</strong></p>
-            <p className="text-lg font-bold">৳{totalAmount.toFixed(2)}</p>
-          </div>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
+          <DialogHeader><DialogTitle>Sale Complete — Invoice {lastInvoice}</DialogTitle></DialogHeader>
+          {lastSaleData && lastSaleItems ? (
+            <SaleInvoice
+              sale={lastSaleData}
+              items={lastSaleItems}
+              settings={settings || {}}
+              onPrint={() => {
+                const printArea = document.getElementById("invoice-print-area");
+                if (!printArea) return;
+                const w = window.open("", "_blank");
+                if (!w) return;
+                w.document.write(`<html><head><title>Invoice ${lastInvoice}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left}th{border-bottom:2px solid #d1d5db;font-size:12px;background:#f3f4f6}td{border-bottom:1px solid #e5e7eb;font-size:12px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}</style></head><body>${printArea.innerHTML}</body></html>`);
+                w.document.close();
+                w.print();
+              }}
+            />
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-2">✅</div>
+              <p className="text-muted-foreground">Invoice: <strong>{lastInvoice}</strong></p>
+              <p className="text-lg font-bold">৳{totalAmount.toFixed(2)}</p>
+            </div>
+          )}
           <DialogFooter className="flex-col gap-2">
             <Button onClick={handleNewSale} className="w-full">New Sale</Button>
             <Button variant="outline" onClick={() => navigate("/sales")} className="w-full">View Sales</Button>
