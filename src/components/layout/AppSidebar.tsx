@@ -69,17 +69,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-const saasAdminGroup = {
-  label: "SaaS Admin",
-  items: [
-    { title: "Admin Dashboard", url: "/admin", icon: Crown },
-    { title: "Tenants", url: "/admin/tenants", icon: Building2 },
-    { title: "Packages", url: "/admin/packages", icon: Package },
-    { title: "CMS", url: "/admin/cms", icon: Globe },
-    { title: "Transactions", url: "/admin/transactions", icon: CreditCard },
-    { title: "Settings", url: "/admin/settings", icon: Settings },
-  ],
-};
 
 const menuGroups = [
   {
@@ -206,7 +195,7 @@ export function AppSidebar() {
     });
   }, [user]);
 
-  const allGroups = isSuperadmin ? [saasAdminGroup, ...menuGroups] : menuGroups;
+  const allGroups = menuGroups;
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
