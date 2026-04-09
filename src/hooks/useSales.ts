@@ -49,6 +49,22 @@ export function useSales() {
   });
 }
 
+export function useSale(id: string | null) {
+  return useQuery({
+    queryKey: ["sale", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales")
+        .select("*, customers(name, phone, address, email)")
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useSaleItems(saleId: string | null) {
   return useQuery({
     queryKey: ["sale_items", saleId],
@@ -119,6 +135,49 @@ export function useSaleMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updateSale = useMutation({
+    mutationFn: async ({ id, formData }: { id: string; formData: SaleFormData }) => {
+      const { items, ...saleData } = formData;
+      const { error: saleError } = await supabase
+        .from("sales")
+        .update(saleData)
+        .eq("id", id);
+      if (saleError) throw saleError;
+
+      // Delete old items then insert new
+      const { error: delError } = await supabase
+        .from("sale_items")
+        .delete()
+        .eq("sale_id", id);
+      if (delError) throw delError;
+
+      if (items.length > 0) {
+        const saleItems = items.map((item) => ({
+          sale_id: id,
+          product_id: item.product_id,
+          variation_id: item.variation_id || null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount: item.discount,
+          tax_percent: item.tax_percent,
+          total: item.total,
+          serial_number: item.serial_number || null,
+        }));
+        const { error: itemsError } = await supabase
+          .from("sale_items")
+          .insert(saleItems);
+        if (itemsError) throw itemsError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["sale"] });
+      queryClient.invalidateQueries({ queryKey: ["sale_items"] });
+      toast.success("Sale updated successfully");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deleteSale = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("sales").delete().eq("id", id);
@@ -131,5 +190,5 @@ export function useSaleMutations() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return { createSale, updateSaleStatus, deleteSale };
+  return { createSale, updateSaleStatus, updateSale, deleteSale };
 }
