@@ -299,8 +299,8 @@ export default function PurchaseAdd() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Add Purchase" description="Record a new purchase from supplier" actions={
-        <Button variant="outline" onClick={() => navigate("/purchases")}>
+      <PageHeader title={isEditMode ? "Edit Purchase" : "Add Purchase"} description={isEditMode ? "Edit purchase details" : "Record a new purchase from supplier"} actions={
+        <Button variant="outline" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Back
         </Button>
       } />
@@ -615,14 +615,24 @@ export default function PurchaseAdd() {
             <Button variant="outline" onClick={() => navigate("/purchases")}>Cancel</Button>
             <Button
               size="lg"
-              disabled={items.length === 0 || createPurchase.isPending || duplicateSerials.size > 0}
-              onClick={handleSubmit}
+              disabled={items.length === 0 || createPurchase.isPending || updatePurchase.isPending || duplicateSerials.size > 0}
+              onClick={() => setShowPaymentDialog(true)}
             >
-              {createPurchase.isPending ? "Saving..." : "Save Purchase"}
+              {isEditMode ? "Update & Pay" : "Save Purchase"}
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Payment Dialog */}
+      <PaymentDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        totalAmount={grandTotal}
+        onFinalize={handleFinalizePayment}
+        isPending={createPurchase.isPending || updatePurchase.isPending}
+        title={isEditMode ? "Update Payment" : "Purchase Payment"}
+      />
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
