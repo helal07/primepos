@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -10,8 +9,7 @@ import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { Save } from "lucide-react";
 
 function GatewayCard({ settingsKey, title, fields }: {
-  settingsKey: string;
-  title: string;
+  settingsKey: string; title: string;
   fields: { name: string; label: string; type?: string }[];
 }) {
   const { data } = useLandingCms(settingsKey);
@@ -23,32 +21,24 @@ function GatewayCard({ settingsKey, title, fields }: {
   }, [data]);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{title}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs">Enabled</Label>
-            <Switch checked={!!values.enabled} onCheckedChange={(v) => setValues({ ...values, enabled: v })} />
-          </div>
+    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-base font-semibold text-white">{title}</h4>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-slate-400">Enabled</Label>
+          <Switch checked={!!values.enabled} onCheckedChange={(v) => setValues({ ...values, enabled: v })} />
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {fields.map((f) => (
-          <div key={f.name}>
-            <Label>{f.label}</Label>
-            <Input
-              type={f.type ?? "text"}
-              value={values[f.name] ?? ""}
-              onChange={(e) => setValues({ ...values, [f.name]: e.target.value })}
-            />
-          </div>
-        ))}
-        <Button size="sm" onClick={() => mutation.mutate({ key: settingsKey, value: values })} disabled={mutation.isPending}>
-          <Save className="h-4 w-4 mr-1" /> Save
-        </Button>
-      </CardContent>
-    </Card>
+      </div>
+      {fields.map((f) => (
+        <div key={f.name}>
+          <Label className="text-slate-300">{f.label}</Label>
+          <Input className="bg-slate-800 border-slate-700 text-white" type={f.type ?? "text"} value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
+        </div>
+      ))}
+      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => mutation.mutate({ key: settingsKey, value: values })} disabled={mutation.isPending}>
+        <Save className="h-4 w-4 mr-1" /> Save
+      </Button>
+    </div>
   );
 }
 
@@ -58,58 +48,32 @@ export default function AdminSettings() {
       <PageHeader title="SaaS Settings" subtitle="Configure payment gateways and SMS providers" />
 
       <Tabs defaultValue="payment">
-        <TabsList>
-          <TabsTrigger value="payment">Payment Gateways</TabsTrigger>
-          <TabsTrigger value="sms">SMS Gateways</TabsTrigger>
+        <TabsList className="bg-slate-800 border-slate-700">
+          <TabsTrigger value="payment" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Payment Gateways</TabsTrigger>
+          <TabsTrigger value="sms" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">SMS Gateways</TabsTrigger>
         </TabsList>
 
         <TabsContent value="payment" className="mt-4 space-y-4">
-          <GatewayCard
-            settingsKey="gateway_bkash"
-            title="bKash"
-            fields={[
-              { name: "app_key", label: "App Key" },
-              { name: "app_secret", label: "App Secret", type: "password" },
-              { name: "username", label: "Username" },
-              { name: "password", label: "Password", type: "password" },
-            ]}
-          />
-          <GatewayCard
-            settingsKey="gateway_sslcommerz"
-            title="SSLCommerz"
-            fields={[
-              { name: "store_id", label: "Store ID" },
-              { name: "store_passwd", label: "Store Password", type: "password" },
-              { name: "mode", label: "Mode (sandbox/live)" },
-            ]}
-          />
-          <GatewayCard
-            settingsKey="gateway_eps"
-            title="EPS"
-            fields={[
-              { name: "merchant_id", label: "Merchant ID" },
-              { name: "api_key", label: "API Key", type: "password" },
-            ]}
-          />
+          <GatewayCard settingsKey="gateway_bkash" title="bKash" fields={[
+            { name: "app_key", label: "App Key" }, { name: "app_secret", label: "App Secret", type: "password" },
+            { name: "username", label: "Username" }, { name: "password", label: "Password", type: "password" },
+          ]} />
+          <GatewayCard settingsKey="gateway_sslcommerz" title="SSLCommerz" fields={[
+            { name: "store_id", label: "Store ID" }, { name: "store_passwd", label: "Store Password", type: "password" },
+            { name: "mode", label: "Mode (sandbox/live)" },
+          ]} />
+          <GatewayCard settingsKey="gateway_eps" title="EPS" fields={[
+            { name: "merchant_id", label: "Merchant ID" }, { name: "api_key", label: "API Key", type: "password" },
+          ]} />
         </TabsContent>
 
         <TabsContent value="sms" className="mt-4 space-y-4">
-          <GatewayCard
-            settingsKey="sms_bulksmsbd"
-            title="BulkSMS BD"
-            fields={[
-              { name: "api_key", label: "API Key" },
-              { name: "sender_id", label: "Sender ID" },
-            ]}
-          />
-          <GatewayCard
-            settingsKey="sms_mimsms"
-            title="MIM SMS"
-            fields={[
-              { name: "api_key", label: "API Key" },
-              { name: "sender_id", label: "Sender ID" },
-            ]}
-          />
+          <GatewayCard settingsKey="sms_bulksmsbd" title="BulkSMS BD" fields={[
+            { name: "api_key", label: "API Key" }, { name: "sender_id", label: "Sender ID" },
+          ]} />
+          <GatewayCard settingsKey="sms_mimsms" title="MIM SMS" fields={[
+            { name: "api_key", label: "API Key" }, { name: "sender_id", label: "Sender ID" },
+          ]} />
         </TabsContent>
       </Tabs>
     </div>
