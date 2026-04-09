@@ -45,6 +45,15 @@ import {
   UserPlus,
   CalendarCheck,
   Crown,
+  CalendarRange,
+  AlertCircle,
+  ShoppingBag,
+  Receipt,
+  Contact,
+  Layers,
+  Flame,
+  Wallet,
+  Calculator,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -169,8 +178,18 @@ const menuGroups = [
     items: [
       { title: "Overview", url: "/reports", icon: BarChart3 },
       { title: "Profit / Loss", url: "/reports/profit-loss", icon: TrendingUp },
-      { title: "Stock Report", url: "/reports/stock", icon: Package },
+      { title: "Daily Summary", url: "/reports/daily-summary", icon: CalendarRange },
+      { title: "Due Sale Report", url: "/reports/due-sales", icon: AlertCircle },
+      { title: "Product Profit", url: "/reports/product-profit", icon: ShoppingBag },
+      { title: "Purchase & Sale", url: "/reports/purchase-sale", icon: Receipt },
       { title: "Tax Report", url: "/reports/tax", icon: Scale },
+      { title: "Contacts Report", url: "/reports/contacts", icon: Contact },
+      { title: "Stock Report", url: "/reports/stock", icon: Package },
+      { title: "Items Report", url: "/reports/items", icon: Layers },
+      { title: "Trending Products", url: "/reports/trending", icon: Flame },
+      { title: "Installment Report", url: "/reports/installment", icon: Wallet },
+      { title: "Expense Report", url: "/reports/expense", icon: Banknote },
+      { title: "Register Report", url: "/reports/register", icon: Calculator },
     ],
   },
   {

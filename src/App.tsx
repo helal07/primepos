@@ -47,6 +47,16 @@ import Reports from "./pages/Reports";
 import ProfitLossReport from "./pages/reports/ProfitLossReport";
 import StockReport from "./pages/reports/StockReport";
 import TaxReport from "./pages/reports/TaxReport";
+import DailySummaryReport from "./pages/reports/DailySummaryReport";
+import DueSaleReport from "./pages/reports/DueSaleReport";
+import ProductProfitReport from "./pages/reports/ProductProfitReport";
+import PurchaseSaleReport from "./pages/reports/PurchaseSaleReport";
+import ContactsReport from "./pages/reports/ContactsReport";
+import ItemsReport from "./pages/reports/ItemsReport";
+import TrendingProductsReport from "./pages/reports/TrendingProductsReport";
+import InstallmentReport from "./pages/reports/InstallmentReport";
+import ExpenseReport from "./pages/reports/ExpenseReport";
+import RegisterReport from "./pages/reports/RegisterReport";
 import InstallmentCustomerAdd from "./pages/InstallmentCustomerAdd";
 import InstallmentCustomers from "./pages/InstallmentCustomers";
 import InstallmentSaleAdd from "./pages/InstallmentSaleAdd";
@@ -146,6 +156,16 @@ const App = () => (
                       <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
                       <Route path="/reports/stock" element={<StockReport />} />
                       <Route path="/reports/tax" element={<TaxReport />} />
+                      <Route path="/reports/daily-summary" element={<DailySummaryReport />} />
+                      <Route path="/reports/due-sales" element={<DueSaleReport />} />
+                      <Route path="/reports/product-profit" element={<ProductProfitReport />} />
+                      <Route path="/reports/purchase-sale" element={<PurchaseSaleReport />} />
+                      <Route path="/reports/contacts" element={<ContactsReport />} />
+                      <Route path="/reports/items" element={<ItemsReport />} />
+                      <Route path="/reports/trending" element={<TrendingProductsReport />} />
+                      <Route path="/reports/installment" element={<InstallmentReport />} />
+                      <Route path="/reports/expense" element={<ExpenseReport />} />
+                      <Route path="/reports/register" element={<RegisterReport />} />
                       <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
                       <Route path="/installment/customers" element={<InstallmentCustomers />} />
                       <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
