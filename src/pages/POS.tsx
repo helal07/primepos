@@ -250,50 +250,35 @@ export default function POS() {
   const discountAmount = discountType === "percentage" ? subtotal * (discountValue / 100) : discountValue;
   const totalAmount = subtotal - discountAmount + taxAmount;
 
-  const handleComplete = async () => {
+  const handleCompleteWithPayments = async (payments: PaymentRow[], paymentStatus: string) => {
     if (cart.length === 0) return;
 
-    // Expand serial items into individual sale_items
     const expandedItems: SaleItem[] = [];
     for (const item of cart) {
       if (item.serial_tracking && item.selected_serials?.length) {
         for (const sn of item.selected_serials) {
           expandedItems.push({
-            product_id: item.product_id,
-            quantity: 1,
-            unit_price: item.unit_price,
-            discount: item.discount,
-            tax_percent: item.tax_percent,
-            total: item.unit_price * (1 + item.tax_percent / 100),
-            serial_number: sn,
+            product_id: item.product_id, quantity: 1, unit_price: item.unit_price,
+            discount: item.discount, tax_percent: item.tax_percent,
+            total: item.unit_price * (1 + item.tax_percent / 100), serial_number: sn,
           });
         }
       } else {
         expandedItems.push({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          discount: item.discount,
-          tax_percent: item.tax_percent,
-          total: item.total,
+          product_id: item.product_id, quantity: item.quantity, unit_price: item.unit_price,
+          discount: item.discount, tax_percent: item.tax_percent, total: item.total,
         });
       }
     }
 
     const result = await createSale.mutateAsync({
-      customer_id: customerId || null,
-      status: "completed",
-      subtotal,
-      discount_type: discountType,
-      discount_value: discountValue,
-      discount_amount: discountAmount,
-      tax_amount: taxAmount,
-      shipping_cost: 0,
-      total_amount: totalAmount,
-      payment_method: paymentMethod,
-      payment_status: "paid",
-      items: expandedItems,
+      customer_id: customerId || null, status: "completed", subtotal,
+      discount_type: discountType, discount_value: discountValue,
+      discount_amount: discountAmount, tax_amount: taxAmount, shipping_cost: 0,
+      total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
+      payment_status: paymentStatus, items: expandedItems,
     });
+    await createSalePayments.mutateAsync({ saleId: result.id, payments });
     setLastInvoice(result.invoice_number);
     setShowPayment(false);
     setShowMobileCart(false);
