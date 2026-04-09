@@ -1,9 +1,13 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -21,13 +25,18 @@ import {
   ScanBarcode, FileText, Clock, Pencil,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
-import { useSaleMutations, type SaleItem } from "@/hooks/useSales";
+import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
+import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
+import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
+import { SaleInvoice } from "@/components/sales/SaleInvoice";
 
 interface CartItem extends SaleItem {
   serial_tracking?: boolean;
