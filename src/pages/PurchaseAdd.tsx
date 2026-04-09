@@ -25,10 +25,16 @@ interface PurchaseItemWithSerials extends PurchaseItem {
 
 export default function PurchaseAdd() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEditMode = !!editId;
+
   const { data: products } = useProducts();
   const { data: suppliers } = useSuppliers();
   const { data: purchaseOrders } = usePurchaseOrders();
-  const { createPurchase } = usePurchaseMutations();
+  const { createPurchase, createPurchasePayments, updatePurchase } = usePurchaseMutations();
+  const { data: existingPurchase } = usePurchase(editId);
+  const { data: existingItems } = usePurchaseItems(editId);
 
   const [supplierId, setSupplierId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
