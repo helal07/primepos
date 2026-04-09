@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Search, ArrowLeft, PackagePlus, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Search, ArrowLeft, PackagePlus, AlertTriangle, ScanBarcode } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
 import { usePurchaseMutations, type PurchaseItem } from "@/hooks/usePurchases";
@@ -34,6 +37,20 @@ export default function PurchaseAdd() {
   const [discountInput, setDiscountInput] = useState("");
   const [otherCharges, setOtherCharges] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
+  const [scannerIdx, setScannerIdx] = useState<number | null>(null);
+
+  const handleSerialScan = (code: string, idx: number) => {
+    updateItem(idx, "serial_number", code);
+    setScannerIdx(null);
+    // Auto-add next row
+    const product = (products as any[])?.find((p: any) => p.id === items[idx]?.product_id);
+    if (product) {
+      addProduct(product);
+      setTimeout(() => {
+        document.getElementById(`serial-input-${idx + 1}`)?.focus();
+      }, 50);
+    }
+  };
 
   const selectedSupplier = useMemo(() => {
     if (!supplierId || !suppliers) return null;
@@ -302,25 +319,37 @@ export default function PurchaseAdd() {
                           <TableCell>
                             {isSerial ? (
                               <div>
-                                <Input
-                                  id={`serial-input-${idx}`}
-                                  value={item.serial_number || ""}
-                                  onChange={(e) => updateItem(idx, "serial_number", e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && item.serial_number?.trim()) {
-                                      e.preventDefault();
-                                      const product = (products as any[])?.find((p: any) => p.id === item.product_id);
-                                      if (product) {
-                                        addProduct(product);
-                                        setTimeout(() => {
-                                          document.getElementById(`serial-input-${idx + 1}`)?.focus();
-                                        }, 50);
+                                <div className="flex gap-1">
+                                  <Input
+                                    id={`serial-input-${idx}`}
+                                    value={item.serial_number || ""}
+                                    onChange={(e) => updateItem(idx, "serial_number", e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" && item.serial_number?.trim()) {
+                                        e.preventDefault();
+                                        const product = (products as any[])?.find((p: any) => p.id === item.product_id);
+                                        if (product) {
+                                          addProduct(product);
+                                          setTimeout(() => {
+                                            document.getElementById(`serial-input-${idx + 1}`)?.focus();
+                                          }, 50);
+                                        }
                                       }
-                                    }
-                                  }}
-                                  placeholder={item.product_type === "imei" ? "Enter IMEI & press Enter" : "Enter Serial & press Enter"}
-                                  className={`h-8 text-sm ${isDupe ? "border-destructive" : ""}`}
-                                />
+                                    }}
+                                    placeholder={item.product_type === "imei" ? "IMEI" : "Serial"}
+                                    className={`h-8 text-sm ${isDupe ? "border-destructive" : ""}`}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    onClick={() => setScannerIdx(idx)}
+                                    title="Scan barcode"
+                                  >
+                                    <ScanBarcode className="h-4 w-4" />
+                                  </Button>
+                                </div>
                                 {isDupe && (
                                   <p className="text-[10px] text-destructive flex items-center gap-1 mt-0.5">
                                     <AlertTriangle className="h-3 w-3" /> Duplicate
