@@ -53,6 +53,39 @@ export default function PurchaseAdd() {
   const [scannerIdx, setScannerIdx] = useState<number | null>(null);
   const [selectedPOId, setSelectedPOId] = useState<string>("");
   const [serialInput, setSerialInput] = useState<Record<number, string>>({});
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [editInitialized, setEditInitialized] = useState(false);
+
+  // Pre-populate in edit mode
+  useEffect(() => {
+    if (isEditMode && existingPurchase && existingItems && !editInitialized) {
+      setSupplierId(existingPurchase.supplier_id || "");
+      setPurchaseDate(existingPurchase.purchase_date || new Date().toISOString().split("T")[0]);
+      setReferenceNumber(existingPurchase.reference_number || "");
+      setPurchaseStatus(existingPurchase.status || "received");
+      setPaymentMethod(existingPurchase.payment_method || "cash");
+      setPaymentStatus(existingPurchase.payment_status || "unpaid");
+      setNotes(existingPurchase.notes || "");
+      setOtherCharges(Number(existingPurchase.shipping_cost) || 0);
+
+      const mapped: PurchaseItemWithSerials[] = existingItems.map((item: any) => ({
+        product_id: item.product_id,
+        product_name: item.products?.name || "Unknown",
+        product_type: "general",
+        brand_name: "",
+        sku: "",
+        quantity: item.quantity,
+        unit_cost: Number(item.unit_cost),
+        discount: Number(item.discount),
+        tax_percent: Number(item.tax_percent),
+        total: Number(item.total),
+        serial_number: item.serial_number || "",
+        serials: item.serial_number ? [item.serial_number] : [],
+      }));
+      setItems(mapped);
+      setEditInitialized(true);
+    }
+  }, [isEditMode, existingPurchase, existingItems, editInitialized]);
 
   const { data: poItems } = usePurchaseOrderItems(selectedPOId || null);
 
