@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -5,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import ReportToolbar from "@/components/reports/ReportToolbar";
 
 export default function InstallmentReport() {
   const { data, isLoading } = useQuery({
@@ -26,24 +28,34 @@ export default function InstallmentReport() {
   const fmt = (n: number) => n.toLocaleString("en", { minimumFractionDigits: 2 });
   const statusColor: Record<string, string> = { active: "default", completed: "secondary", overdue: "destructive" };
 
+  const exportData = useMemo(() => ({
+    columns: ["Invoice", "Date", "Customer", "Status", "Total", "Down Payment", "Remaining"],
+    rows: (data?.sales ?? []).map((s: any) => [s.invoice_no, s.sale_date, s.customers?.name || "-", s.status, fmt(Number(s.total_amount)), fmt(Number(s.down_payment)), fmt(Number(s.remaining_amount))]),
+    filename: "installment-report",
+    title: "Installment Sale Report",
+  }), [data]);
+
   return (
     <div className="space-y-6">
       <PageHeader title="Installment Sale Report" subtitle="Installment sales and collection summary" />
-      {isLoading ? <Skeleton className="h-60 w-full" /> : data && (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <Card><CardContent className="pt-4 text-center"><p className="text-xs text-muted-foreground">Total Installment Sales</p><p className="text-xl font-bold">৳ {fmt(data.totalSold)}</p></CardContent></Card>
-            <Card><CardContent className="pt-4 text-center"><p className="text-xs text-muted-foreground">Total Collected</p><p className="text-xl font-bold text-emerald-600">৳ {fmt(data.totalCollected)}</p></CardContent></Card>
-            <Card><CardContent className="pt-4 text-center"><p className="text-xs text-muted-foreground">Remaining</p><p className="text-xl font-bold text-destructive">৳ {fmt(data.totalRemaining)}</p></CardContent></Card>
-          </div>
-          <Card><CardContent className="pt-4">
-            <Table><TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Down Payment</TableHead><TableHead className="text-right">Remaining</TableHead></TableRow></TableHeader>
-            <TableBody>{data.sales.map((s: any) => (
-              <TableRow key={s.id}><TableCell className="font-mono text-sm">{s.invoice_no}</TableCell><TableCell>{s.sale_date}</TableCell><TableCell>{s.customers?.name || "-"}</TableCell><TableCell><Badge variant={statusColor[s.status] as any || "secondary"}>{s.status}</Badge></TableCell><TableCell className="text-right">৳ {fmt(Number(s.total_amount))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.down_payment))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.remaining_amount))}</TableCell></TableRow>
-            ))}{data.sales.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No installment sales</TableCell></TableRow>}</TableBody></Table>
-          </CardContent></Card>
-        </>
-      )}
+      <ReportToolbar exportData={exportData} />
+      <div className="print-area space-y-6">
+        {isLoading ? <Skeleton className="h-60 w-full" /> : data && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Card><CardContent className="pt-4 text-center"><p className="text-xs text-muted-foreground">Total Installment Sales</p><p className="text-xl font-bold">৳ {fmt(data.totalSold)}</p></CardContent></Card>
+              <Card><CardContent className="pt-4 text-center"><p className="text-xs text-muted-foreground">Total Collected</p><p className="text-xl font-bold text-emerald-600">৳ {fmt(data.totalCollected)}</p></CardContent></Card>
+              <Card><CardContent className="pt-4 text-center"><p className="text-xs text-muted-foreground">Remaining</p><p className="text-xl font-bold text-destructive">৳ {fmt(data.totalRemaining)}</p></CardContent></Card>
+            </div>
+            <Card><CardContent className="pt-4">
+              <Table><TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Down Payment</TableHead><TableHead className="text-right">Remaining</TableHead></TableRow></TableHeader>
+              <TableBody>{data.sales.map((s: any) => (
+                <TableRow key={s.id}><TableCell className="font-mono text-sm">{s.invoice_no}</TableCell><TableCell>{s.sale_date}</TableCell><TableCell>{s.customers?.name || "-"}</TableCell><TableCell><Badge variant={statusColor[s.status] as any || "secondary"}>{s.status}</Badge></TableCell><TableCell className="text-right">৳ {fmt(Number(s.total_amount))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.down_payment))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.remaining_amount))}</TableCell></TableRow>
+              ))}{data.sales.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No installment sales</TableCell></TableRow>}</TableBody></Table>
+            </CardContent></Card>
+          </>
+        )}
+      </div>
     </div>
   );
 }
