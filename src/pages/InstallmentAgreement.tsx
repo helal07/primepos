@@ -1,7 +1,19 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useInstallmentSales, useInstallmentSchedules, useInstallmentCustomers } from "@/hooks/useInstallments";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
+
+// Helper to get a signed URL for a private bucket path
+async function getSignedUrl(path: string | null | undefined): Promise<string | null> {
+  if (!path) return null;
+  // If it's already a full URL (legacy data), return as-is
+  if (path.startsWith("http")) return path;
+  const { data, error } = await supabase.storage.from("installment-docs").createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+}
 
 export default function InstallmentAgreement() {
   const { id } = useParams();
@@ -12,6 +24,20 @@ export default function InstallmentAgreement() {
 
   const sale = sales?.find((s: any) => s.id === id);
   const ic = instCustomers?.find((c: any) => c.id === sale?.installment_customer_id);
+
+  const [signedUrls, setSignedUrls] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    if (!ic) return;
+    const load = async () => {
+      const [photo, gPhoto] = await Promise.all([
+        getSignedUrl(ic.photo_url),
+        getSignedUrl(ic.guarantor_photo_url),
+      ]);
+      setSignedUrls({ photo, gPhoto });
+    };
+    load();
+  }, [ic]);
 
   if (!sale) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
@@ -35,7 +61,7 @@ export default function InstallmentAgreement() {
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
             <h3 className="font-bold text-sm border-b pb-1">Customer Details</h3>
-            {ic?.photo_url && <img src={ic.photo_url} alt="Customer" className="w-20 h-20 rounded object-cover" />}
+            {signedUrls.photo && <img src={signedUrls.photo} alt="Customer" className="w-20 h-20 rounded object-cover" />}
             <p><strong>Name:</strong> {sale.customers?.name}</p>
             <p><strong>Phone:</strong> {sale.customers?.phone}</p>
             {ic?.permanent_address && <p><strong>Address:</strong> {ic.permanent_address}</p>}
@@ -55,7 +81,7 @@ export default function InstallmentAgreement() {
             <h3 className="font-bold text-sm border-b pb-1">Guarantor Details</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                {ic.guarantor_photo_url && <img src={ic.guarantor_photo_url} alt="Guarantor" className="w-16 h-16 rounded object-cover mb-2" />}
+                {signedUrls.gPhoto && <img src={signedUrls.gPhoto} alt="Guarantor" className="w-16 h-16 rounded object-cover mb-2" />}
                 <p><strong>Name:</strong> {ic.guarantor_name}</p>
                 <p><strong>Mobile:</strong> {ic.guarantor_mobile}</p>
               </div>

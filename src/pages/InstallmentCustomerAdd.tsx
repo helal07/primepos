@@ -45,8 +45,8 @@ export default function InstallmentCustomerAdd() {
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("installment-docs").upload(path, file);
     if (error) throw error;
-    const { data } = supabase.storage.from("installment-docs").getPublicUrl(path);
-    return data.publicUrl;
+    // Store the path, not public URL — bucket is private, use signed URLs to display
+    return path;
   };
 
   const handleSubmit = async (addMore = false) => {
