@@ -126,8 +126,12 @@ export default function PurchaseAdd() {
     setScannerIdx(null);
   };
 
-  const addSerialToItem = (idx: number, serial: string) => {
+  const addSerialToItem = async (idx: number, serial: string) => {
     if (!serial) return;
+    // Check IMEI uniqueness
+    const { checkImeiUniqueness } = await import("@/hooks/useImeiValidation");
+    const isUnique = await checkImeiUniqueness(serial, undefined, isEditMode ? editId! : undefined);
+    if (!isUnique) return;
     setItems(prev => prev.map((item, i) => {
       if (i !== idx) return item;
       if (item.serials.includes(serial)) return item; // duplicate check
