@@ -251,54 +251,50 @@ export default function PurchaseAdd() {
   const allSerials = getAllSerials();
   const duplicateSerials = new Set(allSerials.filter((s, i) => allSerials.indexOf(s) !== i));
 
-  const handleSubmit = async () => {
-    if (items.length === 0) return;
-
-    // For serial items, expand each serial into its own purchase_item row
+  const buildExpandedItems = (): PurchaseItem[] => {
     const expandedItems: PurchaseItem[] = [];
     for (const item of items) {
       const isSerial = item.product_type === "imei" || item.product_type === "serial";
       if (isSerial && item.serials.length > 0) {
         for (const serial of item.serials) {
           expandedItems.push({
-            product_id: item.product_id,
-            quantity: 1,
-            unit_cost: item.unit_cost,
-            discount: 0,
-            tax_percent: item.tax_percent,
-            total: item.unit_cost + item.unit_cost * (item.tax_percent / 100),
-            serial_number: serial,
+            product_id: item.product_id, quantity: 1, unit_cost: item.unit_cost,
+            discount: 0, tax_percent: item.tax_percent,
+            total: item.unit_cost + item.unit_cost * (item.tax_percent / 100), serial_number: serial,
           });
         }
       } else {
         expandedItems.push({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          unit_cost: item.unit_cost,
-          discount: item.discount,
-          tax_percent: item.tax_percent,
-          total: item.total,
+          product_id: item.product_id, quantity: item.quantity, unit_cost: item.unit_cost,
+          discount: item.discount, tax_percent: item.tax_percent, total: item.total,
           serial_number: item.serial_number || null,
         });
       }
     }
+    return expandedItems;
+  };
 
-    await createPurchase.mutateAsync({
-      supplier_id: supplierId || null,
-      purchase_date: purchaseDate,
-      reference_number: referenceNumber,
-      status: purchaseStatus,
-      subtotal,
-      discount_amount: itemDiscount + overallDiscount,
-      tax_amount: totalTax,
-      shipping_cost: otherCharges,
-      total_amount: grandTotal,
-      payment_status: paidAmount >= grandTotal ? "paid" : paidAmount > 0 ? "partial" : "unpaid",
-      payment_method: paymentMethod,
-      notes,
-      items: expandedItems,
-    });
-    navigate("/purchases");
+  const handleFinalizePayment = async (payments: PaymentRow[], paymentStatus: string) => {
+    if (items.length === 0) return;
+    const expandedItems = buildExpandedItems();
+    const formData = {
+      supplier_id: supplierId || null, purchase_date: purchaseDate, reference_number: referenceNumber,
+      status: purchaseStatus, subtotal, discount_amount: itemDiscount + overallDiscount,
+      tax_amount: totalTax, shipping_cost: otherCharges, total_amount: grandTotal,
+      payment_status: paymentStatus, payment_method: payments[0]?.payment_method || "cash",
+      notes, items: expandedItems,
+    };
+
+    if (isEditMode) {
+      await updatePurchase.mutateAsync({ id: editId!, formData });
+      await createPurchasePayments.mutateAsync({ purchaseId: editId!, payments });
+      navigate(`/purchases/${editId}`);
+    } else {
+      const purchase = await createPurchase.mutateAsync(formData);
+      await createPurchasePayments.mutateAsync({ purchaseId: purchase.id, payments });
+      navigate("/purchases");
+    }
+    setShowPaymentDialog(false);
   };
 
   return (
