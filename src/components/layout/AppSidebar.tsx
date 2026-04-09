@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -43,9 +44,12 @@ import {
   CreditCard,
   UserPlus,
   CalendarCheck,
+  Crown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -64,6 +68,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
+const saasAdminGroup = {
+  label: "SaaS Admin",
+  items: [
+    { title: "Admin Dashboard", url: "/admin", icon: Crown },
+    { title: "Tenants", url: "/admin/tenants", icon: Building2 },
+    { title: "Packages", url: "/admin/packages", icon: Package },
+    { title: "CMS", url: "/admin/cms", icon: Globe },
+    { title: "Transactions", url: "/admin/transactions", icon: CreditCard },
+    { title: "Settings", url: "/admin/settings", icon: Settings },
+  ],
+};
 
 const menuGroups = [
   {
@@ -180,6 +196,17 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user } = useAuth();
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_superadmin", { _user_id: user.id }).then(({ data }) => {
+      setIsSuperadmin(!!data);
+    });
+  }, [user]);
+
+  const allGroups = isSuperadmin ? [saasAdminGroup, ...menuGroups] : menuGroups;
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -196,7 +223,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        {menuGroups.map((group) => {
+        {allGroups.map((group) => {
           const isGroupActive = group.items.some(
             (item) =>
               location.pathname === item.url ||
