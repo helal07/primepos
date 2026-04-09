@@ -14,7 +14,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Eye, Trash2, Pencil } from "lucide-react";
 import { useSales, useSaleMutations } from "@/hooks/useSales";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -112,6 +112,9 @@ export default function Sales() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}`)}>
                               <Eye className="h-4 w-4 mr-2" /> View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}/edit`)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => deleteSale.mutate(sale.id)}>
                               <Trash2 className="h-4 w-4 mr-2" /> Delete
