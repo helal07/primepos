@@ -16,6 +16,8 @@ import Products from "./pages/Products";
 import ProductAdd from "./pages/ProductAdd";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
+import SellingPriceGroups from "./pages/SellingPriceGroups";
+import CustomerGroups from "./pages/CustomerGroups";
 import Units from "./pages/Units";
 import Variations from "./pages/Variations";
 import StockAdjustments from "./pages/StockAdjustments";
@@ -123,6 +125,8 @@ const App = () => (
                       <Route path="/products/edit/:id" element={<ProductAdd />} />
                       <Route path="/categories" element={<Categories />} />
                       <Route path="/brands" element={<Brands />} />
+                      <Route path="/products/price-groups" element={<SellingPriceGroups />} />
+                      <Route path="/contacts/customer-groups" element={<CustomerGroups />} />
                       <Route path="/units" element={<Units />} />
                       <Route path="/variations" element={<Variations />} />
                       <Route path="/stock-adjustments" element={<StockAdjustments />} />
