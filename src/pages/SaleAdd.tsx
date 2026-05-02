@@ -18,6 +18,8 @@ import { useCustomers } from "@/hooks/useContacts";
 import { useSale, useSaleItems, useSaleMutations, type SaleItem } from "@/hooks/useSales";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { toast } from "sonner";
+import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
+import { resolvePrice } from "@/lib/priceGroup";
 
 export default function SaleAdd() {
   const navigate = useNavigate();
@@ -30,6 +32,9 @@ export default function SaleAdd() {
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
   const { createSale, createSalePayments, updateSale } = useSaleMutations();
+  const { data: priceGroups } = useSellingPriceGroups();
+  const { data: customerGroups } = useCustomerGroups();
+  const { data: groupPriceMap } = useProductGroupPricesMap();
 
   const { data: existingSale } = useSale(editId);
   const { data: existingItems } = useSaleItems(editId);
@@ -49,6 +54,32 @@ export default function SaleAdd() {
   const [filterType, setFilterType] = useState<"category" | "brand">("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
+  const [activePriceGroupId, setActivePriceGroupId] = useState<string | null>(null);
+
+  const customerDefaultGroupId = useMemo(() => {
+    if (!customerId || !customers || !customerGroups) return null;
+    const cust: any = (customers as any[]).find((c: any) => c.id === customerId);
+    if (!cust?.customer_group_id) return null;
+    const cg = customerGroups.find((g) => g.id === cust.customer_group_id);
+    return cg?.selling_price_group_id || null;
+  }, [customerId, customers, customerGroups]);
+
+  useEffect(() => {
+    if (!isEditMode) setActivePriceGroupId(customerDefaultGroupId);
+  }, [customerDefaultGroupId, isEditMode]);
+
+  useEffect(() => {
+    if (!products || !groupPriceMap || isEditMode) return;
+    setItems((prev) => prev.map((item) => {
+      const product = (products as any[]).find((p: any) => p.id === item.product_id);
+      if (!product) return item;
+      const newPrice = resolvePrice(product, item.variation_id ?? null, Number(product.selling_price), activePriceGroupId, groupPriceMap);
+      const qty = Number(item.quantity);
+      const disc = Number(item.discount);
+      const tax = Number(item.tax_percent);
+      return { ...item, unit_price: newPrice, total: qty * newPrice * (1 - disc / 100) * (1 + tax / 100) };
+    }));
+  }, [activePriceGroupId, groupPriceMap, products, isEditMode]);
 
   // Pre-populate in edit mode
   useEffect(() => {
