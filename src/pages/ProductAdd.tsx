@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Upload, X, ImageIcon, Save, Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSellingPriceGroups, useProductGroupPrices, useProductGroupPriceMutations } from "@/hooks/usePriceGroups";
 
 const PRODUCT_TYPES = [
   { value: "general", label: "General" },
@@ -46,6 +47,20 @@ export default function ProductAdd() {
   const { toast } = useToast();
   const { data: variations } = useVariations(editId);
   const varMutations = useVariationMutations();
+  const { data: priceGroups } = useSellingPriceGroups();
+  const { data: productGroupPrices } = useProductGroupPrices(editId);
+  const groupPriceMutations = useProductGroupPriceMutations();
+  const [groupPriceRows, setGroupPriceRows] = useState<Record<string, { price: string; price_type: "fixed" | "percent" }>>({});
+
+  useEffect(() => {
+    if (!productGroupPrices) return;
+    const map: Record<string, { price: string; price_type: "fixed" | "percent" }> = {};
+    for (const r of productGroupPrices) {
+      if (r.variation_id) continue; // base product overrides only here
+      map[r.selling_price_group_id] = { price: String(r.price), price_type: r.price_type };
+    }
+    setGroupPriceRows(map);
+  }, [productGroupPrices]);
 
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -139,10 +154,28 @@ export default function ProductAdd() {
     };
 
     if (editId) {
-      update.mutate({ id: editId, ...payload }, { onSuccess: () => navigate("/products") });
+      update.mutate({ id: editId, ...payload }, {
+        onSuccess: async () => {
+          await saveGroupPrices(editId);
+          navigate("/products");
+        },
+      });
     } else {
       create.mutate(payload, { onSuccess: () => navigate("/products") });
     }
+  };
+
+  const saveGroupPrices = async (productId: string) => {
+    const rows = Object.entries(groupPriceRows)
+      .filter(([, v]) => v.price !== "" && !isNaN(parseFloat(v.price)))
+      .map(([groupId, v]) => ({
+        product_id: productId,
+        variation_id: null,
+        selling_price_group_id: groupId,
+        price: parseFloat(v.price),
+        price_type: v.price_type,
+      }));
+    if (rows.length) await groupPriceMutations.upsert.mutateAsync(rows);
   };
 
   const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
@@ -240,6 +273,51 @@ export default function ProductAdd() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Selling Price Group Overrides — edit mode only */}
+          {editId && priceGroups && priceGroups.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Price Group Overrides</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Set tier-specific prices. Leave blank to use the default selling price for that group.
+                </p>
+                <div className="space-y-2">
+                  {priceGroups.filter(g => g.is_active).map((g) => {
+                    const row = groupPriceRows[g.id] || { price: "", price_type: "fixed" as const };
+                    return (
+                      <div key={g.id} className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 text-sm font-medium">{g.name}</div>
+                        <div className="col-span-4">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="Price / %"
+                            value={row.price}
+                            onChange={(e) => setGroupPriceRows(prev => ({ ...prev, [g.id]: { ...row, price: e.target.value } }))}
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <Select
+                            value={row.price_type}
+                            onValueChange={(v) => setGroupPriceRows(prev => ({ ...prev, [g.id]: { ...row, price_type: v as "fixed" | "percent" } }))}
+                          >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fixed">Fixed (৳)</SelectItem>
+                              <SelectItem value="percent">Percent (% of base)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Classification */}
           <Card>

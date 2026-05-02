@@ -18,6 +18,8 @@ import { useCustomers } from "@/hooks/useContacts";
 import { useSale, useSaleItems, useSaleMutations, type SaleItem } from "@/hooks/useSales";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { toast } from "sonner";
+import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
+import { resolvePrice } from "@/lib/priceGroup";
 
 export default function SaleAdd() {
   const navigate = useNavigate();
@@ -30,6 +32,9 @@ export default function SaleAdd() {
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
   const { createSale, createSalePayments, updateSale } = useSaleMutations();
+  const { data: priceGroups } = useSellingPriceGroups();
+  const { data: customerGroups } = useCustomerGroups();
+  const { data: groupPriceMap } = useProductGroupPricesMap();
 
   const { data: existingSale } = useSale(editId);
   const { data: existingItems } = useSaleItems(editId);
@@ -49,6 +54,32 @@ export default function SaleAdd() {
   const [filterType, setFilterType] = useState<"category" | "brand">("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
+  const [activePriceGroupId, setActivePriceGroupId] = useState<string | null>(null);
+
+  const customerDefaultGroupId = useMemo(() => {
+    if (!customerId || !customers || !customerGroups) return null;
+    const cust: any = (customers as any[]).find((c: any) => c.id === customerId);
+    if (!cust?.customer_group_id) return null;
+    const cg = customerGroups.find((g) => g.id === cust.customer_group_id);
+    return cg?.selling_price_group_id || null;
+  }, [customerId, customers, customerGroups]);
+
+  useEffect(() => {
+    if (!isEditMode) setActivePriceGroupId(customerDefaultGroupId);
+  }, [customerDefaultGroupId, isEditMode]);
+
+  useEffect(() => {
+    if (!products || !groupPriceMap || isEditMode) return;
+    setItems((prev) => prev.map((item) => {
+      const product = (products as any[]).find((p: any) => p.id === item.product_id);
+      if (!product) return item;
+      const newPrice = resolvePrice(product, item.variation_id ?? null, Number(product.selling_price), activePriceGroupId, groupPriceMap);
+      const qty = Number(item.quantity);
+      const disc = Number(item.discount);
+      const tax = Number(item.tax_percent);
+      return { ...item, unit_price: newPrice, total: qty * newPrice * (1 - disc / 100) * (1 + tax / 100) };
+    }));
+  }, [activePriceGroupId, groupPriceMap, products, isEditMode]);
 
   // Pre-populate in edit mode
   useEffect(() => {
@@ -102,7 +133,8 @@ export default function SaleAdd() {
           : i
       ));
     } else {
-      const price = Number(product.selling_price);
+      const base = Number(product.selling_price);
+      const price = resolvePrice(product, null, base, activePriceGroupId, groupPriceMap || {});
       const tax = Number(product.tax_percent);
       setItems([...items, {
         product_id: product.id, product_name: product.name,
@@ -235,6 +267,22 @@ export default function SaleAdd() {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search product name / SKU / barcode..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="pl-8 h-8 text-sm" />
               </div>
+              {priceGroups && priceGroups.filter(g => g.is_active).length > 0 && (
+                <Select
+                  value={activePriceGroupId ?? "default"}
+                  onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
+                >
+                  <SelectTrigger className="h-8 w-[150px] text-xs shrink-0">
+                    <SelectValue placeholder="Default Pricing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default Pricing</SelectItem>
+                    {priceGroups.filter(g => g.is_active).map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 
