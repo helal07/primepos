@@ -267,6 +267,22 @@ export default function SaleAdd() {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search product name / SKU / barcode..." value={productSearch} onChange={(e) => setProductSearch(e.target.value)} className="pl-8 h-8 text-sm" />
               </div>
+              {priceGroups && priceGroups.filter(g => g.is_active).length > 0 && (
+                <Select
+                  value={activePriceGroupId ?? "default"}
+                  onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
+                >
+                  <SelectTrigger className="h-8 w-[150px] text-xs shrink-0">
+                    <SelectValue placeholder="Default Pricing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default Pricing</SelectItem>
+                    {priceGroups.filter(g => g.is_active).map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 
