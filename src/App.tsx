@@ -28,6 +28,7 @@ import SaleView from "./pages/SaleView";
 import POS from "./pages/POS";
 import Customers from "./pages/Customers";
 import Suppliers from "./pages/Suppliers";
+import ContactProfile from "./pages/ContactProfile";
 import SettingsPage from "./pages/Settings";
 import UsersPage from "./pages/Users";
 import RolesPage from "./pages/Roles";
@@ -152,7 +153,9 @@ const App = () => (
                       <Route path="/purchase-orders" element={<PurchaseOrders />} />
                       <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
                       <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/:id" element={<ContactProfile kind="customer" />} />
                       <Route path="/suppliers" element={<Suppliers />} />
+                      <Route path="/suppliers/:id" element={<ContactProfile kind="supplier" />} />
                       <Route path="/accounts" element={<ChartOfAccounts />} />
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/journal" element={<JournalEntries />} />
