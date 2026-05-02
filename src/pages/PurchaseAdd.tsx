@@ -240,7 +240,10 @@ export default function PurchaseAdd() {
   }, [discountInput, subtotal, itemDiscount, totalTax]);
 
   const grandTotal = subtotal - itemDiscount + totalTax - overallDiscount + otherCharges;
-  const dueAmount = Math.max(0, grandTotal - paidAmount);
+  const totalPaying = paymentRows.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const dueAmount = Math.max(0, grandTotal - totalPaying);
+  const changeReturn = Math.max(0, totalPaying - grandTotal);
+  const computedPaymentStatus = totalPaying >= grandTotal ? "paid" : totalPaying > 0 ? "partial" : "unpaid";
   const totalItemCount = items.reduce((s, i) => s + i.quantity, 0);
 
   // Check for duplicate serials across all items
@@ -275,14 +278,26 @@ export default function PurchaseAdd() {
     return expandedItems;
   };
 
-  const handleFinalizePayment = async (payments: PaymentRow[], paymentStatus: string) => {
+  const updatePaymentRow = (idx: number, field: keyof PaymentRow, value: any) => {
+    setPaymentRows(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+  };
+  const addPaymentRow = () => {
+    setPaymentRows(prev => [...prev, { amount: dueAmount, payment_method: "cash", payment_note: "" }]);
+  };
+  const removePaymentRow = (idx: number) => {
+    if (paymentRows.length <= 1) return;
+    setPaymentRows(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSavePurchase = async () => {
     if (items.length === 0) return;
+    const payments = paymentRows.filter(p => Number(p.amount) > 0);
     const expandedItems = buildExpandedItems();
     const formData = {
       supplier_id: supplierId || null, purchase_date: purchaseDate, reference_number: referenceNumber,
       status: purchaseStatus, subtotal, discount_amount: itemDiscount + overallDiscount,
       tax_amount: totalTax, shipping_cost: otherCharges, total_amount: grandTotal,
-      payment_status: paymentStatus, payment_method: payments[0]?.payment_method || "cash",
+      payment_status: computedPaymentStatus, payment_method: payments[0]?.payment_method || "cash",
       notes, items: expandedItems,
     };
 
@@ -295,7 +310,6 @@ export default function PurchaseAdd() {
       await createPurchasePayments.mutateAsync({ purchaseId: purchase.id, payments });
       navigate("/purchases");
     }
-    setShowPaymentDialog(false);
   };
 
   return (
