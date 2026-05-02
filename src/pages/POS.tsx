@@ -37,6 +37,8 @@ import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDia
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
+import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
+import { resolvePrice } from "@/lib/priceGroup";
 
 interface CartItem extends SaleItem {
   serial_tracking?: boolean;
@@ -51,6 +53,9 @@ export default function POS() {
   const { data: customers } = useCustomers();
   const { createSale, createSalePayments } = useSaleMutations();
   const { data: settings } = useSettings();
+  const { data: priceGroups } = useSellingPriceGroups();
+  const { data: customerGroups } = useCustomerGroups();
+  const { data: groupPriceMap } = useProductGroupPricesMap();
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -71,6 +76,33 @@ export default function POS() {
   const [imeiProductId, setImeiProductId] = useState<string | null>(null);
   const { data: availableSerials } = useAvailableSerials(imeiProductId);
   const [saleDate, setSaleDate] = useState<Date>(new Date());
+  const [activePriceGroupId, setActivePriceGroupId] = useState<string | null>(null);
+
+  // Derive default price group from selected customer's group
+  const customerDefaultGroupId = useMemo(() => {
+    if (!customerId || !customers || !customerGroups) return null;
+    const cust: any = (customers as any[]).find((c: any) => c.id === customerId);
+    if (!cust?.customer_group_id) return null;
+    const cg = customerGroups.find((g) => g.id === cust.customer_group_id);
+    return cg?.selling_price_group_id || null;
+  }, [customerId, customers, customerGroups]);
+
+  // Auto-switch to customer's group, but allow manual override
+  useEffect(() => {
+    setActivePriceGroupId(customerDefaultGroupId);
+  }, [customerDefaultGroupId]);
+
+  // Re-price cart items when active group changes
+  useEffect(() => {
+    if (!products || !groupPriceMap) return;
+    setCart((prev) => prev.map((item) => {
+      const product = (products as any[]).find((p: any) => p.id === item.product_id);
+      if (!product) return item;
+      const newPrice = resolvePrice(product, null, Number(product.selling_price), activePriceGroupId, groupPriceMap);
+      const qty = item.quantity;
+      return { ...item, unit_price: newPrice, total: qty * newPrice * (1 + item.tax_percent / 100) };
+    }));
+  }, [activePriceGroupId, groupPriceMap, products]);
 
   // Fetch last sale for invoice printing
   const { data: lastSaleData } = useSale(lastSaleId);
