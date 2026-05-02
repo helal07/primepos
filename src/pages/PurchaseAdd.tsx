@@ -17,7 +17,7 @@ const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
 import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, usePurchase, usePurchaseItems, type PurchaseItem } from "@/hooks/usePurchases";
-import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
+import { type PaymentRow } from "@/components/payments/PaymentDialog";
 
 interface PurchaseItemWithSerials extends PurchaseItem {
   serials: string[];
@@ -41,19 +41,18 @@ export default function PurchaseAdd() {
   const [referenceNumber, setReferenceNumber] = useState(`PUR-${Date.now().toString().slice(-6)}`);
   const [supplierInvoice, setSupplierInvoice] = useState("");
   const [purchaseStatus, setPurchaseStatus] = useState("received");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [paymentStatus, setPaymentStatus] = useState("unpaid");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<PurchaseItemWithSerials[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [discountInput, setDiscountInput] = useState("");
   const [otherCharges, setOtherCharges] = useState(0);
-  const [paidAmount, setPaidAmount] = useState(0);
   const [scannerIdx, setScannerIdx] = useState<number | null>(null);
   const [selectedPOId, setSelectedPOId] = useState<string>("");
   const [serialInput, setSerialInput] = useState<Record<number, string>>({});
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentRows, setPaymentRows] = useState<PaymentRow[]>([
+    { amount: 0, payment_method: "cash", payment_note: "" },
+  ]);
   const [editInitialized, setEditInitialized] = useState(false);
 
   // Pre-populate in edit mode
