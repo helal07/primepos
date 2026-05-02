@@ -399,10 +399,12 @@ function LedgerTable({
   txBaseRoute: string;
 }) {
   const rows = useMemo(() => {
+    const txById = new Map(txs.map((t) => [t.id, t]));
     const a = txs.map((t) => ({
       kind: "invoice" as const,
       date: t[dateCol],
       ref: t[invoiceCol],
+      parentRef: t[invoiceCol],
       debit: Number(t.total_amount || 0),
       credit: 0,
       id: t.id,
@@ -412,6 +414,7 @@ function LedgerTable({
       kind: "payment" as const,
       date: (p.created_at || "").slice(0, 10),
       ref: `Payment (${p.payment_method})`,
+      parentRef: txById.get(p[fkKey])?.[invoiceCol] ?? null,
       debit: 0,
       credit: Number(p.amount || 0),
       id: p[fkKey],
@@ -437,11 +440,13 @@ function LedgerTable({
             <TableRow key={i}>
               <TableCell>{r.date}</TableCell>
               <TableCell>
-                {r.kind === "invoice" ? (
-                  <Link className="text-primary hover:underline" to={`${txBaseRoute}/${r.id}`}>{r.ref}</Link>
-                ) : r.id ? (
-                  <Link className="text-primary hover:underline" to={`${txBaseRoute}/${r.id}`}>{r.ref}</Link>
-                ) : r.ref}
+                {r.id ? (
+                  <Link className="text-primary hover:underline" to={`${txBaseRoute}/${r.id}`}>
+                    {r.kind === "payment" && r.parentRef ? `${r.ref} → ${r.parentRef}` : r.ref}
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">{r.ref}</span>
+                )}
               </TableCell>
               <TableCell className="text-right">{r.debit ? fmt(r.debit) : "—"}</TableCell>
               <TableCell className="text-right">{r.credit ? fmt(r.credit) : "—"}</TableCell>
