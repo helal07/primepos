@@ -254,7 +254,9 @@ export default function SaleAdd() {
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => navigate(isEditMode ? `/sales/${editId}` : "/sales")}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-sm font-bold shrink-0">{isEditMode ? "Edit Sale" : "New Sale"}</h1>
+              <h1 className="text-sm font-bold shrink-0">
+                {isEditMode ? "Edit Sale" : presetStatus === "order" ? "New Sales Order" : presetStatus === "quotation" ? "New Quotation" : "New Sale"}
+              </h1>
               <Select value={customerSelectValue} onValueChange={(v) => setCustomerId(v === "walk-in" ? "" : v)}>
                 <SelectTrigger className="w-[160px] h-8 text-xs">
                   <SelectValue placeholder="Walk-in Customer" />
