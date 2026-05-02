@@ -141,10 +141,21 @@ const App = () => (
                       <Route path="/sales/add" element={<SaleAdd />} />
                       <Route path="/sales/:id" element={<SaleView />} />
                       <Route path="/sales/:id/edit" element={<SaleEditRedirect />} />
-                      <Route path="/invoices" element={<PlaceholderPage title="Invoices" />} />
-                      <Route path="/sales/drafts" element={<PlaceholderPage title="Drafts" />} />
-                      <Route path="/quotations" element={<PlaceholderPage title="Quotations" />} />
-                      <Route path="/sales/returns" element={<PlaceholderPage title="Sale Returns" />} />
+                      <Route path="/sales/orders" element={
+                        <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Order" addPath="/sales/add?status=order" />
+                      } />
+                      <Route path="/invoices" element={
+                        <Sales defaultStatus="completed" title="Invoices" description="All completed sale invoices" hideStatusFilter />
+                      } />
+                      <Route path="/sales/drafts" element={
+                        <Sales defaultStatus="draft" title="Drafts" description="Draft sales" hideStatusFilter addLabel="Add Draft" />
+                      } />
+                      <Route path="/quotations" element={
+                        <Sales defaultStatus="quotation" title="Quotations" description="Customer quotations" hideStatusFilter addLabel="Add Quotation" addPath="/sales/add?status=quotation" />
+                      } />
+                      <Route path="/sales/returns" element={
+                        <Sales defaultStatus="returned" title="Sale Returns" description="Returned sales" hideStatusFilter />
+                      } />
                       <Route path="/shipments" element={<PlaceholderPage title="Shipments" />} />
                       <Route path="/purchases/add" element={<PurchaseAdd />} />
                       <Route path="/purchases" element={<Purchases />} />

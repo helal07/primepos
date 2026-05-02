@@ -26,6 +26,7 @@ export default function SaleAdd() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = !!editId;
+  const presetStatus = searchParams.get("status"); // "order" | "quotation" | null
 
   const { data: products } = useProducts();
   const { data: categories } = useCategories();
@@ -211,7 +212,7 @@ export default function SaleAdd() {
   const handleDraft = async () => {
     if (items.length === 0) return;
     const formData = {
-      customer_id: customerId || null, status: "draft", subtotal,
+      customer_id: customerId || null, status: presetStatus || "draft", subtotal,
       discount_type: discountType, discount_value: discountValue,
       discount_amount: discountAmount + itemDiscountTotal,
       tax_amount: taxAmount, shipping_cost: shippingCost, total_amount: totalAmount,
@@ -223,7 +224,7 @@ export default function SaleAdd() {
       navigate(`/sales/${editId}`);
     } else {
       await createSale.mutateAsync(formData);
-      navigate("/sales");
+      navigate(presetStatus === "order" ? "/sales/orders" : presetStatus === "quotation" ? "/quotations" : "/sales/drafts");
     }
   };
 
@@ -253,7 +254,9 @@ export default function SaleAdd() {
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => navigate(isEditMode ? `/sales/${editId}` : "/sales")}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-sm font-bold shrink-0">{isEditMode ? "Edit Sale" : "New Sale"}</h1>
+              <h1 className="text-sm font-bold shrink-0">
+                {isEditMode ? "Edit Sale" : presetStatus === "order" ? "New Sales Order" : presetStatus === "quotation" ? "New Quotation" : "New Sale"}
+              </h1>
               <Select value={customerSelectValue} onValueChange={(v) => setCustomerId(v === "walk-in" ? "" : v)}>
                 <SelectTrigger className="w-[160px] h-8 text-xs">
                   <SelectValue placeholder="Walk-in Customer" />
@@ -445,7 +448,7 @@ export default function SaleAdd() {
       {/* Bottom Action Bar */}
       <div className="h-14 border-t bg-card flex items-center px-3 gap-2 shrink-0">
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleDraft} disabled={items.length === 0 || createSale.isPending}>
-          <Save className="h-3.5 w-3.5" /> Save Draft
+          <Save className="h-3.5 w-3.5" /> {presetStatus === "order" ? "Save Order" : presetStatus === "quotation" ? "Save Quotation" : "Save Draft"}
         </Button>
         <Button
           variant="outline"
