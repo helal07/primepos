@@ -131,15 +131,19 @@ export default function Sales({
               <Button variant="outline" size="sm" onClick={() => window.print()}>
                 <Printer className="h-3.5 w-3.5 mr-1" /> Print
               </Button>
+              {!hideStatusFilter && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[130px] h-8"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="order">Order</SelectItem>
+                  <SelectItem value="quotation">Quotation</SelectItem>
                   <SelectItem value="returned">Returned</SelectItem>
                 </SelectContent>
               </Select>
+              )}
               <Select value={paymentFilter} onValueChange={setPaymentFilter}>
                 <SelectTrigger className="w-[130px] h-8"><SelectValue placeholder="Payment" /></SelectTrigger>
                 <SelectContent>
