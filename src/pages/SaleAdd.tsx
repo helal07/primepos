@@ -448,7 +448,7 @@ export default function SaleAdd() {
       {/* Bottom Action Bar */}
       <div className="h-14 border-t bg-card flex items-center px-3 gap-2 shrink-0">
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleDraft} disabled={items.length === 0 || createSale.isPending}>
-          <Save className="h-3.5 w-3.5" /> Save Draft
+          <Save className="h-3.5 w-3.5" /> {presetStatus === "order" ? "Save Order" : presetStatus === "quotation" ? "Save Quotation" : "Save Draft"}
         </Button>
         <Button
           variant="outline"
