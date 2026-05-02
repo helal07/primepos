@@ -142,6 +142,7 @@ export default function Sales() {
                   <TableHead>Date</TableHead>
                   <TableHead>Invoice No.</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Ledger</TableHead>
                   <TableHead>Payment Status</TableHead>
                   <TableHead>Payment Method</TableHead>
                   <TableHead className="text-right">Total Amount</TableHead>
@@ -154,13 +155,13 @@ export default function Sales() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                      {Array.from({ length: 10 }).map((_, j) => (
+                      {Array.from({ length: 11 }).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">No sales found. Create your first sale!</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">No sales found. Create your first sale!</TableCell></TableRow>
                 ) : (
                   filtered.slice(0, Number(perPage)).map((sale: any) => {
                     const paid = sale.payment_status === "paid" ? Number(sale.total_amount) : 0;
@@ -238,6 +239,20 @@ export default function Sales() {
                         <TableCell className="text-sm">{new Date(sale.sale_date).toLocaleDateString()}</TableCell>
                         <TableCell className="font-medium text-sm">{sale.invoice_number}</TableCell>
                         <TableCell className="text-sm">{sale.customers?.name || "Walk-in"}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          {sale.customer_id ? (
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="h-auto p-0 text-xs gap-1"
+                              onClick={() => navigate(`/customers/${sale.customer_id}`)}
+                            >
+                              <BookOpen className="h-3.5 w-3.5" /> Ledger
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{paymentBadge(sale.payment_status)}</TableCell>
                         <TableCell className="text-sm capitalize">{sale.payment_method || "—"}</TableCell>
                         <TableCell className="text-right font-medium">৳{Number(sale.total_amount).toLocaleString()}</TableCell>
@@ -252,7 +267,7 @@ export default function Sales() {
               {!isLoading && filtered.length > 0 && (
                 <TableFooter>
                   <TableRow className="bg-muted/70 font-semibold">
-                    <TableCell colSpan={4} className="text-center font-bold">Total:</TableCell>
+                    <TableCell colSpan={5} className="text-center font-bold">Total:</TableCell>
                     <TableCell className="text-xs">
                       {paidCount > 0 && <div>Paid - {paidCount}</div>}
                       {partialCount > 0 && <div>Partial - {partialCount}</div>}
