@@ -439,6 +439,8 @@ function LedgerTable({
               <TableCell>
                 {r.kind === "invoice" ? (
                   <Link className="text-primary hover:underline" to={`${txBaseRoute}/${r.id}`}>{r.ref}</Link>
+                ) : r.id ? (
+                  <Link className="text-primary hover:underline" to={`${txBaseRoute}/${r.id}`}>{r.ref}</Link>
                 ) : r.ref}
               </TableCell>
               <TableCell className="text-right">{r.debit ? fmt(r.debit) : "—"}</TableCell>
