@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const NONE = "__none__";
 const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", credit_limit: "", customer_group_id: NONE, notes: "", is_active: true };
@@ -171,7 +172,7 @@ export default function Customers() {
             ) : filtered.map((c: any) => (
               <TableRow key={c.id}>
                 <TableCell>
-                  <div className="font-medium">{c.name}</div>
+                  <Link to={`/customers/${c.id}`} className="font-medium text-primary hover:underline">{c.name}</Link>
                   {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell text-muted-foreground">{c.phone || "—"}</TableCell>

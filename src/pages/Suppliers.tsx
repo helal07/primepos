@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", notes: "", is_active: true };
 
@@ -135,7 +136,7 @@ export default function Suppliers() {
             ) : filtered.map((s: any) => (
               <TableRow key={s.id}>
                 <TableCell>
-                  <div className="font-medium">{s.name}</div>
+                  <Link to={`/suppliers/${s.id}`} className="font-medium text-primary hover:underline">{s.name}</Link>
                   {s.company && <div className="text-xs text-muted-foreground">{s.company}</div>}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell text-muted-foreground">{s.phone || "—"}</TableCell>
