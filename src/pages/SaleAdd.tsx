@@ -212,7 +212,7 @@ export default function SaleAdd() {
   const handleDraft = async () => {
     if (items.length === 0) return;
     const formData = {
-      customer_id: customerId || null, status: "draft", subtotal,
+      customer_id: customerId || null, status: presetStatus || "draft", subtotal,
       discount_type: discountType, discount_value: discountValue,
       discount_amount: discountAmount + itemDiscountTotal,
       tax_amount: taxAmount, shipping_cost: shippingCost, total_amount: totalAmount,
@@ -224,7 +224,7 @@ export default function SaleAdd() {
       navigate(`/sales/${editId}`);
     } else {
       await createSale.mutateAsync(formData);
-      navigate("/sales");
+      navigate(presetStatus === "order" ? "/sales/orders" : presetStatus === "quotation" ? "/quotations" : "/sales/drafts");
     }
   };
 
