@@ -193,7 +193,8 @@ export default function POS() {
             : i
         );
       }
-      const price = Number(product.selling_price);
+      const base = Number(product.selling_price);
+      const price = resolvePrice(product, null, base, activePriceGroupId, groupPriceMap || {});
       const tax = Number(product.tax_percent);
       return [...prev, {
         product_id: product.id, product_name: product.name, quantity: 1,
@@ -201,7 +202,7 @@ export default function POS() {
         serial_tracking: false,
       }];
     });
-  }, []);
+  }, [activePriceGroupId, groupPriceMap]);
 
   const addSerialToCart = (productId: string, serial: string) => {
     const product = (products as any[])?.find((p: any) => p.id === productId);
@@ -216,7 +217,8 @@ export default function POS() {
             : i
         );
       }
-      const price = Number(product.selling_price);
+      const base = Number(product.selling_price);
+      const price = resolvePrice(product, null, base, activePriceGroupId, groupPriceMap || {});
       const tax = Number(product.tax_percent);
       return [...prev, {
         product_id: product.id, product_name: product.name, quantity: 1,
