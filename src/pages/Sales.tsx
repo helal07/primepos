@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Eye, Trash2, Pencil, Printer, ChevronDown, FileText, Truck, Package, FileSignature, CreditCard, Wallet, Undo2, Link2, Bell, BookOpen } from "lucide-react";
+import { Plus, Search, Eye, Trash2, Pencil, Printer, ChevronDown, FileText, Truck, Package, FileSignature, CreditCard, Wallet, Undo2, Link2, Bell, BookOpen, ArrowRightLeft } from "lucide-react";
 import { useSales, useSaleMutations } from "@/hooks/useSales";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -26,17 +26,35 @@ const statusBadge = (s: string) => {
   switch (s) {
     case "completed": return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>;
     case "draft": return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Draft</Badge>;
+    case "order": return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Order</Badge>;
+    case "quotation": return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Quotation</Badge>;
     case "returned": return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Returned</Badge>;
     default: return <Badge variant="outline">{s}</Badge>;
   }
 };
 
-export default function Sales() {
+interface SalesProps {
+  defaultStatus?: string;       // filter by status (e.g. "order", "draft", "quotation", "returned", "completed")
+  title?: string;
+  description?: string;
+  hideStatusFilter?: boolean;
+  addLabel?: string;
+  addPath?: string;             // e.g. /sales/add?status=order
+}
+
+export default function Sales({
+  defaultStatus,
+  title = "All Sales",
+  description = "View and manage all sales transactions",
+  hideStatusFilter = false,
+  addLabel = "Add Sale",
+  addPath = "/sales/add",
+}: SalesProps = {}) {
   const navigate = useNavigate();
   const { data: sales, isLoading } = useSales();
-  const { deleteSale } = useSaleMutations();
+  const { deleteSale, updateSaleStatus } = useSaleMutations();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(defaultStatus ?? "all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [perPage, setPerPage] = useState("25");
 
@@ -44,7 +62,12 @@ export default function Sales() {
     const matchSearch =
       s.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
       s.customers?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || s.status === statusFilter;
+    const effectiveStatus = defaultStatus ?? statusFilter;
+    // When this is the main "All Sales" page, exclude order/quotation/draft to keep the list focused on actual sales.
+    const isMainList = !defaultStatus && statusFilter === "all";
+    const matchStatus = effectiveStatus === "all"
+      ? (isMainList ? !["order", "quotation", "draft"].includes(s.status) : true)
+      : s.status === effectiveStatus;
     const matchPayment = paymentFilter === "all" || s.payment_status === paymentFilter;
     return matchSearch && matchStatus && matchPayment;
   });
