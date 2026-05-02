@@ -62,8 +62,6 @@ export default function PurchaseAdd() {
       setPurchaseDate(existingPurchase.purchase_date || new Date().toISOString().split("T")[0]);
       setReferenceNumber(existingPurchase.reference_number || "");
       setPurchaseStatus(existingPurchase.status || "received");
-      setPaymentMethod(existingPurchase.payment_method || "cash");
-      setPaymentStatus(existingPurchase.payment_status || "unpaid");
       setNotes(existingPurchase.notes || "");
       setOtherCharges(Number(existingPurchase.shipping_cost) || 0);
 
