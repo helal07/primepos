@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
-const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", notes: "", is_active: true };
+const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", credit_limit: "", notes: "", is_active: true };
 
 export default function Customers() {
   const { data: customers, isLoading } = useCustomers();
@@ -32,6 +32,7 @@ export default function Customers() {
       address: form.address || null,
       company: form.company || null,
       tax_number: form.tax_number || null,
+      credit_limit: form.credit_limit === "" ? null : Number(form.credit_limit),
       notes: form.notes || null,
       is_active: form.is_active,
     };
@@ -47,7 +48,9 @@ export default function Customers() {
     setForm({
       name: c.name, phone: c.phone || "", email: c.email || "",
       address: c.address || "", company: c.company || "",
-      tax_number: c.tax_number || "", notes: c.notes || "", is_active: c.is_active,
+      tax_number: c.tax_number || "",
+      credit_limit: c.credit_limit == null ? "" : String(c.credit_limit),
+      notes: c.notes || "", is_active: c.is_active,
     });
     setOpen(true);
   };
@@ -92,6 +95,18 @@ export default function Customers() {
                   <Label>Tax Number</Label>
                   <Input value={form.tax_number} onChange={e => setForm({ ...form, tax_number: e.target.value })} placeholder="TIN / VAT" />
                 </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Credit Limit</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.credit_limit}
+                    onChange={e => setForm({ ...form, credit_limit: e.target.value })}
+                    placeholder="e.g. 50000"
+                  />
+                  <p className="text-xs text-muted-foreground">Keep blank for no limit</p>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
@@ -123,6 +138,7 @@ export default function Customers() {
               <TableHead className="hidden sm:table-cell">Phone</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="text-right hidden sm:table-cell">Balance</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">Credit Limit</TableHead>
               <TableHead className="text-right hidden md:table-cell">Purchases</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -130,9 +146,9 @@ export default function Customers() {
           </TableHeader>
           <TableBody>
             {isLoading ? Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+              <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
             )) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No customers found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No customers found</TableCell></TableRow>
             ) : filtered.map((c: any) => (
               <TableRow key={c.id}>
                 <TableCell>
@@ -142,6 +158,9 @@ export default function Customers() {
                 <TableCell className="hidden sm:table-cell text-muted-foreground">{c.phone || "—"}</TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground">{c.email || "—"}</TableCell>
                 <TableCell className="text-right hidden sm:table-cell font-medium">৳{Number(c.balance).toLocaleString()}</TableCell>
+                <TableCell className="text-right hidden lg:table-cell text-muted-foreground">
+                  {c.credit_limit == null ? "—" : `৳${Number(c.credit_limit).toLocaleString()}`}
+                </TableCell>
                 <TableCell className="text-right hidden md:table-cell">{c.total_purchases}</TableCell>
                 <TableCell>
                   <Badge variant={c.is_active ? "default" : "secondary"}>{c.is_active ? "Active" : "Inactive"}</Badge>

@@ -418,6 +418,7 @@ export type Database = {
           company: string | null
           created_at: string
           created_by: string | null
+          credit_limit: number | null
           email: string | null
           id: string
           is_active: boolean
@@ -435,6 +436,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           created_by?: string | null
+          credit_limit?: number | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -452,6 +454,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           created_by?: string | null
+          credit_limit?: number | null
           email?: string | null
           id?: string
           is_active?: boolean

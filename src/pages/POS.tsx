@@ -224,6 +224,21 @@ export default function POS() {
 
   const handleCompleteWithPayments = async (payments: PaymentRow[], paymentStatus: string) => {
     if (cart.length === 0) return;
+    // Block credit/partial sales for walk-in customers and enforce credit limit
+    const totalPaying = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const dueNow = totalAmount - totalPaying;
+    if (paymentStatus !== "paid" || dueNow > 0.001) {
+      if (!customerId) {
+        toast.error("Walk-in customers cannot have due/credit sales. Select a customer or take full payment.");
+        return;
+      }
+      const cust = (customers ?? []).find((c: any) => c.id === customerId);
+      const limit = cust?.credit_limit;
+      if (limit != null && Number(cust.balance || 0) + dueNow > Number(limit)) {
+        toast.error(`Credit limit exceeded. Limit ৳${Number(limit).toLocaleString()}, current balance ৳${Number(cust.balance || 0).toLocaleString()}.`);
+        return;
+      }
+    }
     const expandedItems: SaleItem[] = [];
     for (const item of cart) {
       if (item.serial_tracking && item.selected_serials?.length) {
@@ -264,6 +279,10 @@ export default function POS() {
 
   const handleCreditSale = async () => {
     if (cart.length === 0) return;
+    if (!customerId) {
+      toast.error("Select a customer to record a credit sale. Walk-in customers must pay in full.");
+      return;
+    }
     await handleCompleteWithPayments([], "unpaid");
   };
 
@@ -552,7 +571,14 @@ export default function POS() {
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => navigate("/sales")}>
           <FileText className="h-3.5 w-3.5" /> Quotation
         </Button>
-        <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleCreditSale} disabled={cart.length === 0 || createSale.isPending}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1 text-xs"
+          onClick={handleCreditSale}
+          disabled={cart.length === 0 || !customerId || createSale.isPending}
+          title={!customerId ? "Select a customer first — walk-in cannot use credit" : undefined}
+        >
           ✓ Credit Sale
         </Button>
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleCardSale} disabled={cart.length === 0 || createSale.isPending}>
