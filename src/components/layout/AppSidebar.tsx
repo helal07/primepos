@@ -92,6 +92,7 @@ const menuGroups = [
       { title: "Products", url: "/products", icon: Package },
       { title: "Categories", url: "/categories", icon: Tags },
       { title: "Brands", url: "/brands", icon: Award },
+      { title: "Price Groups", url: "/products/price-groups", icon: Layers },
       { title: "Units", url: "/units", icon: Ruler },
       { title: "Variations", url: "/variations", icon: Shuffle },
       { title: "Stock Adjustments", url: "/stock-adjustments", icon: ClipboardList },
@@ -138,6 +139,7 @@ const menuGroups = [
     label: "People",
     items: [
       { title: "Customers", url: "/customers", icon: UserCircle },
+      { title: "Customer Groups", url: "/contacts/customer-groups", icon: Users },
       { title: "Suppliers", url: "/suppliers", icon: Building2 },
     ],
   },
