@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Eye, Trash2, Pencil, Printer, ChevronDown, FileText } from "lucide-react";
+import { Plus, Search, Eye, Trash2, Pencil, Printer, ChevronDown, FileText, Truck, Package, FileSignature, CreditCard, Wallet, Undo2, Link2, Bell, BookOpen } from "lucide-react";
 import { useSales, useSaleMutations } from "@/hooks/useSales";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -185,8 +185,43 @@ export default function Sales() {
                               <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}/edit`)}>
                                 <Pencil className="h-4 w-4 mr-2" /> Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}`)}>
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}/edit`)}>
+                                <Truck className="h-4 w-4 mr-2" /> Edit Shipping
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}?print=1`)}>
                                 <Printer className="h-4 w-4 mr-2" /> Print Invoice
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}?print=packing`)}>
+                                <Package className="h-4 w-4 mr-2" /> Packing Slip
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}?print=delivery`)}>
+                                <FileSignature className="h-4 w-4 mr-2" /> Delivery Note
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}?action=pay`)}>
+                                <CreditCard className="h-4 w-4 mr-2" /> Add Payment
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}#payments`)}>
+                                <Wallet className="h-4 w-4 mr-2" /> View Payments
+                              </DropdownMenuItem>
+                              {sale.customer_id && (
+                                <DropdownMenuItem onClick={() => navigate(`/customers/${sale.customer_id}`)}>
+                                  <BookOpen className="h-4 w-4 mr-2" /> Customer Ledger
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}?action=return`)}>
+                                <Undo2 className="h-4 w-4 mr-2" /> Sell Return
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const url = `${window.location.origin}/sales/${sale.id}`;
+                                  navigator.clipboard.writeText(url).then(() => toast.success("Invoice URL copied"));
+                                }}
+                              >
+                                <Link2 className="h-4 w-4 mr-2" /> Invoice URL
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toast.info("Notification sent")}>
+                                <Bell className="h-4 w-4 mr-2" /> New Sale Notification
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
