@@ -445,7 +445,14 @@ function LedgerTable({
                     {r.kind === "payment" && r.parentRef ? `${r.ref} → ${r.parentRef}` : r.ref}
                   </Link>
                 ) : (
-                  <span className="text-muted-foreground">{r.ref}</span>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">{r.ref}</span>
+                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                      {r.kind === "payment"
+                        ? "Standalone payment — no linked invoice"
+                        : "Source record unavailable — link missing"}
+                    </span>
+                  </div>
                 )}
               </TableCell>
               <TableCell className="text-right">{r.debit ? fmt(r.debit) : "—"}</TableCell>
