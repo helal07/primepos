@@ -571,7 +571,14 @@ export default function POS() {
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => navigate("/sales")}>
           <FileText className="h-3.5 w-3.5" /> Quotation
         </Button>
-        <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleCreditSale} disabled={cart.length === 0 || createSale.isPending}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1 text-xs"
+          onClick={handleCreditSale}
+          disabled={cart.length === 0 || !customerId || createSale.isPending}
+          title={!customerId ? "Select a customer first — walk-in cannot use credit" : undefined}
+        >
           ✓ Credit Sale
         </Button>
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleCardSale} disabled={cart.length === 0 || createSale.isPending}>
