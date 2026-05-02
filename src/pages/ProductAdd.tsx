@@ -279,6 +279,51 @@ export default function ProductAdd() {
             </CardContent>
           </Card>
 
+          {/* Selling Price Group Overrides */}
+          {priceGroups && priceGroups.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Price Group Overrides</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Set tier-specific prices. Leave blank to use the default selling price for that group.
+                </p>
+                <div className="space-y-2">
+                  {priceGroups.filter(g => g.is_active).map((g) => {
+                    const row = groupPriceRows[g.id] || { price: "", price_type: "fixed" as const };
+                    return (
+                      <div key={g.id} className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-4 text-sm font-medium">{g.name}</div>
+                        <div className="col-span-4">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="Price / %"
+                            value={row.price}
+                            onChange={(e) => setGroupPriceRows(prev => ({ ...prev, [g.id]: { ...row, price: e.target.value } }))}
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <Select
+                            value={row.price_type}
+                            onValueChange={(v) => setGroupPriceRows(prev => ({ ...prev, [g.id]: { ...row, price_type: v as "fixed" | "percent" } }))}
+                          >
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fixed">Fixed (৳)</SelectItem>
+                              <SelectItem value="percent">Percent (% of base)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Classification */}
           <Card>
             <CardHeader className="pb-3">
