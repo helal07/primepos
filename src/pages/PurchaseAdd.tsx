@@ -570,23 +570,7 @@ export default function PurchaseAdd() {
       {/* Bottom — Payment & Totals */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <Label>Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Paid Amount</Label>
-              <Input type="number" min={0} value={paidAmount} onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)} />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <Label>Discount (৳ or %)</Label>
               <Input value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} placeholder="0 or 10%" />
@@ -599,7 +583,64 @@ export default function PurchaseAdd() {
 
           <Separator className="my-4" />
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+          {/* Inline multi-row payments */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Payments</Label>
+              <span className="text-sm">
+                Status:{" "}
+                <span className={`font-semibold ${computedPaymentStatus === "paid" ? "text-green-600" : computedPaymentStatus === "partial" ? "text-amber-600" : "text-destructive"}`}>
+                  {computedPaymentStatus === "paid" ? "Fully Paid" : computedPaymentStatus === "partial" ? "Partial Payment" : "Credit (Unpaid)"}
+                </span>
+              </span>
+            </div>
+            {paymentRows.map((row, idx) => (
+              <div key={idx} className="flex gap-2 items-end">
+                <div className="w-32">
+                  {idx === 0 && <Label className="text-xs">Amount</Label>}
+                  <Input
+                    type="number"
+                    min={0}
+                    value={row.amount}
+                    onChange={(e) => updatePaymentRow(idx, "amount", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="w-36">
+                  {idx === 0 && <Label className="text-xs">Method</Label>}
+                  <Select value={row.payment_method} onValueChange={(v) => updatePaymentRow(idx, "payment_method", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="bkash">bKash</SelectItem>
+                      <SelectItem value="bank">Bank</SelectItem>
+                      <SelectItem value="cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  {idx === 0 && <Label className="text-xs">Note</Label>}
+                  <Input
+                    value={row.payment_note}
+                    onChange={(e) => updatePaymentRow(idx, "payment_note", e.target.value)}
+                    placeholder="Optional note"
+                  />
+                </div>
+                {paymentRows.length > 1 && (
+                  <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => removePaymentRow(idx)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={addPaymentRow} className="w-full">
+              <Plus className="h-4 w-4 mr-2" /> Add Payment Row
+            </Button>
+          </div>
+
+          <Separator className="my-4" />
+
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
             <div>
               <Label className="text-xs text-muted-foreground">Total Items</Label>
               <div className="text-lg font-bold">{totalItemCount}</div>
@@ -617,9 +658,13 @@ export default function PurchaseAdd() {
               <div className="text-xl font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Due</Label>
-              <div className={`text-xl font-bold ${dueAmount > 0 ? "text-destructive" : "text-green-600"}`}>
-                ৳{dueAmount.toFixed(2)}
+              <Label className="text-xs text-muted-foreground">Paid</Label>
+              <div className="text-xl font-bold text-primary">৳{totalPaying.toFixed(2)}</div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">{changeReturn > 0 ? "Change" : "Due"}</Label>
+              <div className={`text-xl font-bold ${changeReturn > 0 ? "text-green-600" : dueAmount > 0 ? "text-destructive" : "text-green-600"}`}>
+                ৳{(changeReturn > 0 ? changeReturn : dueAmount).toFixed(2)}
               </div>
             </div>
           </div>
@@ -631,23 +676,13 @@ export default function PurchaseAdd() {
             <Button
               size="lg"
               disabled={items.length === 0 || createPurchase.isPending || updatePurchase.isPending || duplicateSerials.size > 0}
-              onClick={() => setShowPaymentDialog(true)}
+              onClick={handleSavePurchase}
             >
-              {isEditMode ? "Update & Pay" : "Save Purchase"}
+              {createPurchase.isPending || updatePurchase.isPending ? "Saving..." : (isEditMode ? "Update Purchase" : "Save Purchase")}
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Payment Dialog */}
-      <PaymentDialog
-        open={showPaymentDialog}
-        onOpenChange={setShowPaymentDialog}
-        totalAmount={grandTotal}
-        onFinalize={handleFinalizePayment}
-        isPending={createPurchase.isPending || updatePurchase.isPending}
-        title={isEditMode ? "Update Payment" : "Purchase Payment"}
-      />
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
