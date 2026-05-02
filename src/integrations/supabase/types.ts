@@ -411,6 +411,50 @@ export type Database = {
           },
         ]
       }
+      customer_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          selling_price_group_id: string | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          selling_price_group_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          selling_price_group_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_groups_selling_price_group_id_fkey"
+            columns: ["selling_price_group_id"]
+            isOneToOne: false
+            referencedRelation: "selling_price_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -419,6 +463,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit_limit: number | null
+          customer_group_id: string | null
           email: string | null
           id: string
           is_active: boolean
@@ -437,6 +482,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_limit?: number | null
+          customer_group_id?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -455,6 +501,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_limit?: number | null
+          customer_group_id?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -467,6 +514,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "customers_customer_group_id_fkey"
+            columns: ["customer_group_id"]
+            isOneToOne: false
+            referencedRelation: "customer_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customers_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1075,6 +1129,64 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_group_prices: {
+        Row: {
+          created_at: string
+          id: string
+          price: number
+          price_type: string
+          product_id: string
+          selling_price_group_id: string
+          tenant_id: string | null
+          updated_at: string
+          variation_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price?: number
+          price_type?: string
+          product_id: string
+          selling_price_group_id: string
+          tenant_id?: string | null
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price?: number
+          price_type?: string
+          product_id?: string
+          selling_price_group_id?: string
+          tenant_id?: string | null
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_group_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_group_prices_selling_price_group_id_fkey"
+            columns: ["selling_price_group_id"]
+            isOneToOne: false
+            referencedRelation: "selling_price_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_group_prices_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
             referencedColumns: ["id"]
           },
         ]
@@ -1957,6 +2069,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      selling_price_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       stock_adjustments: {
         Row: {
