@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useCustomers, useCustomerMutations } from "@/hooks/useContacts";
+import { useCustomerGroups } from "@/hooks/usePriceGroups";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +14,12 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 
-const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", credit_limit: "", notes: "", is_active: true };
+const NONE = "__none__";
+const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", credit_limit: "", customer_group_id: NONE, notes: "", is_active: true };
 
 export default function Customers() {
   const { data: customers, isLoading } = useCustomers();
+  const { data: customerGroups } = useCustomerGroups();
   const { create, update, remove } = useCustomerMutations();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -33,6 +37,7 @@ export default function Customers() {
       company: form.company || null,
       tax_number: form.tax_number || null,
       credit_limit: form.credit_limit === "" ? null : Number(form.credit_limit),
+      customer_group_id: form.customer_group_id === NONE ? null : form.customer_group_id,
       notes: form.notes || null,
       is_active: form.is_active,
     };
@@ -50,6 +55,7 @@ export default function Customers() {
       address: c.address || "", company: c.company || "",
       tax_number: c.tax_number || "",
       credit_limit: c.credit_limit == null ? "" : String(c.credit_limit),
+      customer_group_id: c.customer_group_id || NONE,
       notes: c.notes || "", is_active: c.is_active,
     });
     setOpen(true);
@@ -106,6 +112,19 @@ export default function Customers() {
                     placeholder="e.g. 50000"
                   />
                   <p className="text-xs text-muted-foreground">Keep blank for no limit</p>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Customer Group</Label>
+                  <Select value={form.customer_group_id} onValueChange={v => setForm({ ...form, customer_group_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>None (default price)</SelectItem>
+                      {customerGroups?.filter(g => g.is_active).map(g => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Determines which selling price tier applies at POS / Sale.</p>
                 </div>
               </div>
               <div className="space-y-2">
