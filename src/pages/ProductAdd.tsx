@@ -154,10 +154,33 @@ export default function ProductAdd() {
     };
 
     if (editId) {
-      update.mutate({ id: editId, ...payload }, { onSuccess: () => navigate("/products") });
+      update.mutate({ id: editId, ...payload }, {
+        onSuccess: async () => {
+          await saveGroupPrices(editId);
+          navigate("/products");
+        },
+      });
     } else {
-      create.mutate(payload, { onSuccess: () => navigate("/products") });
+      create.mutate(payload, {
+        onSuccess: async (created: any) => {
+          if (created?.id) await saveGroupPrices(created.id);
+          navigate("/products");
+        },
+      });
     }
+  };
+
+  const saveGroupPrices = async (productId: string) => {
+    const rows = Object.entries(groupPriceRows)
+      .filter(([, v]) => v.price !== "" && !isNaN(parseFloat(v.price)))
+      .map(([groupId, v]) => ({
+        product_id: productId,
+        variation_id: null,
+        selling_price_group_id: groupId,
+        price: parseFloat(v.price),
+        price_type: v.price_type,
+      }));
+    if (rows.length) await groupPriceMutations.upsert.mutateAsync(rows);
   };
 
   const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
