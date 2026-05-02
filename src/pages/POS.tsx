@@ -399,6 +399,22 @@ export default function POS() {
                   />
                 </PopoverContent>
               </Popover>
+              {priceGroups && priceGroups.filter(g => g.is_active).length > 0 && (
+                <Select
+                  value={activePriceGroupId ?? "default"}
+                  onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
+                >
+                  <SelectTrigger className="h-7 w-[160px] text-xs">
+                    <SelectValue placeholder="Default Pricing" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default Pricing</SelectItem>
+                    {priceGroups.filter(g => g.is_active).map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
 
