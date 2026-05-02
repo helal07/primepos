@@ -301,19 +301,39 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
                     <TableHead>Method</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Note</TableHead>
+                    <TableHead>{isCustomer ? "Invoice" : "Purchase"}</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(paymentsQ.data ?? []).length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No payments</TableCell></TableRow>
-                  ) : (paymentsQ.data ?? []).map((p: any) => (
-                    <TableRow key={p.id}>
-                      <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell>{p.payment_method}</TableCell>
-                      <TableCell className="text-right font-medium">{fmt(p.amount)}</TableCell>
-                      <TableCell className="text-muted-foreground">{p.payment_note || "—"}</TableCell>
-                    </TableRow>
-                  ))}
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payments</TableCell></TableRow>
+                  ) : (paymentsQ.data ?? []).map((p: any) => {
+                    const parentId = p[isCustomer ? "sale_id" : "purchase_id"];
+                    const parent = (txQ.data ?? []).find((t: any) => t.id === parentId);
+                    const ref = parent ? parent[txInvoiceCol] : "—";
+                    const base = isCustomer ? "/sales" : "/purchases";
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>{p.payment_method}</TableCell>
+                        <TableCell className="text-right font-medium">{fmt(p.amount)}</TableCell>
+                        <TableCell className="text-muted-foreground">{p.payment_note || "—"}</TableCell>
+                        <TableCell>
+                          {parentId ? (
+                            <Link to={`${base}/${parentId}`} className="text-primary hover:underline">{ref}</Link>
+                          ) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {parentId && (
+                            <Link to={`${base}/${parentId}`}>
+                              <Button variant="ghost" size="sm">View</Button>
+                            </Link>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
