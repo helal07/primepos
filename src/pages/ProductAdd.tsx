@@ -47,6 +47,20 @@ export default function ProductAdd() {
   const { toast } = useToast();
   const { data: variations } = useVariations(editId);
   const varMutations = useVariationMutations();
+  const { data: priceGroups } = useSellingPriceGroups();
+  const { data: productGroupPrices } = useProductGroupPrices(editId);
+  const groupPriceMutations = useProductGroupPriceMutations();
+  const [groupPriceRows, setGroupPriceRows] = useState<Record<string, { price: string; price_type: "fixed" | "percent" }>>({});
+
+  useEffect(() => {
+    if (!productGroupPrices) return;
+    const map: Record<string, { price: string; price_type: "fixed" | "percent" }> = {};
+    for (const r of productGroupPrices) {
+      if (r.variation_id) continue; // base product overrides only here
+      map[r.selling_price_group_id] = { price: String(r.price), price_type: r.price_type };
+    }
+    setGroupPriceRows(map);
+  }, [productGroupPrices]);
 
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
