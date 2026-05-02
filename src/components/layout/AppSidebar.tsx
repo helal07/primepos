@@ -108,6 +108,7 @@ const menuGroups = [
     items: [
       { title: "POS", url: "/pos", icon: MonitorSmartphone },
       { title: "Sales List", url: "/sales", icon: ListOrdered },
+      { title: "Sales Orders", url: "/sales/orders", icon: ClipboardList },
       { title: "Invoices", url: "/invoices", icon: FileText },
       { title: "Drafts", url: "/sales/drafts", icon: FilePenLine },
       { title: "Quotations", url: "/quotations", icon: FileQuestion },
