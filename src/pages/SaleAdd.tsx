@@ -133,7 +133,8 @@ export default function SaleAdd() {
           : i
       ));
     } else {
-      const price = Number(product.selling_price);
+      const base = Number(product.selling_price);
+      const price = resolvePrice(product, null, base, activePriceGroupId, groupPriceMap || {});
       const tax = Number(product.tax_percent);
       setItems([...items, {
         product_id: product.id, product_name: product.name,
