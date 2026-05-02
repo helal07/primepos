@@ -98,11 +98,11 @@ export default function Sales({
   return (
     <div className="space-y-4">
       <PageHeader
-        title="All Sales"
-        description="View and manage all sales transactions"
+        title={title}
+        description={description}
         actions={
-          <Button onClick={() => navigate("/sales/add")}>
-            <Plus className="h-4 w-4 mr-1" /> Add Sale
+          <Button onClick={() => navigate(addPath)}>
+            <Plus className="h-4 w-4 mr-1" /> {addLabel}
           </Button>
         }
       />
