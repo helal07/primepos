@@ -213,6 +213,11 @@ export default function Sales({
                               <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}/edit`)}>
                                 <Pencil className="h-4 w-4 mr-2" /> Edit
                               </DropdownMenuItem>
+                              {(sale.status === "draft" || sale.status === "order" || sale.status === "quotation") && (
+                                <DropdownMenuItem onClick={() => updateSaleStatus.mutate({ id: sale.id, status: "completed" })}>
+                                  <ArrowRightLeft className="h-4 w-4 mr-2" /> Convert to Sale
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}/edit`)}>
                                 <Truck className="h-4 w-4 mr-2" /> Edit Shipping
                               </DropdownMenuItem>
