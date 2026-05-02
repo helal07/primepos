@@ -26,6 +26,7 @@ export default function SaleAdd() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const isEditMode = !!editId;
+  const presetStatus = searchParams.get("status"); // "order" | "quotation" | null
 
   const { data: products } = useProducts();
   const { data: categories } = useCategories();
