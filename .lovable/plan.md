@@ -1,68 +1,81 @@
-# IMEI Uniqueness, IMEI Search in POS, and Changeable Sale Date
+# Customer Credit Limit + Credit Sale Restriction
 
-## 3 Changes
+## 1. Database
 
-### 1. IMEI/Serial Uniqueness Enforcement (Database Level)
+Add `credit_limit` column to `customers`:
 
-**Problem**: Same IMEI/serial can be entered multiple times across purchases or sales — no uniqueness check exists.
-
-**Solution**: Add validation at the app level before saving. Before inserting purchase_items or sale_items with a serial_number, query the respective table to check if that serial already exists. Show an error toast and block the save if duplicate found.
-
-**Files**:
-
-- `src/pages/POS.tsx` — validate in `addSerialToCart` and `handleCompleteWithPayments`: check serial not already in `sale_items` or `purchase_items` DB tables
-- `src/pages/SaleAdd.tsx` — same validation before save
-- `src/pages/PurchaseAdd.tsx` — validate in `addSerialToItem`: check serial not already in `purchase_items` DB table
-- `src/hooks/useAvailableSerials.ts` — already filters sold serials, no change needed
-
-**Validation logic** (reusable helper or inline):
-
-```typescript
-// Check if serial exists in purchase_items
-const { data } = await supabase.from("purchase_items")
-  .select("id").eq("serial_number", serial).maybeSingle();
-if (data) { toast.error("IMEI already exists in purchases"); return; }
-
-// Check if serial exists in sale_items  
-const { data: sold } = await supabase.from("sale_items")
-  .select("id").eq("serial_number", serial).maybeSingle();
-if (sold) { toast.error("IMEI already sold"); return; }
+```sql
+ALTER TABLE public.customers
+ADD COLUMN credit_limit numeric NULL;
+-- NULL = no limit (matches "Keep blank for no limit")
 ```
 
-### 2. IMEI Searchable in POS Product Search & Barcode Scanner
+No RLS changes — existing policies cover the new column.
 
-**Problem**: POS search only matches product name, SKU, and barcode — not IMEI/serial numbers stored in `purchase_items`.
+## 2. Customer Add/Edit form (`src/pages/Customers.tsx`)
 
-**Solution**: Extend the POS search and barcode scan logic to also search `purchase_items.serial_number`. If an IMEI match is found, identify the product and auto-add it to cart with that serial pre-selected.
+- Add `credit_limit: ""` to `defaultForm`.
+- Render a new field in the Add/Edit dialog grid: **Credit Limit** — numeric input with helper text "Keep blank for no limit".
+- Map blank → `null`, otherwise `Number(value)` in `handleSubmit` payload.
+- In `handleEdit`, hydrate `credit_limit` from the row (`""` if null).
+- Add a **Credit Limit** column in the customer table (right-aligned, hidden on small screens). Show `—` when null, otherwise `৳{value}`.
 
-If Same Product multiple IMEI then no new row should be added only increase quentiy 
+Update `useContacts.ts` types/hook payload to include `credit_limit` (the hook spreads payload, so just widen the type if one exists; otherwise no change needed).
 
-# 3. On success sale auto generate invoice and force to print.
+## 3. Block credit sale without contact info
 
-## **Files**:
+Walk-in (no `customer_id`) must NOT be allowed to do a credit/partial sale. Enforce in three places:
 
-- `src/pages/POS.tsx`:
-  - `filteredProducts` memo: add a secondary search path — if no product matches by name/SKU/barcode, query available serials
-  - `handleBarcodeScan`: after product lookup fails, check if scanned code matches any available serial in `purchase_items` (not yet sold via `sale_items`), find the parent product, and call `addSerialToCart(productId, serial)`
-  - Add a new async search effect or debounced lookup for IMEI in the search bar
+### a) POS (`src/pages/POS.tsx`)
 
-### 3. Changeable Sale Date in POS Screen
+In `handleCreditSale`:
 
-**Problem**: POS date is hardcoded to `new Date()` and not editable. Invoice date should follow the selected date.
+```ts
+if (!customerId) {
+  toast.error("Select a customer to record a credit sale. Walk-in customers must pay in full.");
+  return;
+}
+```
 
-**Solution**: Add a date state variable and a date picker input near the existing date display. The selected date flows into the `createSale` call as `sale_date`.
+Also gate the **Credit Sale** button: `disabled={cart.length === 0 || !customerId}` and add a tooltip/title "Select a customer first".
 
-**Files**:
+In `handleCompleteWithPayments`, when `paymentStatus !== "paid"` and `customerId` is set, check the selected customer's outstanding balance + this sale's due against `credit_limit`:
 
-- `src/pages/POS.tsx`:
-  - Replace `const now = new Date()` with `const [saleDate, setSaleDate] = useState(new Date())`
-  - Add a date input or Popover+Calendar next to the date/time display in the header area
-  - Pass `sale_date: saleDate.toISOString().split("T")[0]` in the `createSale.mutateAsync` call
+```ts
+const dueNow = totalAmount - totalPaying;
+if (dueNow > 0) {
+  if (!customerId) { /* same toast as above */ return; }
+  const cust = customers.find(c => c.id === customerId);
+  const limit = cust?.credit_limit;
+  if (limit != null && Number(cust.balance) + dueNow > Number(limit)) {
+    toast.error(`Credit limit exceeded. Limit ৳${limit}, current balance ৳${cust.balance}.`);
+    return;
+  }
+}
+```
 
----
+Apply the same gate inside the multi-payment finalize path triggered from PaymentDialog.
 
-## Implementation Order
+### b) Sale Add (`src/pages/SaleAdd.tsx`)
 
-1. Add changeable date picker to POS (simplest, isolated)
-2. Add IMEI search to POS search bar and barcode scanner
-3. Add IMEI uniqueness validation across POS, SaleAdd, and PurchaseAdd
+Mirror the same checks in `handleCreditSale` and in the multi-payment finalize handler. Disable the Credit Sale button when no customer is selected.
+
+### c) Customer dropdown UX
+
+Next to **Walk-in Customer** option in both POS and SaleAdd, leave label as-is but the disabled credit button + toast communicates the restriction. No further UI change needed.
+
+**Customer Group** is needed some time because sometimes a base of customer get extra discount like 5% for inside location customers 10% automaticly get daily customers. search the documentation [https://ultimatefosters.com/docs/ultimatepos/products/selling-price-groups-sell-in-different-prices-wholesale-retail-or-for-different-prices-for-different-locations/](https://ultimatefosters.com/docs/ultimatepos/products/selling-price-groups-sell-in-different-prices-wholesale-retail-or-for-different-prices-for-different-locations/)
+
+and make like that
+
+
+
+&nbsp;
+
+## Files
+
+- New migration adding `credit_limit` to `customers`
+- `src/pages/Customers.tsx` — add field, table column
+- `src/hooks/useContacts.ts` — widen payload type if needed
+- `src/pages/POS.tsx` — block walk-in credit + enforce limit
+- `src/pages/SaleAdd.tsx` — same enforcement
