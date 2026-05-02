@@ -161,12 +161,7 @@ export default function ProductAdd() {
         },
       });
     } else {
-      create.mutate(payload, {
-        onSuccess: async (created: any) => {
-          if (created?.id) await saveGroupPrices(created.id);
-          navigate("/products");
-        },
-      });
+      create.mutate(payload, { onSuccess: () => navigate("/products") });
     }
   };
 
