@@ -274,8 +274,8 @@ export default function ProductAdd() {
             </CardContent>
           </Card>
 
-          {/* Selling Price Group Overrides */}
-          {priceGroups && priceGroups.length > 0 && (
+          {/* Selling Price Group Overrides — edit mode only */}
+          {editId && priceGroups && priceGroups.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Price Group Overrides</CardTitle>
