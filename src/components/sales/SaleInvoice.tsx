@@ -30,14 +30,62 @@ const numberToWords = (num: number): string => {
   return result + " Only";
 };
 
+// Merge sale items that share the same product/variation/unit_price/discount.
+// Quantities are summed, totals are summed, and serial numbers (IMEIs) are
+// collected into an array so they can be listed inside the same row.
+function mergeItems(items: any[]) {
+  const map = new Map<string, any>();
+  for (const it of items) {
+    const key = [
+      it.product_id,
+      it.variation_id ?? "",
+      Number(it.unit_price),
+      Number(it.discount ?? 0),
+    ].join("|");
+    const existing = map.get(key);
+    const serial = it.serial_number ? String(it.serial_number).trim() : "";
+    if (existing) {
+      existing.quantity = Number(existing.quantity) + Number(it.quantity);
+      existing.total = Number(existing.total ?? 0) + Number(it.total ?? 0);
+      if (serial) existing.serials.push(serial);
+    } else {
+      map.set(key, {
+        ...it,
+        quantity: Number(it.quantity),
+        total: Number(it.total ?? 0),
+        serials: serial ? [serial] : [],
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
 export function SaleInvoice({ sale, items, settings, onPrint }: SaleInvoiceProps) {
   const businessName = settings?.business_name || "Business Name";
   const businessAddress = settings?.business_address || "";
   const businessPhone = settings?.business_phone || "";
   const businessEmail = settings?.business_email || "";
+  const businessLogo = settings?.business_logo || settings?.logo_url || "";
   const terms = settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
+  const total = Number(sale.total_amount) || 0;
+  // Sales schema doesn't have a paid_amount column — derive it.
+  const paid =
+    sale.paid_amount != null
+      ? Number(sale.paid_amount)
+      : sale.payment_status === "paid"
+      ? total
+      : sale.payment_status === "partial"
+      ? Math.max(0, total - (Number(sale.due_amount) || 0))
+      : 0;
+  const balance = Math.max(0, total - paid);
+
+  const merged = mergeItems(items);
+  const totalQty = merged.reduce((s, r) => s + Number(r.quantity || 0), 0);
+
+  const ACCENT = "#8b7cf6"; // soft purple, matches reference
+  const BAND_BG = "#efeaff";
 
   return (
     <div className="p-6">
@@ -46,120 +94,155 @@ export function SaleInvoice({ sale, items, settings, onPrint }: SaleInvoiceProps
       </div>
 
       <div id="invoice-print-area">
-        {/* Header */}
-        <div className="text-center mb-4" style={{ borderBottom: "3px solid #333", paddingBottom: "12px" }}>
-          <h1 style={{ fontSize: "24px", fontWeight: "bold", margin: 0 }}>{businessName}</h1>
-          {businessAddress && <p style={{ fontSize: "13px", color: "#666", margin: "2px 0" }}>{businessAddress}</p>}
-          <p style={{ fontSize: "12px", color: "#666", margin: "2px 0" }}>
-            {businessPhone && `Phone: ${businessPhone}`}{businessPhone && businessEmail && " | "}{businessEmail && `Email: ${businessEmail}`}
-          </p>
-        </div>
-
-        {/* Invoice Title */}
-        <div className="text-center mb-4">
-          <h2 style={{ fontSize: "20px", fontWeight: "bold", letterSpacing: "2px", margin: 0 }}>INVOICE</h2>
-        </div>
-
-        {/* Invoice Info & Customer */}
-        <div className="grid-2 mb-4" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+        {/* Header: logo left, business right */}
+        <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: "16px", alignItems: "center", marginBottom: "8px" }}>
           <div>
-            <h2 style={{ fontSize: "12px", fontWeight: "bold", color: "#666", marginBottom: "4px" }}>BILL TO</h2>
-            <p style={{ fontWeight: "bold", margin: "2px 0" }}>{sale.customers?.name || "Walk-in Customer"}</p>
-            {sale.customers?.phone && <p style={{ fontSize: "12px", margin: "2px 0" }}>Phone: {sale.customers.phone}</p>}
-            {sale.customers?.address && <p style={{ fontSize: "12px", margin: "2px 0" }}>{sale.customers.address}</p>}
-            {sale.customers?.email && <p style={{ fontSize: "12px", margin: "2px 0" }}>{sale.customers.email}</p>}
+            {businessLogo ? (
+              <img src={businessLogo} alt={businessName} style={{ maxWidth: "70px", maxHeight: "70px", objectFit: "contain" }} />
+            ) : (
+              <div style={{ width: "70px", height: "70px", border: `2px solid ${ACCENT}`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT, fontWeight: "bold", fontSize: "11px" }}>
+                LOGO
+              </div>
+            )}
           </div>
           <div style={{ textAlign: "right" }}>
-            <p style={{ margin: "2px 0", fontSize: "13px" }}><strong>Invoice No:</strong> {sale.invoice_number}</p>
-            <p style={{ margin: "2px 0", fontSize: "13px" }}><strong>Date:</strong> {saleDate.toLocaleDateString()}</p>
-            <p style={{ margin: "2px 0", fontSize: "13px" }}><strong>Time:</strong> {saleDate.toLocaleTimeString()}</p>
-            <p style={{ margin: "2px 0", fontSize: "13px" }}><strong>Payment:</strong> {sale.payment_method || "Cash"}</p>
-            <p style={{ margin: "2px 0", fontSize: "13px" }}><strong>Status:</strong> {sale.payment_status}</p>
+            <h1 style={{ fontSize: "22px", fontWeight: "bold", margin: 0, color: "#1f2937" }}>{businessName}</h1>
+            {businessAddress && <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>{businessAddress}</p>}
+            <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>
+              {businessPhone && <>Phone no.: {businessPhone}</>}
+              {businessPhone && businessEmail && " "}
+              {businessEmail && <>Email: {businessEmail}</>}
+            </p>
+          </div>
+        </div>
+
+        {/* Invoice band */}
+        <div style={{ background: BAND_BG, color: ACCENT, textAlign: "center", padding: "6px 0", fontStyle: "italic", fontWeight: 600, letterSpacing: "1px", margin: "10px 0" }}>
+          Invoice
+        </div>
+
+        {/* Bill To & Invoice Details */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "12px" }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: "12px", color: "#374151", borderBottom: `1px solid ${ACCENT}`, paddingBottom: "2px", marginBottom: "4px" }}>Bill To</div>
+            <p style={{ fontWeight: "bold", margin: "2px 0", fontSize: "13px" }}>{sale.customers?.name || "Walk-in Customer"}</p>
+            {sale.customers?.address && <p style={{ fontSize: "12px", margin: "2px 0" }}>{sale.customers.address}</p>}
+            {sale.customers?.phone && <p style={{ fontSize: "12px", margin: "2px 0" }}>Contact No.: {sale.customers.phone}</p>}
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontWeight: 600, fontSize: "12px", color: "#374151", borderBottom: `1px solid ${ACCENT}`, paddingBottom: "2px", marginBottom: "4px" }}>Invoice Details</div>
+            <p style={{ margin: "2px 0", fontSize: "12px" }}>Invoice No.: {sale.invoice_number}</p>
+            <p style={{ margin: "2px 0", fontSize: "12px" }}>Date: {saleDate.toLocaleDateString()}</p>
+            <p style={{ margin: "2px 0", fontSize: "12px" }}>Time: {saleDate.toLocaleTimeString()}</p>
           </div>
         </div>
 
         {/* Items Table */}
-        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px", fontSize: "12px" }}>
           <thead>
-            <tr style={{ background: "#f3f4f6" }}>
-              <th style={{ padding: "8px", textAlign: "left", borderBottom: "2px solid #d1d5db", fontSize: "12px" }}>#</th>
-              <th style={{ padding: "8px", textAlign: "left", borderBottom: "2px solid #d1d5db", fontSize: "12px" }}>Item Description</th>
-              <th style={{ padding: "8px", textAlign: "center", borderBottom: "2px solid #d1d5db", fontSize: "12px" }}>Qty</th>
-              <th style={{ padding: "8px", textAlign: "right", borderBottom: "2px solid #d1d5db", fontSize: "12px" }}>Price/Unit</th>
-              <th style={{ padding: "8px", textAlign: "right", borderBottom: "2px solid #d1d5db", fontSize: "12px" }}>Disc%</th>
-              <th style={{ padding: "8px", textAlign: "right", borderBottom: "2px solid #d1d5db", fontSize: "12px" }}>Amount</th>
+            <tr style={{ background: ACCENT, color: "#fff" }}>
+              <th style={{ padding: "8px", textAlign: "center", width: "32px" }}>#</th>
+              <th style={{ padding: "8px", textAlign: "left" }}>Item name</th>
+              <th style={{ padding: "8px", textAlign: "left" }}>Item Code</th>
+              <th style={{ padding: "8px", textAlign: "center" }}>Quantity</th>
+              <th style={{ padding: "8px", textAlign: "center" }}>Unit</th>
+              <th style={{ padding: "8px", textAlign: "right" }}>Price/ Unit</th>
+              <th style={{ padding: "8px", textAlign: "right" }}>Amount</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item: any, idx: number) => {
-              const afterDiscount = Number(item.unit_price) * Number(item.quantity) * (1 - Number(item.discount) / 100);
+            {merged.map((item: any, idx: number) => {
+              const lineTotal = Number(item.unit_price) * Number(item.quantity) * (1 - Number(item.discount ?? 0) / 100);
               return (
-                <tr key={item.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                  <td style={{ padding: "8px", fontSize: "12px" }}>{idx + 1}</td>
-                  <td style={{ padding: "8px", fontSize: "12px" }}>
-                    <strong>{item.products?.name || "—"}</strong>
-                    {item.serial_number && (
-                      <div style={{ fontSize: "11px", color: "#666" }}>S/N: {item.serial_number}</div>
-                    )}
-                    {item.product_variations?.name && (
-                      <div style={{ fontSize: "11px", color: "#666" }}>Variant: {item.product_variations.name}</div>
+                <tr key={idx} style={{ borderBottom: "1px solid #e5e7eb", verticalAlign: "top" }}>
+                  <td style={{ padding: "8px", textAlign: "center" }}>{idx + 1}</td>
+                  <td style={{ padding: "8px" }}>
+                    <div style={{ fontWeight: "bold" }}>
+                      {item.products?.name || "—"}
+                      {item.product_variations?.name ? ` (${item.product_variations.name})` : ""}
+                    </div>
+                    {item.serials.length > 0 && (
+                      <div style={{ fontSize: "11px", color: "#4b5563", marginTop: "2px" }}>
+                        Serial no.:{" "}
+                        {item.serials.join(", ")}
+                      </div>
                     )}
                   </td>
-                  <td style={{ padding: "8px", textAlign: "center", fontSize: "12px" }}>{item.quantity}</td>
-                  <td style={{ padding: "8px", textAlign: "right", fontSize: "12px" }}>৳{Number(item.unit_price).toLocaleString()}</td>
-                  <td style={{ padding: "8px", textAlign: "right", fontSize: "12px" }}>{item.discount}%</td>
-                  <td style={{ padding: "8px", textAlign: "right", fontSize: "12px", fontWeight: "bold" }}>৳{afterDiscount.toFixed(2)}</td>
+                  <td style={{ padding: "8px" }}>{item.products?.sku || item.products?.barcode || "-"}</td>
+                  <td style={{ padding: "8px", textAlign: "center" }}>{item.quantity}</td>
+                  <td style={{ padding: "8px", textAlign: "center" }}>Pcs</td>
+                  <td style={{ padding: "8px", textAlign: "right" }}>৳ {Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: "8px", textAlign: "right", fontWeight: "bold" }}>৳ {lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               );
             })}
+            <tr style={{ background: "#f9fafb", fontWeight: "bold" }}>
+              <td style={{ padding: "8px" }}></td>
+              <td style={{ padding: "8px" }}>Total</td>
+              <td style={{ padding: "8px" }}></td>
+              <td style={{ padding: "8px", textAlign: "center" }}>{totalQty}</td>
+              <td style={{ padding: "8px" }}></td>
+              <td style={{ padding: "8px" }}></td>
+              <td style={{ padding: "8px", textAlign: "right" }}>৳ {Number(sale.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            </tr>
           </tbody>
         </table>
 
-        {/* Totals */}
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <div style={{ width: "280px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "13px" }}>
-              <span>Sub Total</span><span>৳{Number(sale.subtotal).toLocaleString()}</span>
-            </div>
-            {Number(sale.discount_amount) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "13px", color: "#dc2626" }}>
-                <span>Discount</span><span>-৳{Number(sale.discount_amount).toLocaleString()}</span>
-              </div>
-            )}
-            {Number(sale.tax_amount) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "13px" }}>
-                <span>Tax</span><span>+৳{Number(sale.tax_amount).toLocaleString()}</span>
-              </div>
-            )}
-            {Number(sale.shipping_cost) > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "13px" }}>
-                <span>Shipping</span><span>+৳{Number(sale.shipping_cost).toLocaleString()}</span>
-              </div>
-            )}
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: "16px", fontWeight: "bold", borderTop: "2px solid #333", marginTop: "4px" }}>
-              <span>Grand Total</span><span>৳{Number(sale.total_amount).toLocaleString()}</span>
+        {/* Words band + Amounts band side-by-side headers */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "8px" }}>
+          <div>
+            <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Invoice Amount In Words:</div>
+            <div style={{ background: BAND_BG, padding: "8px 10px", fontSize: "12px", minHeight: "40px" }}>
+              {numberToWords(total)}
             </div>
           </div>
-        </div>
-
-        {/* Amount in Words */}
-        <div style={{ background: "#f9fafb", padding: "8px 12px", margin: "16px 0", borderRadius: "4px", fontSize: "12px" }}>
-          <strong>In Words:</strong> {numberToWords(Number(sale.total_amount))}
+          <div>
+            <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Amounts</div>
+            <div style={{ padding: "0", fontSize: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
+                <span>Sub Total</span><span>৳ {Number(sale.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              {Number(sale.discount_amount) > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb", color: "#dc2626" }}>
+                  <span>Discount</span><span>- ৳ {Number(sale.discount_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {Number(sale.tax_amount) > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
+                  <span>Tax</span><span>৳ {Number(sale.tax_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              {Number(sale.shipping_cost) > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
+                  <span>Shipping</span><span>৳ {Number(sale.shipping_cost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid #e5e7eb", fontWeight: "bold" }}>
+                <span>Total</span><span>৳ {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
+                <span>Received</span><span>৳ {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold" }}>
+                <span>Balance</span><span>৳ {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Terms */}
-        <div style={{ marginTop: "24px", fontSize: "11px", color: "#666" }}>
-          <strong>Terms & Conditions:</strong>
-          <p style={{ margin: "4px 0" }}>{terms}</p>
+        <div style={{ marginTop: "12px" }}>
+          <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Terms and conditions</div>
+          <div style={{ padding: "8px 10px", fontSize: "11px", color: "#374151", whiteSpace: "pre-wrap" }}>
+            {terms}
+          </div>
         </div>
 
         {/* Signature */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "40px", marginTop: "48px" }}>
-          <div style={{ borderTop: "1px solid #333", paddingTop: "8px", textAlign: "center", fontSize: "12px" }}>
-            Customer Signature
-          </div>
-          <div style={{ borderTop: "1px solid #333", paddingTop: "8px", textAlign: "center", fontSize: "12px" }}>
-            Authorized Signatory
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "40px" }}>
+          <div style={{ textAlign: "center", minWidth: "220px" }}>
+            <div style={{ fontSize: "12px", marginBottom: "48px" }}>For, {businessName}</div>
+            <div style={{ borderTop: "1px solid #333", paddingTop: "4px", fontSize: "12px" }}>Authorized Signatory</div>
           </div>
         </div>
       </div>
