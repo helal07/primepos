@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Save, X } from "lucide-react";
+import { checkImeiUniqueness } from "@/hooks/useImeiValidation";
 
 export default function ExchangePurchaseAdd() {
   const navigate = useNavigate();
@@ -59,6 +60,10 @@ export default function ExchangePurchaseAdd() {
     if (!form.seller_name.trim() || !form.product_name.trim() || form.purchase_price <= 0) {
       toast.error("Seller name, device and price are required");
       return;
+    }
+    if (form.imei.trim()) {
+      const ok = await checkImeiUniqueness(form.imei.trim());
+      if (!ok) return;
     }
     setSaving(true);
     try {

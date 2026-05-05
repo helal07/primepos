@@ -232,6 +232,12 @@ export default function POS() {
   const addSerialToCart = (productId: string, serial: string) => {
     const product = (products as any[])?.find((p: any) => p.id === productId);
     if (!product) return;
+    // Prevent adding the same IMEI/serial twice across the entire cart
+    const dup = cart.some((i) => (i.selected_serials || []).includes(serial));
+    if (dup) {
+      toast.warning(`IMEI ${serial} is already in this sale`);
+      return;
+    }
     setCart((prev) => {
       const exists = prev.find((i) => i.product_id === productId && i.serial_tracking);
       if (exists) {
