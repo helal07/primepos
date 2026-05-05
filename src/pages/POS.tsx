@@ -641,8 +641,8 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <div className="h-14 border-t bg-card flex items-center px-3 gap-2 shrink-0">
+      {/* Bottom Action Bar — hidden on mobile (replaced by FAB + sheet) */}
+      <div className="hidden md:flex h-14 border-t bg-card items-center px-3 gap-2 shrink-0">
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => navigate("/sales")}>
           <FileText className="h-3.5 w-3.5" /> Quotation
         </Button>
