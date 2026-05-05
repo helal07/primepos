@@ -15,6 +15,16 @@ export function useAvailableSerials(productId: string | null) {
         .neq("serial_number", "");
       if (pErr) throw pErr;
 
+      // Get IMEIs from exchange_purchases linked to this product (used phones)
+      const { data: exchanged, error: eErr } = await supabase
+        .from("exchange_purchases")
+        .select("imei")
+        .eq("linked_product_id", productId!)
+        .eq("status", "in_stock")
+        .not("imei", "is", null)
+        .neq("imei", "");
+      if (eErr) throw eErr;
+
       // Get all serial numbers already sold
       const { data: sold, error: sErr } = await supabase
         .from("sale_items")
@@ -25,9 +35,12 @@ export function useAvailableSerials(productId: string | null) {
       if (sErr) throw sErr;
 
       const soldSet = new Set((sold || []).map((s) => s.serial_number));
-      return (purchased || [])
-        .map((p) => p.serial_number!)
-        .filter((sn) => !soldSet.has(sn));
+      const all = [
+        ...(purchased || []).map((p) => p.serial_number!),
+        ...(exchanged || []).map((e: any) => e.imei as string),
+      ].filter(Boolean);
+      // dedupe and exclude sold
+      return Array.from(new Set(all)).filter((sn) => !soldSet.has(sn));
     },
   });
 }
