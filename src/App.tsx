@@ -48,6 +48,13 @@ import LeaveManagement from "./pages/LeaveManagement";
 import PayrollPage from "./pages/Payroll";
 import WarrantyClaims from "./pages/WarrantyClaims";
 import CmsPages from "./pages/CmsPages";
+import Exchange from "./pages/Exchange";
+import ExchangePurchases from "./pages/ExchangePurchases";
+import ExchangePurchaseAdd from "./pages/ExchangePurchaseAdd";
+import ExchangePurchaseView from "./pages/ExchangePurchaseView";
+import ExchangeAgreement from "./pages/ExchangeAgreement";
+import ExchangeSell from "./pages/ExchangeSell";
+import { ModuleGate } from "@/components/ModuleGate";
 import Reports from "./pages/Reports";
 import ProfitLossReport from "./pages/reports/ProfitLossReport";
 import StockReport from "./pages/reports/StockReport";
@@ -179,6 +186,12 @@ const App = () => (
                       <Route path="/payroll" element={<PayrollPage />} />
                       <Route path="/warranty-claims" element={<WarrantyClaims />} />
                       <Route path="/cms/pages" element={<CmsPages />} />
+                      <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
+                      <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
+                      <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />
+                      <Route path="/exchange/purchases/:id" element={<ModuleGate module="exchange"><ExchangePurchaseView /></ModuleGate>} />
+                      <Route path="/exchange/agreement/:id" element={<ModuleGate module="exchange"><ExchangeAgreement /></ModuleGate>} />
+                      <Route path="/exchange/sell" element={<ModuleGate module="exchange"><ExchangeSell /></ModuleGate>} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
                       <Route path="/reports/stock" element={<StockReport />} />
