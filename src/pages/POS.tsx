@@ -115,42 +115,58 @@ export default function POS() {
     setShowScanner(false);
     if (!products) return;
     const q = code.toLowerCase();
-    const match = (products as any[]).find(
-      (p: any) => p.barcode?.toLowerCase() === q || p.sku?.toLowerCase() === q || p.name.toLowerCase() === q
+    // 1. Try exact barcode/SKU match first (non-serial items use barcode)
+    const exact = (products as any[]).find(
+      (p: any) => p.barcode?.toLowerCase() === q || p.sku?.toLowerCase() === q
     );
-    if (match) {
-      addToCart(match);
-      toast.success(`Added: ${match.name}`);
-    } else {
-      // Try IMEI search
-      const imeiMatch = await searchImeiInPurchases(code);
-      if (imeiMatch) {
-        const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
-        if (product) {
-          addSerialToCart(imeiMatch.product_id, imeiMatch.serial_number);
-          toast.success(`Added IMEI: ${imeiMatch.serial_number} (${product.name})`);
-          return;
-        }
+    if (exact) {
+      const isSerial = exact.serial_tracking || exact.product_type === "imei" || exact.product_type === "serial";
+      if (!isSerial) {
+        addToCart(exact);
+        toast.success(`Added: ${exact.name}`);
+        return;
       }
-      setSearch(code);
-      toast.error("Product not found");
     }
+    // 2. Try IMEI lookup (adds the specific serial directly, no dialog)
+    const imeiMatch = await searchImeiInPurchases(code);
+    if (imeiMatch) {
+      const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
+      if (product) {
+        addSerialToCart(imeiMatch.product_id, imeiMatch.serial_number);
+        toast.success(`Added IMEI: ${imeiMatch.serial_number} (${product.name})`);
+        return;
+      }
+    }
+    // 3. Fallback: exact name match
+    const nameMatch = (products as any[]).find((p: any) => p.name.toLowerCase() === q);
+    if (nameMatch) {
+      addToCart(nameMatch);
+      toast.success(`Added: ${nameMatch.name}`);
+      return;
+    }
+    setSearch(code);
+    toast.error("Product not found");
   };
 
   // IMEI search in search bar - triggered on Enter
   const handleSearchKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter" || !search.trim() || !products) return;
-    const q = search.toLowerCase();
-    const match = (products as any[]).find(
-      (p: any) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+    const raw = search.trim();
+    const q = raw.toLowerCase();
+    // 1. Exact barcode/SKU match — for non-serial items, add directly (no popup)
+    const exact = (products as any[]).find(
+      (p: any) => p.barcode?.toLowerCase() === q || p.sku?.toLowerCase() === q
     );
-    if (match) {
-      addToCart(match);
-      setSearch("");
-      return;
+    if (exact) {
+      const isSerial = exact.serial_tracking || exact.product_type === "imei" || exact.product_type === "serial";
+      if (!isSerial) {
+        addToCart(exact);
+        setSearch("");
+        return;
+      }
     }
-    // Try IMEI search
-    const imeiMatch = await searchImeiInPurchases(search.trim());
+    // 2. IMEI lookup — adds the specific serial directly without opening selector
+    const imeiMatch = await searchImeiInPurchases(raw);
     if (imeiMatch) {
       const product = (products as any[]).find((p: any) => p.id === imeiMatch.product_id);
       if (product) {
@@ -159,6 +175,15 @@ export default function POS() {
         setSearch("");
         return;
       }
+    }
+    // 3. Partial match fallback
+    const partial = (products as any[]).find(
+      (p: any) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+    );
+    if (partial) {
+      addToCart(partial);
+      setSearch("");
+      return;
     }
     toast.error("No product or IMEI found");
   };
@@ -616,8 +641,8 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <div className="h-14 border-t bg-card flex items-center px-3 gap-2 shrink-0">
+      {/* Bottom Action Bar — hidden on mobile (replaced by FAB + sheet) */}
+      <div className="hidden md:flex h-14 border-t bg-card items-center px-3 gap-2 shrink-0">
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => navigate("/sales")}>
           <FileText className="h-3.5 w-3.5" /> Quotation
         </Button>
