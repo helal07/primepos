@@ -54,6 +54,7 @@ import {
   Flame,
   Wallet,
   Calculator,
+  Plus,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -77,9 +78,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useEnabledModules } from "@/hooks/useEnabledModules";
+import type { ModuleKey } from "@/lib/modules";
 
 
-const menuGroups = [
+const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
   {
     label: "Main",
     items: [
@@ -88,6 +91,7 @@ const menuGroups = [
   },
   {
     label: "Products",
+    module: "products",
     items: [
       { title: "Products", url: "/products", icon: Package },
       { title: "Categories", url: "/categories", icon: Tags },
@@ -105,6 +109,7 @@ const menuGroups = [
   },
   {
     label: "Sales",
+    module: "sales",
     items: [
       { title: "POS", url: "/pos", icon: MonitorSmartphone },
       { title: "Sales List", url: "/sales", icon: ListOrdered },
@@ -118,6 +123,7 @@ const menuGroups = [
   },
   {
     label: "Installment",
+    module: "installments",
     items: [
       { title: "Add Customer", url: "/installment/customers/add", icon: UserPlus },
       { title: "Customers", url: "/installment/customers", icon: UserCircle },
@@ -129,6 +135,7 @@ const menuGroups = [
   },
   {
     label: "Purchase",
+    module: "purchases",
     items: [
       { title: "Add Purchase", url: "/purchases/add", icon: PackagePlus },
       { title: "Purchase List", url: "/purchases", icon: ClipboardList },
@@ -138,6 +145,7 @@ const menuGroups = [
   },
   {
     label: "People",
+    module: "contacts",
     items: [
       { title: "Customers", url: "/customers", icon: UserCircle },
       { title: "Customer Groups", url: "/contacts/customer-groups", icon: Users },
@@ -146,6 +154,7 @@ const menuGroups = [
   },
   {
     label: "Finance",
+    module: "accounting",
     items: [
       { title: "Chart of Accounts", url: "/accounts", icon: BookOpen },
       { title: "Transactions", url: "/transactions", icon: ArrowLeftRight },
@@ -157,6 +166,7 @@ const menuGroups = [
   },
   {
     label: "HRM",
+    module: "hrm",
     items: [
       { title: "Employees", url: "/employees", icon: Users },
       { title: "Attendance", url: "/attendance", icon: CalendarDays },
@@ -166,18 +176,31 @@ const menuGroups = [
   },
   {
     label: "Warranty",
+    module: "warranty",
     items: [
       { title: "Warranty Claims", url: "/warranty-claims", icon: Wrench },
     ],
   },
   {
     label: "CMS",
+    module: "cms",
     items: [
       { title: "Pages", url: "/cms/pages", icon: Globe },
     ],
   },
   {
+    label: "Exchange",
+    module: "exchange",
+    items: [
+      { title: "Dashboard", url: "/exchange", icon: ArrowLeftRight },
+      { title: "Buys", url: "/exchange/purchases", icon: ListOrdered },
+      { title: "New Buy", url: "/exchange/purchases/add", icon: Plus },
+      { title: "Sell", url: "/exchange/sell", icon: ShoppingBag },
+    ],
+  },
+  {
     label: "Reports",
+    module: "reports",
     items: [
       { title: "Overview", url: "/reports", icon: BarChart3 },
       { title: "Profit / Loss", url: "/reports/profit-loss", icon: TrendingUp },
@@ -238,7 +261,8 @@ export function AppSidebar() {
     });
   }, [user]);
 
-  const allGroups = menuGroups;
+  const { data: enabledModules } = useEnabledModules();
+  const allGroups = menuGroups.filter((g) => !g.module || (enabledModules ?? []).includes(g.module));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">

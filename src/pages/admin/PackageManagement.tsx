@@ -9,17 +9,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { usePackages, usePackageMutations } from "@/hooks/useSaasAdmin";
 import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MODULE_CATALOG, DEFAULT_MODULES, type ModuleKey } from "@/lib/modules";
 
 interface PkgForm {
   name: string; price: number; duration_days: number; max_users: number;
   max_business_location: number; max_invoice: number; features: string;
   is_popular: boolean; is_active: boolean; sort_order: number;
+  enabled_modules: ModuleKey[];
 }
 
 const emptyForm: PkgForm = {
   name: "", price: 0, duration_days: 30, max_users: 1,
   max_business_location: 1, max_invoice: 0, features: "",
   is_popular: false, is_active: true, sort_order: 0,
+  enabled_modules: [...DEFAULT_MODULES],
 };
 
 export default function PackageManagement() {
@@ -37,15 +41,27 @@ export default function PackageManagement() {
       max_invoice: p.max_invoice,
       features: (p.features as string[])?.join(", ") ?? "",
       is_popular: p.is_popular, is_active: p.is_active, sort_order: p.sort_order,
+      enabled_modules: ((p.enabled_modules as ModuleKey[]) ?? [...DEFAULT_MODULES]),
     });
     setEditId(p.id); setOpen(true);
   };
 
   const handleSave = () => {
-    const payload = { ...form, features: form.features.split(",").map((f) => f.trim()).filter(Boolean) };
+    const payload = {
+      ...form,
+      features: form.features.split(",").map((f) => f.trim()).filter(Boolean),
+    } as any;
     if (editId) update.mutate({ id: editId, ...payload }, { onSuccess: () => setOpen(false) });
     else create.mutate(payload, { onSuccess: () => setOpen(false) });
   };
+
+  const toggleModule = (k: ModuleKey) =>
+    setForm((f) => ({
+      ...f,
+      enabled_modules: f.enabled_modules.includes(k)
+        ? f.enabled_modules.filter((m) => m !== k)
+        : [...f.enabled_modules, k],
+    }));
 
   return (
     <div className="space-y-6">
@@ -133,6 +149,25 @@ export default function PackageManagement() {
             </div>
             <div><Label className="text-slate-300">Max Invoices (0 = unlimited)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} /></div>
             <div><Label className="text-slate-300">Features (comma-separated)</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" /></div>
+            <div>
+              <Label className="text-slate-300">Enabled Modules</Label>
+              <p className="text-xs text-slate-500 mb-2">Tenants on this plan will only see the ticked modules.</p>
+              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto rounded border border-slate-700 p-2">
+                {MODULE_CATALOG.map((m) => (
+                  <label key={m.key} className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer">
+                    <Checkbox
+                      checked={form.enabled_modules.includes(m.key)}
+                      onCheckedChange={() => toggleModule(m.key)}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <span className="font-medium text-slate-200">{m.label}</span>
+                      <span className="block text-slate-500 leading-tight">{m.description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
             <div><Label className="text-slate-300">Sort Order</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-slate-300">Popular</Label></div>
