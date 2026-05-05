@@ -34,6 +34,7 @@ export function usePackageMutations() {
       is_popular: boolean;
       is_active: boolean;
       sort_order: number;
+      enabled_modules?: string[];
     }) => {
       const { error } = await supabase.from("saas_packages").insert(pkg);
       if (error) throw error;
@@ -50,6 +51,7 @@ export function usePackageMutations() {
       name: string; price: number; duration_days: number; max_users: number;
       max_business_location: number; max_invoice: number; features: string[];
       is_popular: boolean; is_active: boolean; sort_order: number;
+      enabled_modules: string[];
     }>) => {
       const { error } = await supabase.from("saas_packages").update(rest).eq("id", id);
       if (error) throw error;
