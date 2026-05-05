@@ -261,7 +261,8 @@ export function AppSidebar() {
     });
   }, [user]);
 
-  const allGroups = menuGroups;
+  const { data: enabledModules } = useEnabledModules();
+  const allGroups = menuGroups.filter((g) => !g.module || (enabledModules ?? []).includes(g.module));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
