@@ -26,7 +26,7 @@ function numberToWordsBn(n: number): string {
 export default function ExchangeAgreement() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { data: settings } = useSettings();
 
   const { data: r } = useQuery({
     queryKey: ["exchange_purchase", id],
