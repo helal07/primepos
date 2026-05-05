@@ -604,6 +604,96 @@ export type Database = {
           },
         ]
       }
+      exchange_purchases: {
+        Row: {
+          brand: string | null
+          condition_notes: string | null
+          created_at: string
+          created_by: string | null
+          goods_photos: string[]
+          id: string
+          imei: string | null
+          linked_product_id: string | null
+          linked_sale_id: string | null
+          linked_variation_id: string | null
+          model: string | null
+          notes: string | null
+          paid_amount: number
+          payment_method: string
+          product_name: string
+          purchase_date: string
+          purchase_price: number
+          reference_no: string
+          seller_address: string | null
+          seller_name: string
+          seller_nid_no: string | null
+          seller_nid_url: string | null
+          seller_phone: string | null
+          seller_photo_url: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          condition_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          goods_photos?: string[]
+          id?: string
+          imei?: string | null
+          linked_product_id?: string | null
+          linked_sale_id?: string | null
+          linked_variation_id?: string | null
+          model?: string | null
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: string
+          product_name: string
+          purchase_date?: string
+          purchase_price?: number
+          reference_no?: string
+          seller_address?: string | null
+          seller_name: string
+          seller_nid_no?: string | null
+          seller_nid_url?: string | null
+          seller_phone?: string | null
+          seller_photo_url?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          condition_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          goods_photos?: string[]
+          id?: string
+          imei?: string | null
+          linked_product_id?: string | null
+          linked_sale_id?: string | null
+          linked_variation_id?: string | null
+          model?: string | null
+          notes?: string | null
+          paid_amount?: number
+          payment_method?: string
+          product_name?: string
+          purchase_date?: string
+          purchase_price?: number
+          reference_no?: string
+          seller_address?: string | null
+          seller_name?: string
+          seller_nid_no?: string | null
+          seller_nid_url?: string | null
+          seller_phone?: string | null
+          seller_photo_url?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       installment_collections: {
         Row: {
           amount: number
@@ -1826,6 +1916,7 @@ export type Database = {
         Row: {
           created_at: string
           duration_days: number
+          enabled_modules: string[]
           features: Json
           id: string
           is_active: boolean
@@ -1841,6 +1932,7 @@ export type Database = {
         Insert: {
           created_at?: string
           duration_days?: number
+          enabled_modules?: string[]
           features?: Json
           id?: string
           is_active?: boolean
@@ -1856,6 +1948,7 @@ export type Database = {
         Update: {
           created_at?: string
           duration_days?: number
+          enabled_modules?: string[]
           features?: Json
           id?: string
           is_active?: boolean
@@ -1997,6 +2090,7 @@ export type Database = {
           discount_amount: number
           discount_type: string | null
           discount_value: number
+          exchange_purchase_id: string | null
           id: string
           invoice_number: string
           notes: string | null
@@ -2004,6 +2098,7 @@ export type Database = {
           payment_status: string
           sale_date: string
           shipping_cost: number
+          source: string
           status: string
           subtotal: number
           tax_amount: number
@@ -2018,6 +2113,7 @@ export type Database = {
           discount_amount?: number
           discount_type?: string | null
           discount_value?: number
+          exchange_purchase_id?: string | null
           id?: string
           invoice_number?: string
           notes?: string | null
@@ -2025,6 +2121,7 @@ export type Database = {
           payment_status?: string
           sale_date?: string
           shipping_cost?: number
+          source?: string
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -2039,6 +2136,7 @@ export type Database = {
           discount_amount?: number
           discount_type?: string | null
           discount_value?: number
+          exchange_purchase_id?: string | null
           id?: string
           invoice_number?: string
           notes?: string | null
@@ -2046,6 +2144,7 @@ export type Database = {
           payment_status?: string
           sale_date?: string
           shipping_cost?: number
+          source?: string
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -2333,6 +2432,7 @@ export type Database = {
           db_name: string | null
           domain: string | null
           email: string | null
+          enabled_modules: string[] | null
           id: string
           last_login_at: string | null
           name: string
@@ -2353,6 +2453,7 @@ export type Database = {
           db_name?: string | null
           domain?: string | null
           email?: string | null
+          enabled_modules?: string[] | null
           id?: string
           last_login_at?: string | null
           name: string
@@ -2373,6 +2474,7 @@ export type Database = {
           db_name?: string | null
           domain?: string | null
           email?: string | null
+          enabled_modules?: string[] | null
           id?: string
           last_login_at?: string | null
           name?: string
@@ -2638,6 +2740,10 @@ export type Database = {
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_manager_or_above: {
         Args: { _user_id: string }
+        Returns: boolean
+      }
+      tenant_has_module: {
+        Args: { _module: string; _user_id: string }
         Returns: boolean
       }
     }
