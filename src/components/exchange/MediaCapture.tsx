@@ -38,14 +38,24 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
 
   const startCam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      setStreaming(true);
+      // wait a tick for the <video> to mount
+      await new Promise((r) => setTimeout(r, 50));
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        videoRef.current.muted = true;
+        videoRef.current.setAttribute("playsinline", "true");
+        try { await videoRef.current.play(); } catch {}
       }
-      setStreaming(true);
     } catch (e: any) {
-      toast.error("Camera access denied");
+      setStreaming(false);
+      toast.error(e?.message || "Camera access denied. Allow camera permission in browser settings.");
     }
   };
 
@@ -86,7 +96,13 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
       )}
       {streaming && (
         <div className="space-y-2">
-          <video ref={videoRef} className="w-full max-w-xs rounded border" />
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full max-w-sm rounded border bg-black aspect-[3/4] object-cover"
+          />
           <div className="flex gap-2">
             <Button type="button" size="sm" onClick={snap} disabled={busy}>Capture</Button>
             <Button type="button" size="sm" variant="outline" onClick={stopCam}>Cancel</Button>
