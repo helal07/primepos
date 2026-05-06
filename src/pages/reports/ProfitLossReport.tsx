@@ -27,7 +27,7 @@ export default function ProfitLossReport() {
         supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to),
         supabase.from("products").select("stock_quantity, purchase_price, selling_price"),
         hasInstallments
-          ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent").gte("sale_date", from).lte("sale_date", to)
+          ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent, products(purchase_price)").gte("sale_date", from).lte("sale_date", to)
           : Promise.resolve({ data: [] as any[] }),
         hasInstallments
           ? supabase.from("installment_collections").select("amount, collected_at").gte("collected_at", from).lte("collected_at", to + "T23:59:59")
@@ -36,7 +36,7 @@ export default function ProfitLossReport() {
           ? supabase.from("exchange_purchases").select("purchase_price, paid_amount, status, linked_sale_id, purchase_date").gte("purchase_date", from).lte("purchase_date", to)
           : Promise.resolve({ data: [] as any[] }),
         hasExchange
-          ? supabase.from("exchange_purchases").select("purchase_price, status").eq("status", "sold").gte("updated_at", from).lte("updated_at", to + "T23:59:59")
+          ? supabase.from("exchange_purchases").select("purchase_price, status, linked_sale_id").eq("status", "sold").gte("updated_at", from + "T00:00:00").lte("updated_at", to + "T23:59:59")
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -61,30 +61,39 @@ export default function ProfitLossReport() {
       const closingStockPurchase = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.purchase_price), 0);
       const closingStockSale = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.selling_price), 0);
 
-      // Installments: revenue = total_amount of installment sales (full contract value),
-      // collected = actual cash received in period. Estimated cost ≈ price (product cost portion).
+      // ── Installments (cash basis) ──
+      // Contract Value = total receivable for new sales in period (informational only — NOT revenue yet).
+      // Realized revenue in period = cash actually collected (principal + interest are baked into schedule amounts).
+      // COGS in period = product purchase cost for installment sales booked in period (matches when stock leaves).
       const installmentRevenue = instSales.reduce((s: number, r: any) => s + Number(r.total_amount || 0), 0);
       const installmentCollected = instColl.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+      // Interest income is already embedded in scheduled (and therefore collected) amounts; expose separately
+      // for reporting only — do NOT add it again to net profit.
       const installmentInterest = instSales.reduce((s: number, r: any) => {
         const base = Number(r.price || 0) - Number(r.discount || 0);
         return s + (base * Number(r.interest_percent || 0)) / 100;
       }, 0);
+      const installmentCogs = instSales.reduce((s: number, r: any) => s + Number(r.products?.purchase_price || 0), 0);
 
-      // Exchange: cost = purchase_price of items bought in period; revenue = purchase_price of items sold in period (proxy)
+      // ── Exchange ──
+      // Buying a used device = inventory asset (NOT a period expense).
+      // When that unit is sold (status='sold' in period), its purchase_price becomes COGS;
+      // the resale revenue is already captured in the linked sale row inside `sales` (totalSales).
       const exchangePurchaseCost = exchPurch.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
       const exchangeSoldCost = exchSold.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
 
-      const cogs = totalPurchase - closingStockPurchase;
-      const grossProfit = totalSales - cogs;
-      const totalExpenses = sellShipping + purchaseShipping + exchangePurchaseCost;
-      const netProfit = grossProfit - totalExpenses + installmentInterest + installmentCollected - exchangeSoldCost;
+      // ── Consolidated P&L ──
+      const cogs = (totalPurchase - closingStockPurchase) + installmentCogs + exchangeSoldCost;
+      const grossProfit = (totalSales + installmentCollected) - cogs;
+      const totalExpenses = sellShipping + purchaseShipping;
+      const netProfit = grossProfit - totalExpenses;
 
       return {
         totalSales, totalSalesDiscount, sellShipping, sellTax,
         totalPurchase, purchaseDiscount, purchaseShipping, purchaseTax,
         closingStockPurchase, closingStockSale,
         cogs, grossProfit, netProfit, totalExpenses,
-        installmentRevenue, installmentCollected, installmentInterest,
+        installmentRevenue, installmentCollected, installmentInterest, installmentCogs,
         exchangePurchaseCost, exchangeSoldCost,
       };
     },
