@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -94,6 +94,12 @@ const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigat
 
 const queryClient = new QueryClient();
 
+const AdminRedirect = () => {
+  const location = useLocation();
+  const rest = location.pathname.replace(/^\/admin/, "");
+  return <Navigate to={`/superadmin${rest}${location.search}${location.hash}`} replace />;
+};
+
 const SuperadminRoutes = () => (
   <ProtectedRoute>
     <SuperadminRoute>
@@ -129,7 +135,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             {/* SaaS Admin — separate layout */}
             <Route path="/superadmin/*" element={<SuperadminRoutes />} />
-            <Route path="/admin/*" element={<Navigate to="/superadmin" replace />} />
+            <Route path="/admin" element={<Navigate to="/superadmin" replace />} />
+            <Route path="/admin/*" element={<AdminRedirect />} />
             {/* Tenant routes */}
             <Route
               path="/*"
