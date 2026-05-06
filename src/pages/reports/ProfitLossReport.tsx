@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, DollarSign, Package } from "lucide-react";
 import ReportToolbar from "@/components/reports/ReportToolbar";
+import { useHasModule } from "@/hooks/useEnabledModules";
 
 function fmt(n: number) {
   return `৳${Math.round(n).toLocaleString()}`;
@@ -15,19 +16,37 @@ function fmt(n: number) {
 export default function ProfitLossReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const { hasModule: hasInstallments } = useHasModule("installments");
+  const { hasModule: hasExchange } = useHasModule("exchange");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_profit_loss", from, to],
+    queryKey: ["report_profit_loss", from, to, hasInstallments, hasExchange],
     queryFn: async () => {
-      const [salesRes, purchasesRes, productsRes] = await Promise.all([
+      const [salesRes, purchasesRes, productsRes, instSalesRes, instCollRes, exchPurchRes, exchSellRes] = await Promise.all([
         supabase.from("sales").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("sale_date", from).lte("sale_date", to),
         supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to),
         supabase.from("products").select("stock_quantity, purchase_price, selling_price"),
+        hasInstallments
+          ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent").gte("sale_date", from).lte("sale_date", to)
+          : Promise.resolve({ data: [] as any[] }),
+        hasInstallments
+          ? supabase.from("installment_collections").select("amount, collected_at").gte("collected_at", from).lte("collected_at", to + "T23:59:59")
+          : Promise.resolve({ data: [] as any[] }),
+        hasExchange
+          ? supabase.from("exchange_purchases").select("purchase_price, paid_amount, status, linked_sale_id, purchase_date").gte("purchase_date", from).lte("purchase_date", to)
+          : Promise.resolve({ data: [] as any[] }),
+        hasExchange
+          ? supabase.from("exchange_purchases").select("purchase_price, status").eq("status", "sold").gte("updated_at", from).lte("updated_at", to + "T23:59:59")
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
       const sales = salesRes.data ?? [];
       const purchases = purchasesRes.data ?? [];
       const products = productsRes.data ?? [];
+      const instSales = (instSalesRes as any).data ?? [];
+      const instColl = (instCollRes as any).data ?? [];
+      const exchPurch = (exchPurchRes as any).data ?? [];
+      const exchSold = (exchSellRes as any).data ?? [];
 
       const totalSales = sales.reduce((s, r) => s + Number(r.total_amount), 0);
       const totalSalesDiscount = sales.reduce((s, r) => s + Number(r.discount_amount), 0);
@@ -42,16 +61,31 @@ export default function ProfitLossReport() {
       const closingStockPurchase = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.purchase_price), 0);
       const closingStockSale = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.selling_price), 0);
 
+      // Installments: revenue = total_amount of installment sales (full contract value),
+      // collected = actual cash received in period. Estimated cost ≈ price (product cost portion).
+      const installmentRevenue = instSales.reduce((s: number, r: any) => s + Number(r.total_amount || 0), 0);
+      const installmentCollected = instColl.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+      const installmentInterest = instSales.reduce((s: number, r: any) => {
+        const base = Number(r.price || 0) - Number(r.discount || 0);
+        return s + (base * Number(r.interest_percent || 0)) / 100;
+      }, 0);
+
+      // Exchange: cost = purchase_price of items bought in period; revenue = purchase_price of items sold in period (proxy)
+      const exchangePurchaseCost = exchPurch.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
+      const exchangeSoldCost = exchSold.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
+
       const cogs = totalPurchase - closingStockPurchase;
       const grossProfit = totalSales - cogs;
-      const totalExpenses = sellShipping + purchaseShipping;
-      const netProfit = grossProfit - totalExpenses;
+      const totalExpenses = sellShipping + purchaseShipping + exchangePurchaseCost;
+      const netProfit = grossProfit - totalExpenses + installmentInterest + installmentCollected - exchangeSoldCost;
 
       return {
         totalSales, totalSalesDiscount, sellShipping, sellTax,
         totalPurchase, purchaseDiscount, purchaseShipping, purchaseTax,
         closingStockPurchase, closingStockSale,
         cogs, grossProfit, netProfit, totalExpenses,
+        installmentRevenue, installmentCollected, installmentInterest,
+        exchangePurchaseCost, exchangeSoldCost,
       };
     },
   });
@@ -66,11 +100,20 @@ export default function ProfitLossReport() {
       ["COGS", Math.round(data.cogs)],
       ["Gross Profit", Math.round(data.grossProfit)],
       ["Total Expenses", Math.round(data.totalExpenses)],
+      ...(hasInstallments ? [
+        ["Installment Sales (Contract Value)", Math.round(data.installmentRevenue)],
+        ["Installment Collected", Math.round(data.installmentCollected)],
+        ["Installment Interest Income", Math.round(data.installmentInterest)],
+      ] as (string | number)[][] : []),
+      ...(hasExchange ? [
+        ["Exchange Purchase Cost", Math.round(data.exchangePurchaseCost)],
+        ["Exchange Sold (Cost Basis)", Math.round(data.exchangeSoldCost)],
+      ] as (string | number)[][] : []),
       ["Net Profit", Math.round(data.netProfit)],
     ] as (string | number)[][] : [],
     filename: `profit-loss-${from}-to-${to}`,
     title: "Profit & Loss Report",
-  }), [data, from, to]);
+  }), [data, from, to, hasInstallments, hasExchange]);
 
   return (
     <div className="space-y-6">
@@ -122,6 +165,29 @@ export default function ProfitLossReport() {
                 </CardContent>
               </Card>
             </div>
+
+            {(hasInstallments || hasExchange) && (
+              <div className="grid md:grid-cols-2 gap-6">
+                {hasInstallments && (
+                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Installments {data.installmentCollected + data.installmentInterest >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
+                    <CardContent className="space-y-3">
+                      <Row label="Contract Value (New Sales)" value={fmt(data.installmentRevenue)} />
+                      <Row label="Collections Received" value={fmt(data.installmentCollected)} variant="green" />
+                      <Row label="Interest Income" value={fmt(data.installmentInterest)} variant="green" />
+                    </CardContent>
+                  </Card>
+                )}
+                {hasExchange && (
+                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Exchange {(data.exchangeSoldCost - data.exchangePurchaseCost) >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
+                    <CardContent className="space-y-3">
+                      <Row label="Purchase Cost (Bought)" value={fmt(data.exchangePurchaseCost)} variant="red" />
+                      <Row label="Sold Items (Cost Basis)" value={fmt(data.exchangeSoldCost)} variant="green" />
+                      <Row label="Net Exchange" value={fmt(data.exchangeSoldCost - data.exchangePurchaseCost)} variant={data.exchangeSoldCost - data.exchangePurchaseCost >= 0 ? "green" : "red"} />
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
 
             <Card className="border-2 border-primary/20"><CardContent className="p-6 space-y-4">
               <div className="flex items-center justify-between">
