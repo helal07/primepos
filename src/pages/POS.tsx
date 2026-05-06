@@ -792,10 +792,16 @@ export default function POS() {
 
       {/* Barcode Scanner */}
       <Dialog open={showScanner} onOpenChange={setShowScanner}>
-        <DialogContent className="max-w-[90vw] sm:max-w-sm">
-          <DialogHeader><DialogTitle>Scan Barcode</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-[100vw] sm:max-w-md p-3 sm:p-6 h-[100dvh] sm:h-auto sm:max-h-[90vh] overflow-auto rounded-none sm:rounded-lg">
+          <DialogHeader><DialogTitle>Scan Barcode / QR</DialogTitle></DialogHeader>
           <Suspense fallback={<div className="text-center py-8 text-muted-foreground">Loading...</div>}>
-            {showScanner && <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />}
+            {showScanner && (
+              <BarcodeScanner
+                continuous
+                onScan={(code) => handleBarcodeScan(code)}
+                onClose={() => setShowScanner(false)}
+              />
+            )}
           </Suspense>
         </DialogContent>
       </Dialog>
