@@ -82,6 +82,11 @@ import PackageManagement from "./pages/admin/PackageManagement";
 import LandingCms from "./pages/admin/LandingCms";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminSettings from "./pages/admin/AdminSettings";
+import TenantDetail from "./pages/admin/TenantDetail";
+import Sitemap from "./pages/admin/Sitemap";
+import SmsProviders from "./pages/admin/SmsProviders";
+import SmsPlans from "./pages/admin/SmsPlans";
+import SmsPurchases from "./pages/admin/SmsPurchases";
 import NotFound from "./pages/NotFound";
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
@@ -109,8 +114,13 @@ const App = () => (
                       <Routes>
                         <Route path="/" element={<AdminDashboard />} />
                         <Route path="/tenants" element={<TenantManagement />} />
+                        <Route path="/tenants/:id" element={<TenantDetail />} />
                         <Route path="/packages" element={<PackageManagement />} />
                         <Route path="/cms" element={<LandingCms />} />
+                        <Route path="/sitemap" element={<Sitemap />} />
+                        <Route path="/sms/providers" element={<SmsProviders />} />
+                        <Route path="/sms/plans" element={<SmsPlans />} />
+                        <Route path="/sms/purchases" element={<SmsPurchases />} />
                         <Route path="/transactions" element={<AdminTransactions />} />
                         <Route path="/settings" element={<AdminSettings />} />
                         <Route path="*" element={<NotFound />} />
