@@ -45,6 +45,33 @@ interface CartItem extends SaleItem {
   selected_serials?: string[];
 }
 
+// Fuzzy product matcher: prefers starts-with on name/SKU/barcode, then contains,
+// then all-token contains on the name. Returns the best single match or null.
+function fuzzyFindProduct(products: any[], rawQuery: string): any | null {
+  const q = rawQuery.trim().toLowerCase();
+  if (!q || !products?.length) return null;
+  const fields = (p: any) => [p.name, p.sku, p.barcode].filter(Boolean).map((s: string) => s.toLowerCase());
+
+  // 1) starts-with on any field
+  const starts = products.find((p) => fields(p).some((f) => f.startsWith(q)));
+  if (starts) return starts;
+
+  // 2) contains on any field
+  const contains = products.find((p) => fields(p).some((f) => f.includes(q)));
+  if (contains) return contains;
+
+  // 3) all tokens present in name (handles "iphone 13 pro" vs "Apple iPhone 13 Pro 128GB")
+  const tokens = q.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const tokenMatch = products.find((p) => {
+      const name = (p.name || "").toLowerCase();
+      return tokens.every((t) => name.includes(t));
+    });
+    if (tokenMatch) return tokenMatch;
+  }
+  return null;
+}
+
 export default function POS() {
   const navigate = useNavigate();
   const { data: products, isLoading: productsLoading } = useProducts();
