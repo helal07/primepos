@@ -129,7 +129,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             {/* SaaS Admin — separate layout */}
             <Route path="/superadmin/*" element={<SuperadminRoutes />} />
-            <Route path="/admin/*" element={<Navigate to="/superadmin" replace />} />
+            <Route path="/admin" element={<Navigate to="/superadmin" replace />} />
+            <Route path="/admin/*" element={<AdminRedirect />} />
             {/* Tenant routes */}
             <Route
               path="/*"
