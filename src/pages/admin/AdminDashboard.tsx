@@ -175,7 +175,7 @@ export default function AdminDashboard() {
         {statusBreakdown.map((s) => (
           <button
             key={s.label}
-            onClick={() => navigate(s.label === "Packages" ? "/admin/packages" : "/admin/tenants")}
+            onClick={() => navigate(s.label === "Packages" ? "/superadmin/packages" : "/superadmin/tenants")}
             className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-left transition hover:opacity-90 ${s.color}`}
           >
             <div>
@@ -251,7 +251,7 @@ export default function AdminDashboard() {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => navigate(`/admin/tenants/${t.id}`)}
+                    onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
                     className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/50"
                   >
                     <div className="min-w-0">
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
         <div className="rounded-xl border bg-card shadow-sm">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h3 className="text-sm font-semibold">Recent signups</h3>
-            <button onClick={() => navigate("/admin/tenants")} className="text-xs text-primary hover:underline">View all</button>
+            <button onClick={() => navigate("/superadmin/tenants")} className="text-xs text-primary hover:underline">View all</button>
           </div>
           <div className="divide-y">
             {!tenants?.length ? (
@@ -283,7 +283,7 @@ export default function AdminDashboard() {
               tenants.slice(0, 6).map((t: any) => (
                 <button
                   key={t.id}
-                  onClick={() => navigate(`/admin/tenants/${t.id}`)}
+                  onClick={() => navigate(`/superadmin/tenants/${t.id}`)}
                   className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/50"
                 >
                   <div className="flex min-w-0 items-center gap-3">
