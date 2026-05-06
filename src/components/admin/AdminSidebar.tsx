@@ -3,24 +3,34 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
-const items = [
+const overviewItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+];
+
+const platformItems = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/packages", label: "Packages", icon: Package },
+  { to: "/admin/transactions", label: "Transactions", icon: CreditCard },
+];
+
+const websiteItems = [
   { to: "/admin/cms", label: "Landing CMS", icon: Globe },
   { to: "/admin/sitemap", label: "Sitemap", icon: FileCode },
-  { to: "/admin/transactions", label: "Transactions", icon: CreditCard },
-  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 const smsItems = [
   { to: "/admin/sms/providers", label: "SMS Providers", icon: MessageSquare },
   { to: "/admin/sms/plans", label: "SMS Plans", icon: Send },
   { to: "/admin/sms/purchases", label: "SMS Purchases", icon: Wallet },
+];
+
+const systemItems = [
+  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 interface Props {
@@ -42,39 +52,47 @@ export function AdminSidebar({ onNavigate }: Props) {
         : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
     );
 
+  const renderGroup = (label: string, list: typeof platformItems) => (
+    <div className="pt-1">
+      <div className="px-2 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+        {label}
+      </div>
+      {list.map((it: any) => (
+        <NavLink
+          key={it.to}
+          to={it.to}
+          end={it.end}
+          onClick={onNavigate}
+          className={({ isActive }) => linkClass(isActive)}
+        >
+          <it.icon className="h-[18px] w-[18px]" />
+          {it.label}
+        </NavLink>
+      ))}
+    </div>
+  );
+
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      {/* Brand */}
       <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold">Super Admin</div>
-          <div className="truncate text-[11px] text-sidebar-foreground/60">Control Panel</div>
+          <div className="truncate text-[11px] text-sidebar-foreground/60">SaaS Control Panel</div>
         </div>
       </div>
 
-      <div className="px-5 pt-4 pb-2 text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/60">
-        My Account
-      </div>
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4 pt-2">
+        {renderGroup("Overview", overviewItems)}
+        {renderGroup("Platform", platformItems)}
+        {renderGroup("Website", websiteItems)}
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-        {items.map((it) => (
-          <NavLink
-            key={it.to}
-            to={it.to}
-            end={it.end}
-            onClick={onNavigate}
-            className={({ isActive }) => linkClass(isActive)}
-          >
-            <it.icon className="h-[18px] w-[18px]" />
-            {it.label}
-          </NavLink>
-        ))}
-
-        {/* SMS group */}
         <div className="pt-2">
+          <div className="px-2 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+            Messaging
+          </div>
           <button
             type="button"
             onClick={() => setSmsOpen((v) => !v)}
@@ -112,6 +130,8 @@ export function AdminSidebar({ onNavigate }: Props) {
             </div>
           )}
         </div>
+
+        {renderGroup("System", systemItems)}
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
@@ -119,8 +139,8 @@ export function AdminSidebar({ onNavigate }: Props) {
           onClick={() => { navigate("/dashboard"); onNavigate?.(); }}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
         >
-          <LayoutDashboard className="h-[18px] w-[18px]" />
-          Tenant Dashboard
+          <ArrowLeftRight className="h-[18px] w-[18px]" />
+          Switch to App
         </button>
         <button
           onClick={() => signOut()}
