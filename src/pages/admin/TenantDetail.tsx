@@ -40,7 +40,7 @@ export default function TenantDetail() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" asChild><Link to="/admin/tenants"><ArrowLeft className="h-4 w-4 mr-1" />Back to tenants</Link></Button>
+      <Button variant="ghost" size="sm" asChild><Link to="/superadmin/tenants"><ArrowLeft className="h-4 w-4 mr-1" />Back to tenants</Link></Button>
       <PageHeader title={tenant.name ?? "Tenant"} description={tenant.email ?? ""} />
 
       <div className="grid md:grid-cols-2 gap-4">
