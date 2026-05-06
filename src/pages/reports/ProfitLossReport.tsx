@@ -113,10 +113,11 @@ export default function ProfitLossReport() {
         ["Installment Sales (Contract Value)", Math.round(data.installmentRevenue)],
         ["Installment Collected", Math.round(data.installmentCollected)],
         ["Installment Interest Income", Math.round(data.installmentInterest)],
+        ["Installment COGS (Product Cost)", Math.round(data.installmentCogs)],
       ] as (string | number)[][] : []),
       ...(hasExchange ? [
         ["Exchange Purchase Cost", Math.round(data.exchangePurchaseCost)],
-        ["Exchange Sold (Cost Basis)", Math.round(data.exchangeSoldCost)],
+        ["Exchange COGS (Sold Cost Basis)", Math.round(data.exchangeSoldCost)],
       ] as (string | number)[][] : []),
       ["Net Profit", Math.round(data.netProfit)],
     ] as (string | number)[][] : [],
@@ -178,20 +179,22 @@ export default function ProfitLossReport() {
             {(hasInstallments || hasExchange) && (
               <div className="grid md:grid-cols-2 gap-6">
                 {hasInstallments && (
-                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Installments {data.installmentCollected + data.installmentInterest >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
+                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Installments {(data.installmentCollected - data.installmentCogs) >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
-                      <Row label="Contract Value (New Sales)" value={fmt(data.installmentRevenue)} />
+                      <Row label="Contract Value (New Sales — informational)" value={fmt(data.installmentRevenue)} />
                       <Row label="Collections Received" value={fmt(data.installmentCollected)} variant="green" />
-                      <Row label="Interest Income" value={fmt(data.installmentInterest)} variant="green" />
+                      <Row label="Interest (included in collections)" value={fmt(data.installmentInterest)} />
+                      <Row label="Product COGS (new sales)" value={fmt(data.installmentCogs)} variant="red" />
+                      <Row label="Net (Collected − COGS)" value={fmt(data.installmentCollected - data.installmentCogs)} variant={data.installmentCollected - data.installmentCogs >= 0 ? "green" : "red"} />
                     </CardContent>
                   </Card>
                 )}
                 {hasExchange && (
-                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Exchange {(data.exchangeSoldCost - data.exchangePurchaseCost) >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
+                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Exchange Inventory</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
-                      <Row label="Purchase Cost (Bought)" value={fmt(data.exchangePurchaseCost)} variant="red" />
-                      <Row label="Sold Items (Cost Basis)" value={fmt(data.exchangeSoldCost)} variant="green" />
-                      <Row label="Net Exchange" value={fmt(data.exchangeSoldCost - data.exchangePurchaseCost)} variant={data.exchangeSoldCost - data.exchangePurchaseCost >= 0 ? "green" : "red"} />
+                      <Row label="Bought in Period (added to inventory)" value={fmt(data.exchangePurchaseCost)} />
+                      <Row label="Sold in Period (COGS)" value={fmt(data.exchangeSoldCost)} variant="red" />
+                      <p className="text-xs text-muted-foreground pt-1">Resale revenue is recorded in the linked sale and already included in Total Sales.</p>
                     </CardContent>
                   </Card>
                 )}
