@@ -9,28 +9,28 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 const overviewItems = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/superadmin", label: "Dashboard", icon: LayoutDashboard, end: true },
 ];
 
 const platformItems = [
-  { to: "/admin/tenants", label: "Tenants", icon: Building2 },
-  { to: "/admin/packages", label: "Packages", icon: Package },
-  { to: "/admin/transactions", label: "Transactions", icon: CreditCard },
+  { to: "/superadmin/tenants", label: "Tenants", icon: Building2 },
+  { to: "/superadmin/packages", label: "Packages", icon: Package },
+  { to: "/superadmin/transactions", label: "Transactions", icon: CreditCard },
 ];
 
 const websiteItems = [
-  { to: "/admin/cms", label: "Landing CMS", icon: Globe },
-  { to: "/admin/sitemap", label: "Sitemap", icon: FileCode },
+  { to: "/superadmin/cms", label: "Landing CMS", icon: Globe },
+  { to: "/superadmin/sitemap", label: "Sitemap", icon: FileCode },
 ];
 
 const smsItems = [
-  { to: "/admin/sms/providers", label: "SMS Providers", icon: MessageSquare },
-  { to: "/admin/sms/plans", label: "SMS Plans", icon: Send },
-  { to: "/admin/sms/purchases", label: "SMS Purchases", icon: Wallet },
+  { to: "/superadmin/sms/providers", label: "SMS Providers", icon: MessageSquare },
+  { to: "/superadmin/sms/plans", label: "SMS Plans", icon: Send },
+  { to: "/superadmin/sms/purchases", label: "SMS Purchases", icon: Wallet },
 ];
 
 const systemItems = [
-  { to: "/admin/settings", label: "Settings", icon: Settings },
+  { to: "/superadmin/settings", label: "Settings", icon: Settings },
 ];
 
 interface Props {
@@ -41,7 +41,7 @@ export function AdminSidebar({ onNavigate }: Props) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const smsActive = location.pathname.startsWith("/admin/sms");
+  const smsActive = location.pathname.startsWith("/superadmin/sms");
   const [smsOpen, setSmsOpen] = useState(smsActive);
 
   const linkClass = (isActive: boolean) =>
