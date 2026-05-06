@@ -1764,6 +1764,7 @@ export type Database = {
           tenant_id: string | null
           total_amount: number
           updated_at: string
+          warehouse_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1783,6 +1784,7 @@ export type Database = {
           tenant_id?: string | null
           total_amount?: number
           updated_at?: string
+          warehouse_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1802,6 +1804,7 @@ export type Database = {
           tenant_id?: string | null
           total_amount?: number
           updated_at?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -1816,6 +1819,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -2105,6 +2115,7 @@ export type Database = {
           tenant_id: string | null
           total_amount: number
           updated_at: string
+          warehouse_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2128,6 +2139,7 @@ export type Database = {
           tenant_id?: string | null
           total_amount?: number
           updated_at?: string
+          warehouse_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2151,6 +2163,7 @@ export type Database = {
           tenant_id?: string | null
           total_amount?: number
           updated_at?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -2165,6 +2178,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -2378,6 +2398,7 @@ export type Database = {
           tenant_id: string | null
           type: string
           variation_id: string | null
+          warehouse_id: string | null
         }
         Insert: {
           adjusted_by: string
@@ -2390,6 +2411,7 @@ export type Database = {
           tenant_id?: string | null
           type?: string
           variation_id?: string | null
+          warehouse_id?: string | null
         }
         Update: {
           adjusted_by?: string
@@ -2402,6 +2424,7 @@ export type Database = {
           tenant_id?: string | null
           type?: string
           variation_id?: string | null
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -2425,6 +2448,13 @@ export type Database = {
             referencedRelation: "product_variations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stock_adjustments_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       stock_transfers: {
@@ -2432,6 +2462,7 @@ export type Database = {
           created_at: string
           created_by: string
           from_branch: string
+          from_warehouse_id: string | null
           id: string
           notes: string | null
           product_id: string
@@ -2439,6 +2470,7 @@ export type Database = {
           status: string
           tenant_id: string | null
           to_branch: string
+          to_warehouse_id: string | null
           updated_at: string
           variation_id: string | null
         }
@@ -2446,6 +2478,7 @@ export type Database = {
           created_at?: string
           created_by: string
           from_branch?: string
+          from_warehouse_id?: string | null
           id?: string
           notes?: string | null
           product_id: string
@@ -2453,6 +2486,7 @@ export type Database = {
           status?: string
           tenant_id?: string | null
           to_branch: string
+          to_warehouse_id?: string | null
           updated_at?: string
           variation_id?: string | null
         }
@@ -2460,6 +2494,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           from_branch?: string
+          from_warehouse_id?: string | null
           id?: string
           notes?: string | null
           product_id?: string
@@ -2467,10 +2502,18 @@ export type Database = {
           status?: string
           tenant_id?: string | null
           to_branch?: string
+          to_warehouse_id?: string | null
           updated_at?: string
           variation_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_transfers_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_transfers_product_id_fkey"
             columns: ["product_id"]
@@ -2483,6 +2526,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_transfers_to_warehouse_id_fkey"
+            columns: ["to_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
           {
@@ -2809,6 +2859,92 @@ export type Database = {
           },
         ]
       }
+      warehouse_stock: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          tenant_id: string | null
+          updated_at: string
+          variation_id: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          tenant_id?: string | null
+          updated_at?: string
+          variation_id?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          tenant_id?: string | null
+          updated_at?: string
+          variation_id?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_stock_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouses: {
+        Row: {
+          address: string | null
+          code: string | null
+          contact_person: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          phone: string | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          phone?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string | null
+          contact_person?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          phone?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       warranty_claims: {
         Row: {
           claim_date: string
@@ -2894,6 +3030,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_default_warehouse: {
+        Args: { _tenant_id: string }
+        Returns: string
+      }
       generate_installment_invoice: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
