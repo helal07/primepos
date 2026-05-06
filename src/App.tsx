@@ -94,6 +94,29 @@ const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigat
 
 const queryClient = new QueryClient();
 
+const SuperadminRoutes = () => (
+  <ProtectedRoute>
+    <SuperadminRoute>
+      <AdminLayout>
+        <Routes>
+          <Route index element={<AdminDashboard />} />
+          <Route path="tenants" element={<TenantManagement />} />
+          <Route path="tenants/:id" element={<TenantDetail />} />
+          <Route path="packages" element={<PackageManagement />} />
+          <Route path="cms" element={<LandingCms />} />
+          <Route path="sitemap" element={<Sitemap />} />
+          <Route path="sms/providers" element={<SmsProviders />} />
+          <Route path="sms/plans" element={<SmsPlans />} />
+          <Route path="sms/purchases" element={<SmsPurchases />} />
+          <Route path="transactions" element={<AdminTransactions />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AdminLayout>
+    </SuperadminRoute>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -105,31 +128,8 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             {/* SaaS Admin — separate layout */}
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedRoute>
-                  <SuperadminRoute>
-                    <AdminLayout>
-                      <Routes>
-                        <Route path="/" element={<AdminDashboard />} />
-                        <Route path="/tenants" element={<TenantManagement />} />
-                        <Route path="/tenants/:id" element={<TenantDetail />} />
-                        <Route path="/packages" element={<PackageManagement />} />
-                        <Route path="/cms" element={<LandingCms />} />
-                        <Route path="/sitemap" element={<Sitemap />} />
-                        <Route path="/sms/providers" element={<SmsProviders />} />
-                        <Route path="/sms/plans" element={<SmsPlans />} />
-                        <Route path="/sms/purchases" element={<SmsPurchases />} />
-                        <Route path="/transactions" element={<AdminTransactions />} />
-                        <Route path="/settings" element={<AdminSettings />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </AdminLayout>
-                  </SuperadminRoute>
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/superadmin/*" element={<SuperadminRoutes />} />
+            <Route path="/admin/*" element={<Navigate to="/superadmin" replace />} />
             {/* Tenant routes */}
             <Route
               path="/*"

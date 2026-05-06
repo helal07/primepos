@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 const adminMenu = [
-  { title: "Dashboard", url: "/admin", icon: Crown },
-  { title: "Tenants", url: "/admin/tenants", icon: Building2 },
-  { title: "Packages", url: "/admin/packages", icon: Package },
-  { title: "CMS", url: "/admin/cms", icon: Globe },
-  { title: "Transactions", url: "/admin/transactions", icon: CreditCard },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Dashboard", url: "/superadmin", icon: Crown },
+  { title: "Tenants", url: "/superadmin/tenants", icon: Building2 },
+  { title: "Packages", url: "/superadmin/packages", icon: Package },
+  { title: "CMS", url: "/superadmin/cms", icon: Globe },
+  { title: "Transactions", url: "/superadmin/transactions", icon: CreditCard },
+  { title: "Settings", url: "/superadmin/settings", icon: Settings },
 ];
 
 interface Props {
