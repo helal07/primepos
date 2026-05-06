@@ -27,7 +27,7 @@ export default function ProfitLossReport() {
         supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to),
         supabase.from("products").select("stock_quantity, purchase_price, selling_price"),
         hasInstallments
-          ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent").gte("sale_date", from).lte("sale_date", to)
+          ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent, products(purchase_price)").gte("sale_date", from).lte("sale_date", to)
           : Promise.resolve({ data: [] as any[] }),
         hasInstallments
           ? supabase.from("installment_collections").select("amount, collected_at").gte("collected_at", from).lte("collected_at", to + "T23:59:59")
@@ -36,7 +36,7 @@ export default function ProfitLossReport() {
           ? supabase.from("exchange_purchases").select("purchase_price, paid_amount, status, linked_sale_id, purchase_date").gte("purchase_date", from).lte("purchase_date", to)
           : Promise.resolve({ data: [] as any[] }),
         hasExchange
-          ? supabase.from("exchange_purchases").select("purchase_price, status").eq("status", "sold").gte("updated_at", from).lte("updated_at", to + "T23:59:59")
+          ? supabase.from("exchange_purchases").select("purchase_price, status, linked_sale_id").eq("status", "sold").gte("updated_at", from + "T00:00:00").lte("updated_at", to + "T23:59:59")
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -61,30 +61,39 @@ export default function ProfitLossReport() {
       const closingStockPurchase = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.purchase_price), 0);
       const closingStockSale = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.selling_price), 0);
 
-      // Installments: revenue = total_amount of installment sales (full contract value),
-      // collected = actual cash received in period. Estimated cost ≈ price (product cost portion).
+      // ── Installments (cash basis) ──
+      // Contract Value = total receivable for new sales in period (informational only — NOT revenue yet).
+      // Realized revenue in period = cash actually collected (principal + interest are baked into schedule amounts).
+      // COGS in period = product purchase cost for installment sales booked in period (matches when stock leaves).
       const installmentRevenue = instSales.reduce((s: number, r: any) => s + Number(r.total_amount || 0), 0);
       const installmentCollected = instColl.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+      // Interest income is already embedded in scheduled (and therefore collected) amounts; expose separately
+      // for reporting only — do NOT add it again to net profit.
       const installmentInterest = instSales.reduce((s: number, r: any) => {
         const base = Number(r.price || 0) - Number(r.discount || 0);
         return s + (base * Number(r.interest_percent || 0)) / 100;
       }, 0);
+      const installmentCogs = instSales.reduce((s: number, r: any) => s + Number(r.products?.purchase_price || 0), 0);
 
-      // Exchange: cost = purchase_price of items bought in period; revenue = purchase_price of items sold in period (proxy)
+      // ── Exchange ──
+      // Buying a used device = inventory asset (NOT a period expense).
+      // When that unit is sold (status='sold' in period), its purchase_price becomes COGS;
+      // the resale revenue is already captured in the linked sale row inside `sales` (totalSales).
       const exchangePurchaseCost = exchPurch.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
       const exchangeSoldCost = exchSold.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
 
-      const cogs = totalPurchase - closingStockPurchase;
-      const grossProfit = totalSales - cogs;
-      const totalExpenses = sellShipping + purchaseShipping + exchangePurchaseCost;
-      const netProfit = grossProfit - totalExpenses + installmentInterest + installmentCollected - exchangeSoldCost;
+      // ── Consolidated P&L ──
+      const cogs = (totalPurchase - closingStockPurchase) + installmentCogs + exchangeSoldCost;
+      const grossProfit = (totalSales + installmentCollected) - cogs;
+      const totalExpenses = sellShipping + purchaseShipping;
+      const netProfit = grossProfit - totalExpenses;
 
       return {
         totalSales, totalSalesDiscount, sellShipping, sellTax,
         totalPurchase, purchaseDiscount, purchaseShipping, purchaseTax,
         closingStockPurchase, closingStockSale,
         cogs, grossProfit, netProfit, totalExpenses,
-        installmentRevenue, installmentCollected, installmentInterest,
+        installmentRevenue, installmentCollected, installmentInterest, installmentCogs,
         exchangePurchaseCost, exchangeSoldCost,
       };
     },
@@ -104,10 +113,11 @@ export default function ProfitLossReport() {
         ["Installment Sales (Contract Value)", Math.round(data.installmentRevenue)],
         ["Installment Collected", Math.round(data.installmentCollected)],
         ["Installment Interest Income", Math.round(data.installmentInterest)],
+        ["Installment COGS (Product Cost)", Math.round(data.installmentCogs)],
       ] as (string | number)[][] : []),
       ...(hasExchange ? [
         ["Exchange Purchase Cost", Math.round(data.exchangePurchaseCost)],
-        ["Exchange Sold (Cost Basis)", Math.round(data.exchangeSoldCost)],
+        ["Exchange COGS (Sold Cost Basis)", Math.round(data.exchangeSoldCost)],
       ] as (string | number)[][] : []),
       ["Net Profit", Math.round(data.netProfit)],
     ] as (string | number)[][] : [],
@@ -169,20 +179,22 @@ export default function ProfitLossReport() {
             {(hasInstallments || hasExchange) && (
               <div className="grid md:grid-cols-2 gap-6">
                 {hasInstallments && (
-                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Installments {data.installmentCollected + data.installmentInterest >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
+                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Installments {(data.installmentCollected - data.installmentCogs) >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
-                      <Row label="Contract Value (New Sales)" value={fmt(data.installmentRevenue)} />
+                      <Row label="Contract Value (New Sales — informational)" value={fmt(data.installmentRevenue)} />
                       <Row label="Collections Received" value={fmt(data.installmentCollected)} variant="green" />
-                      <Row label="Interest Income" value={fmt(data.installmentInterest)} variant="green" />
+                      <Row label="Interest (included in collections)" value={fmt(data.installmentInterest)} />
+                      <Row label="Product COGS (new sales)" value={fmt(data.installmentCogs)} variant="red" />
+                      <Row label="Net (Collected − COGS)" value={fmt(data.installmentCollected - data.installmentCogs)} variant={data.installmentCollected - data.installmentCogs >= 0 ? "green" : "red"} />
                     </CardContent>
                   </Card>
                 )}
                 {hasExchange && (
-                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Exchange {(data.exchangeSoldCost - data.exchangePurchaseCost) >= 0 ? <Badge variant="default" className="ml-2">Profit</Badge> : <Badge variant="destructive" className="ml-2">Loss</Badge>}</CardTitle></CardHeader>
+                  <Card><CardHeader className="pb-3"><CardTitle className="text-base">Exchange Inventory</CardTitle></CardHeader>
                     <CardContent className="space-y-3">
-                      <Row label="Purchase Cost (Bought)" value={fmt(data.exchangePurchaseCost)} variant="red" />
-                      <Row label="Sold Items (Cost Basis)" value={fmt(data.exchangeSoldCost)} variant="green" />
-                      <Row label="Net Exchange" value={fmt(data.exchangeSoldCost - data.exchangePurchaseCost)} variant={data.exchangeSoldCost - data.exchangePurchaseCost >= 0 ? "green" : "red"} />
+                      <Row label="Bought in Period (added to inventory)" value={fmt(data.exchangePurchaseCost)} />
+                      <Row label="Sold in Period (COGS)" value={fmt(data.exchangeSoldCost)} variant="red" />
+                      <p className="text-xs text-muted-foreground pt-1">Resale revenue is recorded in the linked sale and already included in Total Sales.</p>
                     </CardContent>
                   </Card>
                 )}
