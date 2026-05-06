@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, DollarSign, Package } from "lucide-react";
 import ReportToolbar from "@/components/reports/ReportToolbar";
 import { useHasModule } from "@/hooks/useEnabledModules";
+import { computeProfitLoss } from "./profitLossCalc";
 
 function fmt(n: number) {
   return `৳${Math.round(n).toLocaleString()}`;
@@ -40,62 +41,17 @@ export default function ProfitLossReport() {
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
-      const sales = salesRes.data ?? [];
-      const purchases = purchasesRes.data ?? [];
-      const products = productsRes.data ?? [];
-      const instSales = (instSalesRes as any).data ?? [];
-      const instColl = (instCollRes as any).data ?? [];
-      const exchPurch = (exchPurchRes as any).data ?? [];
-      const exchSold = (exchSellRes as any).data ?? [];
-
-      const totalSales = sales.reduce((s, r) => s + Number(r.total_amount), 0);
-      const totalSalesDiscount = sales.reduce((s, r) => s + Number(r.discount_amount), 0);
-      const sellShipping = sales.reduce((s, r) => s + Number(r.shipping_cost), 0);
-      const sellTax = sales.reduce((s, r) => s + Number(r.tax_amount), 0);
-
-      const totalPurchase = purchases.reduce((s, r) => s + Number(r.total_amount), 0);
-      const purchaseDiscount = purchases.reduce((s, r) => s + Number(r.discount_amount), 0);
-      const purchaseShipping = purchases.reduce((s, r) => s + Number(r.shipping_cost), 0);
-      const purchaseTax = purchases.reduce((s, r) => s + Number(r.tax_amount), 0);
-
-      const closingStockPurchase = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.purchase_price), 0);
-      const closingStockSale = products.reduce((s, p) => s + Number(p.stock_quantity) * Number(p.selling_price), 0);
-
-      // ── Installments (cash basis) ──
-      // Contract Value = total receivable for new sales in period (informational only — NOT revenue yet).
-      // Realized revenue in period = cash actually collected (principal + interest are baked into schedule amounts).
-      // COGS in period = product purchase cost for installment sales booked in period (matches when stock leaves).
-      const installmentRevenue = instSales.reduce((s: number, r: any) => s + Number(r.total_amount || 0), 0);
-      const installmentCollected = instColl.reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-      // Interest income is already embedded in scheduled (and therefore collected) amounts; expose separately
-      // for reporting only — do NOT add it again to net profit.
-      const installmentInterest = instSales.reduce((s: number, r: any) => {
-        const base = Number(r.price || 0) - Number(r.discount || 0);
-        return s + (base * Number(r.interest_percent || 0)) / 100;
-      }, 0);
-      const installmentCogs = instSales.reduce((s: number, r: any) => s + Number(r.products?.purchase_price || 0), 0);
-
-      // ── Exchange ──
-      // Buying a used device = inventory asset (NOT a period expense).
-      // When that unit is sold (status='sold' in period), its purchase_price becomes COGS;
-      // the resale revenue is already captured in the linked sale row inside `sales` (totalSales).
-      const exchangePurchaseCost = exchPurch.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
-      const exchangeSoldCost = exchSold.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);
-
-      // ── Consolidated P&L ──
-      const cogs = (totalPurchase - closingStockPurchase) + installmentCogs + exchangeSoldCost;
-      const grossProfit = (totalSales + installmentCollected) - cogs;
-      const totalExpenses = sellShipping + purchaseShipping;
-      const netProfit = grossProfit - totalExpenses;
-
-      return {
-        totalSales, totalSalesDiscount, sellShipping, sellTax,
-        totalPurchase, purchaseDiscount, purchaseShipping, purchaseTax,
-        closingStockPurchase, closingStockSale,
-        cogs, grossProfit, netProfit, totalExpenses,
-        installmentRevenue, installmentCollected, installmentInterest, installmentCogs,
-        exchangePurchaseCost, exchangeSoldCost,
-      };
+      return computeProfitLoss({
+        sales: salesRes.data ?? [],
+        purchases: purchasesRes.data ?? [],
+        products: productsRes.data ?? [],
+        instSales: (instSalesRes as any).data ?? [],
+        instColl: (instCollRes as any).data ?? [],
+        exchPurch: (exchPurchRes as any).data ?? [],
+        exchSold: (exchSellRes as any).data ?? [],
+        hasInstallments,
+        hasExchange,
+      });
     },
   });
 
