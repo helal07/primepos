@@ -43,7 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/admin" className="flex items-center gap-2 lg:hidden">
+          <Link to="/superadmin" className="flex items-center gap-2 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <ShieldCheck className="h-4 w-4" />
             </div>
