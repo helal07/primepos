@@ -94,6 +94,12 @@ const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigat
 
 const queryClient = new QueryClient();
 
+const AdminRedirect = () => {
+  const location = useLocation();
+  const rest = location.pathname.replace(/^\/admin/, "");
+  return <Navigate to={`/superadmin${rest}${location.search}${location.hash}`} replace />;
+};
+
 const SuperadminRoutes = () => (
   <ProtectedRoute>
     <SuperadminRoute>
