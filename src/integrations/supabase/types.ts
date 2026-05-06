@@ -2202,6 +2202,170 @@ export type Database = {
         }
         Relationships: []
       }
+      sitemap_entries: {
+        Row: {
+          changefreq: string
+          created_at: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          path: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          changefreq?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          path: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          changefreq?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          path?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sms_count: number
+          updated_at: string
+          validity_days: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          sms_count?: number
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sms_count?: number
+          updated_at?: string
+          validity_days?: number | null
+        }
+        Relationships: []
+      }
+      sms_providers: {
+        Row: {
+          api_key: string | null
+          api_secret: string | null
+          base_url: string | null
+          created_at: string
+          created_by: string | null
+          gateway_type: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          sender_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_secret?: string | null
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          gateway_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          sender_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_secret?: string | null
+          base_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          gateway_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          sender_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          payment_method: string | null
+          plan_id: string | null
+          purchased_at: string
+          reference_no: string | null
+          sms_count: number
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          plan_id?: string | null
+          purchased_at?: string
+          reference_no?: string | null
+          sms_count?: number
+          status?: string
+          tenant_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          plan_id?: string | null
+          purchased_at?: string
+          reference_no?: string | null
+          sms_count?: number
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_purchases_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "sms_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_adjustments: {
         Row: {
           adjusted_by: string
