@@ -8,17 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, ShoppingCart, TrendingUp, TrendingDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useWarehouses } from "@/hooks/useWarehouses";
 
 export default function DailySummaryReport() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
+  const { data: warehouses } = useWarehouses();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_daily_summary", date],
+    queryKey: ["report_daily_summary", date, locationId],
     queryFn: async () => {
-      const [salesRes, purchasesRes] = await Promise.all([
-        supabase.from("sales").select("id, total_amount, payment_method, payment_status, customer_id, customers(name)").eq("sale_date", date),
-        supabase.from("purchases").select("id, total_amount, payment_method, payment_status, supplier_id, suppliers(name)").eq("purchase_date", date),
-      ]);
+      let sq = supabase.from("sales").select("id, total_amount, payment_method, payment_status, customer_id, customers(name)").eq("sale_date", date);
+      let pq = supabase.from("purchases").select("id, total_amount, payment_method, payment_status, supplier_id, suppliers(name)").eq("purchase_date", date);
+      if (locationId) { sq = sq.eq("warehouse_id", locationId); pq = pq.eq("warehouse_id", locationId); }
+      const [salesRes, purchasesRes] = await Promise.all([sq, pq]);
       const sales = salesRes.data ?? [];
       const purchases = purchasesRes.data ?? [];
       const totalSales = sales.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
@@ -34,6 +38,18 @@ export default function DailySummaryReport() {
       <PageHeader title="Daily Summary Report" subtitle="Overview of daily sales and purchases" />
       <div className="flex items-end gap-3">
         <div><Label>Date</Label><Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-44" /></div>
+        <div>
+          <Label>Business Location</Label>
+          <Select value={locationId || "all"} onValueChange={(v) => setLocationId(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All locations</SelectItem>
+              {(warehouses ?? []).filter(w => w.is_active).map(w => (
+                <SelectItem key={w.id} value={w.id}>{w.name}{w.code ? ` (${w.code})` : ""}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       {isLoading ? <Skeleton className="h-40 w-full" /> : data && (
         <>
