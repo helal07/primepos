@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useStockTransfers, useStockTransferMutations, useProducts } from "@/hooks/useInventory";
 import { useWarehouses } from "@/hooks/useWarehouses";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,15 +29,44 @@ export default function StockTransfers() {
   const { data: warehouses } = useWarehouses();
   const { create, update } = useStockTransferMutations();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
 
   const activeWarehouses = (warehouses ?? []).filter(w => w.is_active);
 
+  const { data: sourceStock } = useQuery({
+    queryKey: ["warehouse_stock_check", form.from_warehouse_id, form.product_id],
+    enabled: !!form.from_warehouse_id && !!form.product_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warehouse_stock")
+        .select("quantity")
+        .eq("warehouse_id", form.from_warehouse_id)
+        .eq("product_id", form.product_id)
+        .is("variation_id", null)
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.quantity ?? 0);
+    },
+  });
+
+  const availableQty = sourceStock ?? 0;
+  const requestedQty = parseInt(form.quantity) || 0;
+  const insufficientStock = !!form.from_warehouse_id && !!form.product_id && requestedQty > availableQty;
+
   const handleSubmit = () => {
     const from = activeWarehouses.find(w => w.id === form.from_warehouse_id);
     const to = activeWarehouses.find(w => w.id === form.to_warehouse_id);
     if (!from || !to || from.id === to.id) return;
+    if (requestedQty > availableQty) {
+      toast({
+        title: "Insufficient stock",
+        description: `Only ${availableQty} unit(s) available at ${from.name}.`,
+        variant: "destructive",
+      });
+      return;
+    }
     create.mutate({
       product_id: form.product_id,
       from_warehouse_id: from.id,
@@ -101,6 +133,12 @@ export default function StockTransfers() {
               <div className="space-y-2">
                 <Label>Quantity *</Label>
                 <Input type="number" min="1" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} />
+                {form.from_warehouse_id && form.product_id && (
+                  <p className={`text-xs ${insufficientStock ? "text-destructive" : "text-muted-foreground"}`}>
+                    Available at source: <span className="font-medium">{availableQty}</span>
+                    {insufficientStock && " — not enough stock"}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Notes</Label>
@@ -115,6 +153,8 @@ export default function StockTransfers() {
                   !form.from_warehouse_id ||
                   !form.to_warehouse_id ||
                   form.from_warehouse_id === form.to_warehouse_id ||
+                  requestedQty < 1 ||
+                  insufficientStock ||
                   create.isPending
                 }
               >
