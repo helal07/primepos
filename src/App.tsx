@@ -22,6 +22,8 @@ import Units from "./pages/Units";
 import Variations from "./pages/Variations";
 import StockAdjustments from "./pages/StockAdjustments";
 import StockTransfers from "./pages/StockTransfers";
+import Warehouses from "./pages/Warehouses";
+import WarehouseStock from "./pages/WarehouseStock";
 import Sales from "./pages/Sales";
 import SaleAdd from "./pages/SaleAdd";
 import SaleView from "./pages/SaleView";
@@ -149,6 +151,8 @@ const App = () => (
                       <Route path="/variations" element={<Variations />} />
                       <Route path="/stock-adjustments" element={<StockAdjustments />} />
                       <Route path="/stock-transfers" element={<StockTransfers />} />
+                      <Route path="/warehouses" element={<ModuleGate module="warehouses"><Warehouses /></ModuleGate>} />
+                      <Route path="/warehouses/stock" element={<ModuleGate module="warehouses"><WarehouseStock /></ModuleGate>} />
                       <Route path="/warranties" element={<PlaceholderPage title="Warranties" />} />
                       <Route path="/products/import" element={<PlaceholderPage title="Bulk Import" />} />
                       <Route path="/products/export" element={<PlaceholderPage title="Export" />} />
