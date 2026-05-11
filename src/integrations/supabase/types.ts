@@ -3030,6 +3030,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_warehouse_stock_delta: {
+        Args: {
+          _delta: number
+          _product_id: string
+          _tenant_id: string
+          _variation_id: string
+          _warehouse_id: string
+        }
+        Returns: undefined
+      }
       ensure_default_warehouse: {
         Args: { _tenant_id: string }
         Returns: string
