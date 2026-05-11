@@ -55,6 +55,7 @@ import {
   Wallet,
   Calculator,
   Plus,
+  Warehouse as WarehouseIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -119,6 +120,14 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
       { title: "Quotations", url: "/quotations", icon: FileQuestion },
       { title: "Sale Returns", url: "/sales/returns", icon: Undo2 },
       { title: "Shipments", url: "/shipments", icon: Ship },
+    ],
+  },
+  {
+    label: "Warehouses",
+    module: "warehouses",
+    items: [
+      { title: "Warehouses", url: "/warehouses", icon: WarehouseIcon },
+      { title: "Stock by Warehouse", url: "/warehouses/stock", icon: Package },
     ],
   },
   {
