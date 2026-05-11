@@ -8,15 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useWarehouses } from "@/hooks/useWarehouses";
 
 export default function ProductProfitReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
+  const { data: warehouses } = useWarehouses();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_product_profit", from, to],
+    queryKey: ["report_product_profit", from, to, locationId],
     queryFn: async () => {
-      const { data: saleItems } = await supabase.from("sale_items").select("product_id, quantity, unit_price, total, products(name, purchase_price, category_id, brand_id, categories(name), brands(name))").gte("created_at", from).lte("created_at", to + "T23:59:59");
+      let q = supabase.from("sale_items").select("product_id, quantity, unit_price, total, products(name, purchase_price, category_id, brand_id, categories(name), brands(name)), sales!inner(warehouse_id)").gte("created_at", from).lte("created_at", to + "T23:59:59");
+      if (locationId) q = q.eq("sales.warehouse_id", locationId);
+      const { data: saleItems } = await q;
       
       const productMap: Record<string, { name: string; category: string; brand: string; revenue: number; cost: number; qty: number }> = {};
       const categoryMap: Record<string, { name: string; revenue: number; cost: number }> = {};
@@ -62,6 +68,18 @@ export default function ProductProfitReport() {
       <div className="flex flex-wrap gap-3 items-end">
         <div><Label>From</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="w-44" /></div>
         <div><Label>To</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} className="w-44" /></div>
+        <div>
+          <Label>Business Location</Label>
+          <Select value={locationId || "all"} onValueChange={(v) => setLocationId(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All locations</SelectItem>
+              {(warehouses ?? []).filter(w => w.is_active).map(w => (
+                <SelectItem key={w.id} value={w.id}>{w.name}{w.code ? ` (${w.code})` : ""}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? <Skeleton className="h-60 w-full" /> : data && (
