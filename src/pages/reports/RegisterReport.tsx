@@ -10,12 +10,14 @@ import ReportToolbar from "@/components/reports/ReportToolbar";
 export default function RegisterReport() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState("all");
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_register", date, paymentMethod],
+    queryKey: ["report_register", date, paymentMethod, locationId],
     queryFn: async () => {
       let q = supabase.from("sales").select("id, invoice_number, total_amount, payment_method, payment_status, created_at").eq("sale_date", date).order("created_at");
       if (paymentMethod !== "all") q = q.eq("payment_method", paymentMethod);
+      if (locationId) q = q.eq("warehouse_id", locationId);
       const { data: sales } = await q;
       const items = sales ?? [];
       const methodTotals: Record<string, number> = {};
@@ -43,6 +45,7 @@ export default function RegisterReport() {
       <ReportToolbar
         singleDate={date} onDateChange={setDate}
         showPaymentFilter paymentMethod={paymentMethod} onPaymentMethodChange={setPaymentMethod}
+        showLocationFilter locationId={locationId} onLocationChange={setLocationId}
         exportData={exportData}
       />
       <div className="print-area space-y-6">

@@ -11,14 +11,15 @@ import ReportToolbar from "@/components/reports/ReportToolbar";
 export default function TaxReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_tax", from, to],
+    queryKey: ["report_tax", from, to, locationId],
     queryFn: async () => {
-      const [salesRes, purchasesRes] = await Promise.all([
-        supabase.from("sales").select("invoice_number, sale_date, subtotal, tax_amount, total_amount").gte("sale_date", from).lte("sale_date", to).order("sale_date"),
-        supabase.from("purchases").select("reference_number, purchase_date, subtotal, tax_amount, total_amount").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date"),
-      ]);
+      let sq = supabase.from("sales").select("invoice_number, sale_date, subtotal, tax_amount, total_amount").gte("sale_date", from).lte("sale_date", to).order("sale_date");
+      let pq = supabase.from("purchases").select("reference_number, purchase_date, subtotal, tax_amount, total_amount").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date");
+      if (locationId) { sq = sq.eq("warehouse_id", locationId); pq = pq.eq("warehouse_id", locationId); }
+      const [salesRes, purchasesRes] = await Promise.all([sq, pq]);
       const sales = salesRes.data ?? [];
       const purchases = purchasesRes.data ?? [];
       const totalSalesTax = sales.reduce((s, r) => s + Number(r.tax_amount), 0);
@@ -40,7 +41,9 @@ export default function TaxReport() {
   return (
     <div className="space-y-6">
       <PageHeader title="Tax Report" description="Tax collected and paid summary" />
-      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo} exportData={exportData} />
+      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo}
+        showLocationFilter locationId={locationId} onLocationChange={setLocationId}
+        exportData={exportData} />
       <div className="print-area space-y-6">
         {isLoading ? <Skeleton className="h-64 w-full" /> : data && (
           <>

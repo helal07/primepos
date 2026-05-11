@@ -11,11 +11,14 @@ import ReportToolbar from "@/components/reports/ReportToolbar";
 export default function TrendingProductsReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_trending", from, to],
+    queryKey: ["report_trending", from, to, locationId],
     queryFn: async () => {
-      const { data } = await supabase.from("sale_items").select("product_id, quantity, total, products(name)").gte("created_at", from).lte("created_at", to + "T23:59:59");
+      let q = supabase.from("sale_items").select("product_id, quantity, total, products(name), sales!inner(warehouse_id)").gte("created_at", from).lte("created_at", to + "T23:59:59");
+      if (locationId) q = q.eq("sales.warehouse_id", locationId);
+      const { data } = await q;
       const map: Record<string, { name: string; qty: number; revenue: number }> = {};
       (data ?? []).forEach((item: any) => {
         const pid = item.product_id;
@@ -39,7 +42,9 @@ export default function TrendingProductsReport() {
   return (
     <div className="space-y-6">
       <PageHeader title="Trending Products" subtitle="Most sold products by quantity" />
-      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo} exportData={exportData} />
+      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo}
+        showLocationFilter locationId={locationId} onLocationChange={setLocationId}
+        exportData={exportData} />
       <div className="print-area space-y-6">
         {isLoading ? <Skeleton className="h-60 w-full" /> : (
           <Card><CardContent className="pt-4">

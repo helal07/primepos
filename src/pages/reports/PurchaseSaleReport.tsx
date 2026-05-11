@@ -13,17 +13,20 @@ export default function PurchaseSaleReport() {
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState("all");
   const [paymentStatus, setPaymentStatus] = useState("all");
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_purchase_sale", from, to, paymentMethod, paymentStatus],
+    queryKey: ["report_purchase_sale", from, to, paymentMethod, paymentStatus, locationId],
     queryFn: async () => {
       let sq = supabase.from("sales").select("id, invoice_number, sale_date, total_amount, payment_status, payment_method, customers(name)").gte("sale_date", from).lte("sale_date", to).order("sale_date", { ascending: false });
       if (paymentMethod !== "all") sq = sq.eq("payment_method", paymentMethod);
       if (paymentStatus !== "all") sq = sq.eq("payment_status", paymentStatus);
+      if (locationId) sq = sq.eq("warehouse_id", locationId);
 
       let pq = supabase.from("purchases").select("id, reference_number, purchase_date, total_amount, payment_status, payment_method, suppliers(name)").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date", { ascending: false });
       if (paymentMethod !== "all") pq = pq.eq("payment_method", paymentMethod);
       if (paymentStatus !== "all") pq = pq.eq("payment_status", paymentStatus);
+      if (locationId) pq = pq.eq("warehouse_id", locationId);
 
       const [salesRes, purchasesRes] = await Promise.all([sq, pq]);
       const sales = salesRes.data ?? [];
@@ -55,6 +58,7 @@ export default function PurchaseSaleReport() {
         from={from} to={to} onFromChange={setFrom} onToChange={setTo}
         showPaymentFilter paymentMethod={paymentMethod} onPaymentMethodChange={setPaymentMethod}
         showStatusFilter paymentStatus={paymentStatus} onPaymentStatusChange={setPaymentStatus}
+        showLocationFilter locationId={locationId} onLocationChange={setLocationId}
         exportData={exportData}
       />
       <div className="print-area space-y-6">

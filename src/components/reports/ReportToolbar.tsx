@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Printer, MapPin } from "lucide-react";
+import { useWarehouses } from "@/hooks/useWarehouses";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -27,6 +28,9 @@ interface ReportToolbarProps {
   showStatusFilter?: boolean;
   paymentStatus?: string;
   onPaymentStatusChange?: (v: string) => void;
+  showLocationFilter?: boolean;
+  locationId?: string;
+  onLocationChange?: (v: string) => void;
   exportData: ExportData;
 }
 
@@ -73,10 +77,30 @@ export default function ReportToolbar({
   singleDate, onDateChange,
   showPaymentFilter, paymentMethod, onPaymentMethodChange,
   showStatusFilter, paymentStatus, onPaymentStatusChange,
+  showLocationFilter, locationId, onLocationChange,
   exportData,
 }: ReportToolbarProps) {
+  const { data: warehouses } = useWarehouses();
   return (
     <div className="no-print flex flex-wrap items-end gap-3">
+      {/* Business Location */}
+      {showLocationFilter && onLocationChange && (
+        <div className="space-y-1">
+          <Label className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Business Location</Label>
+          <Select value={locationId || "all"} onValueChange={(v) => onLocationChange(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[200px] h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All locations</SelectItem>
+              {(warehouses ?? []).filter(w => w.is_active).map(w => (
+                <SelectItem key={w.id} value={w.id}>
+                  {w.name}{w.code ? ` (${w.code})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Date filters */}
       {singleDate !== undefined && onDateChange && (
         <div className="space-y-1">

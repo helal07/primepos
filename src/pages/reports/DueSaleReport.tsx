@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -9,10 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import ReportToolbar from "@/components/reports/ReportToolbar";
 
 export default function DueSaleReport() {
+  const [locationId, setLocationId] = useState("");
   const { data, isLoading } = useQuery({
-    queryKey: ["report_due_sales"],
+    queryKey: ["report_due_sales", locationId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sales").select("id, invoice_number, sale_date, total_amount, payment_status, customers(name)").in("payment_status", ["due", "partial"]).order("sale_date", { ascending: false });
+      let q = supabase.from("sales").select("id, invoice_number, sale_date, total_amount, payment_status, customers(name)").in("payment_status", ["due", "partial"]).order("sale_date", { ascending: false });
+      if (locationId) q = q.eq("warehouse_id", locationId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
@@ -31,7 +34,7 @@ export default function DueSaleReport() {
   return (
     <div className="space-y-6">
       <PageHeader title="Due Sale Report" subtitle="All sales with pending payments" />
-      <ReportToolbar exportData={exportData} />
+      <ReportToolbar showLocationFilter locationId={locationId} onLocationChange={setLocationId} exportData={exportData} />
       <div className="print-area space-y-6">
         {isLoading ? <Skeleton className="h-60 w-full" /> : (
           <Card><CardContent className="pt-4">

@@ -11,17 +11,39 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
+import { useWarehouses } from "@/hooks/useWarehouses";
 
 const COLORS = ["hsl(201,96%,32%)", "hsl(215,25%,27%)", "hsl(201,96%,42%)", "hsl(215,16%,47%)", "hsl(201,60%,60%)"];
+
+function LocationFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: warehouses } = useWarehouses();
+  return (
+    <div className="space-y-1">
+      <Label>Business Location</Label>
+      <Select value={value || "all"} onValueChange={(v) => onChange(v === "all" ? "" : v)}>
+        <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All locations</SelectItem>
+          {(warehouses ?? []).filter(w => w.is_active).map(w => (
+            <SelectItem key={w.id} value={w.id}>{w.name}{w.code ? ` (${w.code})` : ""}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 function SalesReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_sales", from, to],
+    queryKey: ["report_sales", from, to, locationId],
     queryFn: async () => {
-      const { data: sales, error } = await supabase.from("sales").select("total_amount, sale_date, payment_method, payment_status, customers(name)").gte("sale_date", from).lte("sale_date", to).order("sale_date");
+      let q = supabase.from("sales").select("total_amount, sale_date, payment_method, payment_status, customers(name)").gte("sale_date", from).lte("sale_date", to).order("sale_date");
+      if (locationId) q = q.eq("warehouse_id", locationId);
+      const { data: sales, error } = await q;
       if (error) throw error;
 
       const totalRevenue = (sales ?? []).reduce((s, r: any) => s + Number(r.total_amount), 0);
@@ -50,6 +72,7 @@ function SalesReport() {
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1"><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-[160px]" /></div>
         <div className="space-y-1"><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-[160px]" /></div>
+        <LocationFilter value={locationId} onChange={setLocationId} />
       </div>
 
       {isLoading ? <Skeleton className="h-64 w-full" /> : (
@@ -101,11 +124,29 @@ function SalesReport() {
 }
 
 function InventoryReport() {
+  const [locationId, setLocationId] = useState("");
   const { data, isLoading } = useQuery({
-    queryKey: ["report_inventory"],
+    queryKey: ["report_inventory", locationId],
     queryFn: async () => {
-      const { data: products, error } = await supabase.from("products").select("name, stock_quantity, selling_price, purchase_price, categories(name)").order("stock_quantity");
-      if (error) throw error;
+      let products: any[] = [];
+      if (locationId) {
+        const { data, error } = await supabase
+          .from("warehouse_stock")
+          .select("quantity, products!inner(name, selling_price, purchase_price, categories(name))")
+          .eq("warehouse_id", locationId);
+        if (error) throw error;
+        products = (data ?? []).map((r: any) => ({
+          name: r.products.name,
+          stock_quantity: Number(r.quantity),
+          selling_price: r.products.selling_price,
+          purchase_price: r.products.purchase_price,
+          categories: r.products.categories,
+        }));
+      } else {
+        const { data, error } = await supabase.from("products").select("name, stock_quantity, selling_price, purchase_price, categories(name)").order("stock_quantity");
+        if (error) throw error;
+        products = data ?? [];
+      }
 
       const totalStock = (products ?? []).reduce((s, p: any) => s + Number(p.stock_quantity), 0);
       const totalValue = (products ?? []).reduce((s, p: any) => s + Number(p.stock_quantity) * Number(p.purchase_price), 0);
@@ -126,6 +167,7 @@ function InventoryReport() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-end"><LocationFilter value={locationId} onChange={setLocationId} /></div>
       {isLoading ? <Skeleton className="h-64 w-full" /> : (
         <>
           <div className="grid grid-cols-3 gap-4">
@@ -182,11 +224,14 @@ function InventoryReport() {
 function PurchaseReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_purchases", from, to],
+    queryKey: ["report_purchases", from, to, locationId],
     queryFn: async () => {
-      const { data: purchases, error } = await supabase.from("purchases").select("total_amount, purchase_date, payment_status, suppliers(name)").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date");
+      let q = supabase.from("purchases").select("total_amount, purchase_date, payment_status, suppliers(name)").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date");
+      if (locationId) q = q.eq("warehouse_id", locationId);
+      const { data: purchases, error } = await q;
       if (error) throw error;
 
       const totalSpent = (purchases ?? []).reduce((s, r: any) => s + Number(r.total_amount), 0);
@@ -210,6 +255,7 @@ function PurchaseReport() {
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1"><Label>From</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-[160px]" /></div>
         <div className="space-y-1"><Label>To</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-[160px]" /></div>
+        <LocationFilter value={locationId} onChange={setLocationId} />
       </div>
 
       {isLoading ? <Skeleton className="h-64 w-full" /> : (

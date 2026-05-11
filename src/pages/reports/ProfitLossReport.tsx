@@ -17,16 +17,23 @@ function fmt(n: number) {
 export default function ProfitLossReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [locationId, setLocationId] = useState("");
   const { hasModule: hasInstallments } = useHasModule("installments");
   const { hasModule: hasExchange } = useHasModule("exchange");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_profit_loss", from, to, hasInstallments, hasExchange],
+    queryKey: ["report_profit_loss", from, to, hasInstallments, hasExchange, locationId],
     queryFn: async () => {
+      let salesQ = supabase.from("sales").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("sale_date", from).lte("sale_date", to);
+      let purchasesQ = supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to);
+      if (locationId) { salesQ = salesQ.eq("warehouse_id", locationId); purchasesQ = purchasesQ.eq("warehouse_id", locationId); }
+      const productsQ = locationId
+        ? supabase.from("warehouse_stock").select("quantity, products!inner(purchase_price, selling_price)").eq("warehouse_id", locationId)
+        : supabase.from("products").select("stock_quantity, purchase_price, selling_price");
       const [salesRes, purchasesRes, productsRes, instSalesRes, instCollRes, exchPurchRes, exchSellRes] = await Promise.all([
-        supabase.from("sales").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("sale_date", from).lte("sale_date", to),
-        supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to),
-        supabase.from("products").select("stock_quantity, purchase_price, selling_price"),
+        salesQ,
+        purchasesQ,
+        productsQ,
         hasInstallments
           ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent, products(purchase_price)").gte("sale_date", from).lte("sale_date", to)
           : Promise.resolve({ data: [] as any[] }),
@@ -41,10 +48,17 @@ export default function ProfitLossReport() {
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
+      const productRows: any[] = locationId
+        ? (((productsRes as any).data ?? []) as any[]).map((r: any) => ({
+            stock_quantity: Number(r.quantity),
+            purchase_price: r.products?.purchase_price,
+            selling_price: r.products?.selling_price,
+          }))
+        : ((productsRes.data ?? []) as any[]);
       return computeProfitLoss({
         sales: salesRes.data ?? [],
         purchases: purchasesRes.data ?? [],
-        products: productsRes.data ?? [],
+        products: productRows,
         instSales: (instSalesRes as any).data ?? [],
         instColl: (instCollRes as any).data ?? [],
         exchPurch: (exchPurchRes as any).data ?? [],
@@ -84,7 +98,9 @@ export default function ProfitLossReport() {
   return (
     <div className="space-y-6">
       <PageHeader title="Profit & Loss Report" description="Financial overview for the selected period" />
-      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo} exportData={exportData} />
+      <ReportToolbar from={from} to={to} onFromChange={setFrom} onToChange={setTo}
+        showLocationFilter locationId={locationId} onLocationChange={setLocationId}
+        exportData={exportData} />
 
       <div className="print-area space-y-6">
         {isLoading ? <Skeleton className="h-96 w-full" /> : data && (

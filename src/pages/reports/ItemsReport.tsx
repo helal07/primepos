@@ -12,10 +12,21 @@ import ReportToolbar from "@/components/reports/ReportToolbar";
 
 export default function ItemsReport() {
   const [search, setSearch] = useState("");
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_items"],
+    queryKey: ["report_items", locationId],
     queryFn: async () => {
+      if (locationId) {
+        const { data } = await supabase
+          .from("warehouse_stock")
+          .select("quantity, products!inner(id, name, sku, barcode, purchase_price, selling_price, alert_quantity, is_active, categories(name), brands(name))")
+          .eq("warehouse_id", locationId);
+        return (data ?? []).map((r: any) => ({
+          ...r.products,
+          stock_quantity: Number(r.quantity),
+        }));
+      }
       const { data } = await supabase.from("products").select("id, name, sku, barcode, stock_quantity, purchase_price, selling_price, alert_quantity, is_active, categories(name), brands(name)").order("name");
       return data ?? [];
     },
@@ -36,7 +47,7 @@ export default function ItemsReport() {
   return (
     <div className="space-y-6">
       <PageHeader title="Items Report" subtitle="Complete product inventory listing" />
-      <ReportToolbar exportData={exportData} />
+      <ReportToolbar showLocationFilter locationId={locationId} onLocationChange={setLocationId} exportData={exportData} />
       <div className="print-area space-y-6">
         <div className="flex gap-3 items-center no-print">
           <Input placeholder="Search by name or SKU..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
