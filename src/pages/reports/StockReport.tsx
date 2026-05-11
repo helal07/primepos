@@ -13,10 +13,29 @@ import ReportToolbar from "@/components/reports/ReportToolbar";
 
 export default function StockReport() {
   const [search, setSearch] = useState("");
+  const [locationId, setLocationId] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_stock"],
+    queryKey: ["report_stock", locationId],
     queryFn: async () => {
+      if (locationId) {
+        const { data: rows, error } = await supabase
+          .from("warehouse_stock")
+          .select("quantity, products!inner(id, name, sku, purchase_price, selling_price, alert_quantity, categories(name), brands(name))")
+          .eq("warehouse_id", locationId);
+        if (error) throw error;
+        return (rows ?? []).map((r: any) => ({
+          id: r.products.id,
+          name: r.products.name,
+          sku: r.products.sku,
+          stock_quantity: Number(r.quantity),
+          purchase_price: r.products.purchase_price,
+          selling_price: r.products.selling_price,
+          alert_quantity: r.products.alert_quantity,
+          categories: r.products.categories,
+          brands: r.products.brands,
+        }));
+      }
       const { data: products, error } = await supabase
         .from("products")
         .select("id, name, sku, stock_quantity, purchase_price, selling_price, alert_quantity, categories(name), brands(name)")
@@ -46,7 +65,7 @@ export default function StockReport() {
   return (
     <div className="space-y-6">
       <PageHeader title="Stock Report" description="Current inventory levels and valuation" />
-      <ReportToolbar exportData={exportData} />
+      <ReportToolbar showLocationFilter locationId={locationId} onLocationChange={setLocationId} exportData={exportData} />
       <div className="print-area space-y-6">
         {isLoading ? <Skeleton className="h-64 w-full" /> : (
           <>
