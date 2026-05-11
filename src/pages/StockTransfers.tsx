@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStockTransfers, useStockTransferMutations, useProducts } from "@/hooks/useInventory";
+import { useWarehouses } from "@/hooks/useWarehouses";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -22,30 +23,38 @@ const statusColors: Record<string, "default" | "secondary" | "destructive"> = {
 export default function StockTransfers() {
   const { data: transfers, isLoading } = useStockTransfers();
   const { data: products } = useProducts();
+  const { data: warehouses } = useWarehouses();
   const { create, update } = useStockTransferMutations();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ product_id: "", from_branch: "Main", to_branch: "", quantity: "1", notes: "" });
+  const [form, setForm] = useState({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
+
+  const activeWarehouses = (warehouses ?? []).filter(w => w.is_active);
 
   const handleSubmit = () => {
+    const from = activeWarehouses.find(w => w.id === form.from_warehouse_id);
+    const to = activeWarehouses.find(w => w.id === form.to_warehouse_id);
+    if (!from || !to || from.id === to.id) return;
     create.mutate({
       product_id: form.product_id,
-      from_branch: form.from_branch,
-      to_branch: form.to_branch,
+      from_warehouse_id: from.id,
+      to_warehouse_id: to.id,
+      from_branch: from.name,
+      to_branch: to.name,
       quantity: parseInt(form.quantity) || 1,
       notes: form.notes || null,
       created_by: user?.id || "",
     }, {
       onSuccess: () => {
         setOpen(false);
-        setForm({ product_id: "", from_branch: "Main", to_branch: "", quantity: "1", notes: "" });
+        setForm({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
       },
     });
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Stock Transfers" description="Transfer stock between branches" />
+      <PageHeader title="Stock Transfers" description="Move stock between warehouses" />
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> New Transfer</Button></DialogTrigger>
@@ -63,12 +72,30 @@ export default function StockTransfers() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>From Branch</Label>
-                  <Input value={form.from_branch} onChange={e => setForm({ ...form, from_branch: e.target.value })} />
+                  <Label>From Warehouse *</Label>
+                  <Select value={form.from_warehouse_id} onValueChange={v => setForm({ ...form, from_warehouse_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
+                    <SelectContent>
+                      {activeWarehouses.map(w => (
+                        <SelectItem key={w.id} value={w.id} disabled={w.id === form.to_warehouse_id}>
+                          {w.name}{w.is_default ? " (default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>To Branch *</Label>
-                  <Input value={form.to_branch} onChange={e => setForm({ ...form, to_branch: e.target.value })} placeholder="Branch name" />
+                  <Label>To Warehouse *</Label>
+                  <Select value={form.to_warehouse_id} onValueChange={v => setForm({ ...form, to_warehouse_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Destination" /></SelectTrigger>
+                    <SelectContent>
+                      {activeWarehouses.map(w => (
+                        <SelectItem key={w.id} value={w.id} disabled={w.id === form.from_warehouse_id}>
+                          {w.name}{w.is_default ? " (default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-2">
@@ -81,7 +108,16 @@ export default function StockTransfers() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleSubmit} disabled={!form.product_id || !form.to_branch || create.isPending}>
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  !form.product_id ||
+                  !form.from_warehouse_id ||
+                  !form.to_warehouse_id ||
+                  form.from_warehouse_id === form.to_warehouse_id ||
+                  create.isPending
+                }
+              >
                 Create Transfer
               </Button>
             </DialogFooter>
@@ -112,7 +148,7 @@ export default function StockTransfers() {
                 <TableCell className="font-medium">{t.products?.name || "—"}</TableCell>
                 <TableCell>
                   <span className="flex items-center gap-1 text-sm">
-                    {t.from_branch} <ArrowRightLeft className="h-3 w-3 text-muted-foreground" /> {t.to_branch}
+                    {t.from_branch || "—"} <ArrowRightLeft className="h-3 w-3 text-muted-foreground" /> {t.to_branch || "—"}
                   </span>
                 </TableCell>
                 <TableCell className="text-right font-medium">{t.quantity}</TableCell>
