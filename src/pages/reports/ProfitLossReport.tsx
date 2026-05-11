@@ -48,13 +48,13 @@ export default function ProfitLossReport() {
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
-      const productRows = locationId
-        ? ((productsRes.data ?? []) as any[]).map((r: any) => ({
+      const productRows: any[] = locationId
+        ? (((productsRes as any).data ?? []) as any[]).map((r: any) => ({
             stock_quantity: Number(r.quantity),
-            purchase_price: r.products.purchase_price,
-            selling_price: r.products.selling_price,
+            purchase_price: r.products?.purchase_price,
+            selling_price: r.products?.selling_price,
           }))
-        : (productsRes.data ?? []);
+        : ((productsRes.data ?? []) as any[]);
       return computeProfitLoss({
         sales: salesRes.data ?? [],
         purchases: purchasesRes.data ?? [],
