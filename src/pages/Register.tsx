@@ -54,8 +54,13 @@ export default function Register() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password.length < 6) {
-      toast({ title: "Password too short", description: "At least 6 characters.", variant: "destructive" });
+    const pw = form.password;
+    if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
+      toast({
+        title: "Weak password",
+        description: "Use at least 8 characters with both letters and numbers.",
+        variant: "destructive",
+      });
       return;
     }
     if (choice === "paid" && !packageId) {
@@ -169,11 +174,12 @@ export default function Register() {
               <div className="space-y-2">
                 <Label htmlFor="pw">Password</Label>
                 <div className="relative">
-                  <Input id="pw" type={showPassword ? "text" : "password"} required minLength={6} value={form.password} onChange={(e) => set("password", e.target.value)} />
+                  <Input id="pw" type={showPassword ? "text" : "password"} required minLength={8} pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" title="At least 8 characters with letters and numbers" autoComplete="new-password" value={form.password} onChange={(e) => set("password", e.target.value)} />
                   <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground">Min 8 chars, must include letters and numbers.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="addr">Address</Label>
