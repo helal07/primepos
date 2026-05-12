@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInstallmentCustomers, useInstallmentSaleMutations } from "@/hooks/useInstallments";
 import { useProducts } from "@/hooks/useInventory";
+import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Save, Trash2, CalendarPlus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ArrowLeft, Save, Trash2, CalendarPlus, ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ScheduleRow {
   serial_no: number;
@@ -43,6 +47,20 @@ export default function InstallmentSaleAdd() {
   });
 
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
+  const [imeiOpen, setImeiOpen] = useState(false);
+
+  const selectedProduct = useMemo(
+    () => products?.find((p) => p.id === form.product_id) as any,
+    [products, form.product_id]
+  );
+  const isSerialProduct = !!(
+    selectedProduct?.serial_tracking ||
+    selectedProduct?.product_type === "imei" ||
+    selectedProduct?.product_type === "serial"
+  );
+  const { data: availableSerials } = useAvailableSerials(
+    isSerialProduct ? form.product_id : null
+  );
 
   const set = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
   const setNum = (k: string, v: string) => set(k, parseFloat(v) || 0);
@@ -80,6 +98,7 @@ export default function InstallmentSaleAdd() {
   const handleSelectProduct = (pid: string) => {
     const p = products?.find((pr) => pr.id === pid);
     set("product_id", pid);
+    set("imei_serial", "");
     if (p) { set("price", p.selling_price); }
   };
 
@@ -143,7 +162,64 @@ export default function InstallmentSaleAdd() {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>IMEI / Serial</Label><Input value={form.imei_serial} onChange={(e) => set("imei_serial", e.target.value)} /></div>
+              <div>
+                <Label>IMEI / Serial</Label>
+                {isSerialProduct ? (
+                  <Popover open={imeiOpen} onOpenChange={setImeiOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between font-normal"
+                      >
+                        <span className={cn(!form.imei_serial && "text-muted-foreground")}>
+                          {form.imei_serial || `Select IMEI/Serial (${availableSerials?.length ?? 0} available)`}
+                        </span>
+                        <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search IMEI / Serial..." />
+                        <CommandList>
+                          <CommandEmpty>
+                            {availableSerials?.length
+                              ? "No match."
+                              : "No available IMEI/Serial in stock."}
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {(availableSerials || []).map((sn) => (
+                              <CommandItem
+                                key={sn}
+                                value={sn}
+                                onSelect={() => {
+                                  set("imei_serial", sn);
+                                  setImeiOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    form.imei_serial === sn ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {sn}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Input
+                    value={form.imei_serial}
+                    onChange={(e) => set("imei_serial", e.target.value)}
+                    placeholder={form.product_id ? "Optional" : "Select product first"}
+                  />
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
