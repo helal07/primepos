@@ -15,27 +15,71 @@ import { toast } from "sonner";
 
 type Item = { id: string; name: string; price: number; barcode: string; sku: string; qty: number };
 
+type FormatKey = "auto" | "CODE128" | "EAN13" | "UPC" | "EAN8" | "CODE39";
+
+const FORMATS: { value: FormatKey; label: string }[] = [
+  { value: "auto", label: "Auto (shortest that fits)" },
+  { value: "EAN13", label: "EAN-13 (13 digits)" },
+  { value: "UPC", label: "UPC-A (12 digits)" },
+  { value: "EAN8", label: "EAN-8 (8 digits)" },
+  { value: "CODE39", label: "CODE39" },
+  { value: "CODE128", label: "CODE128 (any text)" },
+];
+
+// Pick the most compact symbology a value can encode.
+function pickFormat(value: string, preferred: FormatKey): { format: string; value: string } {
+  const digits = value.replace(/\D/g, "");
+  const isDigits = /^\d+$/.test(value);
+  if (preferred !== "auto") {
+    if (preferred === "EAN13" && isDigits && (value.length === 12 || value.length === 13)) return { format: "EAN13", value };
+    if (preferred === "UPC" && isDigits && (value.length === 11 || value.length === 12)) return { format: "UPC", value };
+    if (preferred === "EAN8" && isDigits && (value.length === 7 || value.length === 8)) return { format: "EAN8", value };
+    if (preferred === "CODE39") return { format: "CODE39", value: value.toUpperCase() };
+    if (preferred === "CODE128") return { format: "CODE128", value };
+    // fall through to auto if invalid
+  }
+  // Auto: prefer the most compact valid format
+  if (isDigits) {
+    if (digits.length === 8 || digits.length === 7) return { format: "EAN8", value };
+    if (digits.length === 11 || digits.length === 12) return { format: "UPC", value };
+    if (digits.length === 12 || digits.length === 13) return { format: "EAN13", value };
+  }
+  return { format: "CODE128", value };
+}
+
 const SIZES: Record<string, { w: string; h: string; cols: number; label: string }> = {
   small: { w: "38mm", h: "25mm", cols: 4, label: "Small (38×25mm)" },
   medium: { w: "50mm", h: "30mm", cols: 3, label: "Medium (50×30mm)" },
   large: { w: "70mm", h: "40mm", cols: 2, label: "Large (70×40mm)" },
 };
 
-function Barcode({ value }: { value: string }) {
+function Barcode({ value, preferred }: { value: string; preferred: FormatKey }) {
   const ref = useRef<SVGSVGElement>(null);
   useEffect(() => {
     if (ref.current && value) {
+      const { format, value: encoded } = pickFormat(value, preferred);
       try {
-        JsBarcode(ref.current, value, {
-          format: "CODE128",
+        JsBarcode(ref.current, encoded, {
+          format,
           width: 0.9,
           height: 28,
           displayValue: false,
           margin: 0,
         });
-      } catch {}
+      } catch {
+        // Fallback to CODE128 if the chosen format rejects the value
+        try {
+          JsBarcode(ref.current, value, {
+            format: "CODE128",
+            width: 0.9,
+            height: 28,
+            displayValue: false,
+            margin: 0,
+          });
+        } catch {}
+      }
     }
-  }, [value]);
+  }, [value, preferred]);
   return <svg ref={ref} className="w-full" />;
 }
 
@@ -48,6 +92,7 @@ export default function PrintLabels() {
   const [showPrice, setShowPrice] = useState(true);
   const [showBarcode, setShowBarcode] = useState(true);
   const [storeName, setStoreName] = useState("");
+  const [barcodeFormat, setBarcodeFormat] = useState<FormatKey>("auto");
 
   const filtered = useMemo(
     () => (products || []).filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20),
@@ -150,6 +195,21 @@ export default function PrintLabels() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label>Barcode Format</Label>
+              <Select value={barcodeFormat} onValueChange={(v) => setBarcodeFormat(v as FormatKey)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FORMATS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                EAN/UPC are much narrower than CODE128 but require numeric codes of an exact length. Auto picks the shortest valid format per item.
+              </p>
+            </div>
+
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={showName} onCheckedChange={(v) => setShowName(!!v)} /> Name
@@ -209,7 +269,7 @@ export default function PrintLabels() {
                   <div key={idx} className="label-cell" style={{ width: conf.w, height: conf.h }}>
                     {storeName && <div className="label-store">{storeName}</div>}
                     {showName && <div className="label-name">{i.name}</div>}
-                    {showBarcode && <div className="label-barcode"><Barcode value={i.barcode} /></div>}
+                    {showBarcode && <div className="label-barcode"><Barcode value={i.barcode} preferred={barcodeFormat} /></div>}
                     {showBarcode && <div className="label-code">{i.barcode}</div>}
                     {showPrice && <div className="label-price">৳{i.price.toLocaleString()}</div>}
                   </div>
