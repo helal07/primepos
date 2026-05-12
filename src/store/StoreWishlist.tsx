@@ -17,7 +17,7 @@ export default function StoreWishlist() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((i: any) => i.products && (
-            <ProductCard key={i.id} product={i.products} tenantSlug={tenant.slug} currency={settings.currency} tenantId={tenant.id} />
+            <ProductCard key={i.id} product={i.products} tenantSlug={tenant.slug} currency={settings.currency} tenantId={tenant.id} base={base} />
           ))}
         </div>
       )}
