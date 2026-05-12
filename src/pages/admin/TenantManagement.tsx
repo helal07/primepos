@@ -456,7 +456,24 @@ export default function TenantManagement() {
             <div><Label className="text-foreground/90">Phone</Label><Input className="bg-muted border-border text-foreground" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
             <div><Label className="text-foreground/90">Email</Label><Input className="bg-muted border-border text-foreground" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div><Label className="text-foreground/90">Address</Label><Input className="bg-muted border-border text-foreground" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-            <div><Label className="text-foreground/90">Domain</Label><Input className="bg-muted border-border text-foreground" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="shop.example.com" /></div>
+            <div className="sm:col-span-2">
+              <Label className="text-foreground/90">Custom Domain</Label>
+              <Input
+                className="bg-muted border-border text-foreground"
+                value={form.domain}
+                onChange={(e) => setForm({ ...form, domain: e.target.value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "") })}
+                placeholder="shop.example.com"
+              />
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                The tenant points DNS at our hosting and this domain becomes their storefront.
+                Visiting <code>{form.domain || "shop.example.com"}</code> shows the shop, and{" "}
+                <code>{form.domain || "shop.example.com"}/login</code> opens the admin panel.
+                <br />
+                <strong>DNS records to set at the registrar:</strong>{" "}
+                <code>A&nbsp;@ → 185.158.133.1</code>, <code>A&nbsp;www → 185.158.133.1</code>.
+                After DNS propagates, attach the same domain once in <em>Project Settings → Domains</em> so SSL is issued.
+              </p>
+            </div>
           </div>
 
           <Separator className="bg-muted" />
