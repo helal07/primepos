@@ -137,7 +137,7 @@ function CollectionProductsDialog({ collectionId, products, onClose }: { collect
   const toggle = useMutation({
     mutationFn: async ({ productId, on }: { productId: string; on: boolean }) => {
       if (on) {
-        const { error } = await supabase.from("store_collection_products").insert({ collection_id: collectionId, product_id: productId });
+        const { error } = await supabase.from("store_collection_products").insert({ collection_id: collectionId, product_id: productId } as any);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("store_collection_products").delete().eq("collection_id", collectionId).eq("product_id", productId);
