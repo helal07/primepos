@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TenantHostProvider, useHostTenant } from "@/contexts/TenantHostContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SuperadminRoute } from "@/components/admin/SuperadminRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -130,6 +131,35 @@ const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigat
 const queryClient = new QueryClient();
 
 const RouteFallback = () => <div className="flex items-center justify-center p-8 text-muted-foreground">Loading…</div>;
+
+/** Renders storefront routes at root paths when on a tenant's custom domain. */
+const TenantHostStorefront = () => (
+  <Suspense fallback={<RouteFallback />}>
+    <Routes>
+      <Route path="/" element={<StoreShell />}>
+        <Route index element={<StoreHome />} />
+        <Route path="shop" element={<StoreShop />} />
+        <Route path="product/:productSlug" element={<StoreProduct />} />
+        <Route path="collections" element={<StoreCollections />} />
+        <Route path="collection/:collectionSlug" element={<StoreCollection />} />
+        <Route path="cart" element={<StoreCart />} />
+        <Route path="page/:pageSlug" element={<StorePage />} />
+        <Route path="checkout" element={<StoreCheckout />} />
+        <Route path="order/:orderId" element={<StoreOrder />} />
+        <Route path="wishlist" element={<StoreWishlist />} />
+        <Route path="blog" element={<StoreBlog />} />
+        <Route path="blog/:postSlug" element={<StoreBlogPost />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
+);
+
+/** Routes the root "/" path. On a tenant host, show the storefront. Otherwise the marketing landing. */
+const RootRoute = () => {
+  const host = useHostTenant();
+  return host ? <TenantHostStorefront /> : <LandingPage />;
+};
 
 const SuperadminRoutes = () => (
   <ProtectedRoute>
