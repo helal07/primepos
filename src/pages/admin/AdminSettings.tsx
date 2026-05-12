@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { Save } from "lucide-react";
+import { ThemePicker } from "@/components/settings/ThemePicker";
 
 function GatewayCard({ settingsKey, title, fields }: {
   settingsKey: string; title: string;
@@ -48,9 +49,10 @@ export default function AdminSettings() {
       <PageHeader title="SaaS Settings" subtitle="Configure payment gateways and SMS providers" />
 
       <Tabs defaultValue="payment">
-        <TabsList className="bg-slate-800 border-slate-700">
-          <TabsTrigger value="payment" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Payment Gateways</TabsTrigger>
-          <TabsTrigger value="sms" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">SMS Gateways</TabsTrigger>
+        <TabsList className="bg-muted border border-border">
+          <TabsTrigger value="payment">Payment Gateways</TabsTrigger>
+          <TabsTrigger value="sms">SMS Gateways</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
         </TabsList>
 
         <TabsContent value="payment" className="mt-4 space-y-4">
@@ -74,6 +76,12 @@ export default function AdminSettings() {
           <GatewayCard settingsKey="sms_mimsms" title="MIM SMS" fields={[
             { name: "api_key", label: "API Key" }, { name: "sender_id", label: "Sender ID" },
           ]} />
+        </TabsContent>
+
+        <TabsContent value="appearance" className="mt-4">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <ThemePicker />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

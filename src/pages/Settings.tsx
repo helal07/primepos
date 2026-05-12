@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings, useSaveSetting } from "@/hooks/useSettings";
+import { ThemePicker } from "@/components/settings/ThemePicker";
 
 function BusinessTab() {
   const { data: settings, isLoading } = useSettings();
@@ -237,11 +238,15 @@ export default function SettingsPage() {
           <TabsTrigger value="invoice">Invoice</TabsTrigger>
           <TabsTrigger value="tax">Tax</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
         </TabsList>
         <TabsContent value="business"><BusinessTab /></TabsContent>
         <TabsContent value="invoice"><InvoiceTab /></TabsContent>
         <TabsContent value="tax"><TaxTab /></TabsContent>
         <TabsContent value="notifications"><NotificationsTab /></TabsContent>
+        <TabsContent value="appearance">
+          <Card><CardContent className="pt-6"><ThemePicker /></CardContent></Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
