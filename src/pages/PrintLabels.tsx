@@ -53,7 +53,11 @@ const SIZES: Record<string, { w: string; h: string; cols: number; label: string 
   large: { w: "70mm", h: "40mm", cols: 2, label: "Large (70×40mm)" },
 };
 
-function Barcode({ value, preferred }: { value: string; preferred: FormatKey }) {
+function Barcode({
+  value, preferred, barWidth, barHeight, margin,
+}: {
+  value: string; preferred: FormatKey; barWidth: number; barHeight: number; margin: number;
+}) {
   const ref = useRef<SVGSVGElement>(null);
   useEffect(() => {
     if (ref.current && value) {
@@ -61,25 +65,25 @@ function Barcode({ value, preferred }: { value: string; preferred: FormatKey }) 
       try {
         JsBarcode(ref.current, encoded, {
           format,
-          width: 0.9,
-          height: 28,
+          width: barWidth,
+          height: barHeight,
           displayValue: false,
-          margin: 0,
+          margin,
         });
       } catch {
         // Fallback to CODE128 if the chosen format rejects the value
         try {
           JsBarcode(ref.current, value, {
             format: "CODE128",
-            width: 0.9,
-            height: 28,
+            width: barWidth,
+            height: barHeight,
             displayValue: false,
-            margin: 0,
+            margin,
           });
         } catch {}
       }
     }
-  }, [value, preferred]);
+  }, [value, preferred, barWidth, barHeight, margin]);
   return <svg ref={ref} className="w-full" />;
 }
 
@@ -93,6 +97,10 @@ export default function PrintLabels() {
   const [showBarcode, setShowBarcode] = useState(true);
   const [storeName, setStoreName] = useState("");
   const [barcodeFormat, setBarcodeFormat] = useState<FormatKey>("auto");
+  const [barWidth, setBarWidth] = useState(0.9);
+  const [barHeight, setBarHeight] = useState(28);
+  const [barMargin, setBarMargin] = useState(0);
+  const [cellPadding, setCellPadding] = useState(1.5); // mm
 
   const filtered = useMemo(
     () => (products || []).filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20),
@@ -210,6 +218,45 @@ export default function PrintLabels() {
               </p>
             </div>
 
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Bar Width</Label>
+                <Input
+                  type="number" step={0.1} min={0.5} max={4}
+                  value={barWidth}
+                  onChange={(e) => setBarWidth(Math.max(0.3, Number(e.target.value) || 0.9))}
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Bar Height (px)</Label>
+                <Input
+                  type="number" step={1} min={10} max={120}
+                  value={barHeight}
+                  onChange={(e) => setBarHeight(Math.max(8, Number(e.target.value) || 28))}
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Quiet Zone</Label>
+                <Input
+                  type="number" step={1} min={0} max={20}
+                  value={barMargin}
+                  onChange={(e) => setBarMargin(Math.max(0, Number(e.target.value) || 0))}
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Cell Padding (mm)</Label>
+                <Input
+                  type="number" step={0.1} min={0} max={5}
+                  value={cellPadding}
+                  onChange={(e) => setCellPadding(Math.max(0, Number(e.target.value) || 0))}
+                  className="h-8"
+                />
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={showName} onCheckedChange={(v) => setShowName(!!v)} /> Name
@@ -266,10 +313,20 @@ export default function PrintLabels() {
             ) : (
               <div className="label-grid">
                 {labelArray.map((i, idx) => (
-                  <div key={idx} className="label-cell" style={{ width: conf.w, height: conf.h }}>
+                  <div key={idx} className="label-cell" style={{ width: conf.w, height: conf.h, padding: `${cellPadding}mm` }}>
                     {storeName && <div className="label-store">{storeName}</div>}
                     {showName && <div className="label-name">{i.name}</div>}
-                    {showBarcode && <div className="label-barcode"><Barcode value={i.barcode} preferred={barcodeFormat} /></div>}
+                    {showBarcode && (
+                      <div className="label-barcode" style={{ height: barHeight + barMargin * 2 }}>
+                        <Barcode
+                          value={i.barcode}
+                          preferred={barcodeFormat}
+                          barWidth={barWidth}
+                          barHeight={barHeight}
+                          margin={barMargin}
+                        />
+                      </div>
+                    )}
                     {showBarcode && <div className="label-code">{i.barcode}</div>}
                     {showPrice && <div className="label-price">৳{i.price.toLocaleString()}</div>}
                   </div>
@@ -289,7 +346,6 @@ export default function PrintLabels() {
         }
         .label-cell {
           border: 1px dashed #ccc;
-          padding: 1.5mm;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -300,7 +356,7 @@ export default function PrintLabels() {
         }
         .label-store { font-size: 8px; font-weight: 600; }
         .label-name { font-size: 9px; font-weight: 600; line-height: 1.1; max-height: 22px; overflow: hidden; }
-        .label-barcode { width: 80%; height: 28px; display: flex; justify-content: center; }
+        .label-barcode { width: 80%; display: flex; justify-content: center; align-items: center; }
         .label-code { font-size: 7px; letter-spacing: 0.5px; }
         .label-price { font-size: 11px; font-weight: 700; }
         @media print {
