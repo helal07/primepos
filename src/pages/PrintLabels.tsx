@@ -274,10 +274,20 @@ export default function PrintLabels() {
             ) : (
               <div className="label-grid">
                 {labelArray.map((i, idx) => (
-                  <div key={idx} className="label-cell" style={{ width: conf.w, height: conf.h }}>
+                  <div key={idx} className="label-cell" style={{ width: conf.w, height: conf.h, padding: `${cellPadding}mm` }}>
                     {storeName && <div className="label-store">{storeName}</div>}
                     {showName && <div className="label-name">{i.name}</div>}
-                    {showBarcode && <div className="label-barcode"><Barcode value={i.barcode} preferred={barcodeFormat} /></div>}
+                    {showBarcode && (
+                      <div className="label-barcode" style={{ height: barHeight + barMargin * 2 }}>
+                        <Barcode
+                          value={i.barcode}
+                          preferred={barcodeFormat}
+                          barWidth={barWidth}
+                          barHeight={barHeight}
+                          margin={barMargin}
+                        />
+                      </div>
+                    )}
                     {showBarcode && <div className="label-code">{i.barcode}</div>}
                     {showPrice && <div className="label-price">৳{i.price.toLocaleString()}</div>}
                   </div>
