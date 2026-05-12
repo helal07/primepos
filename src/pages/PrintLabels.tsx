@@ -97,6 +97,10 @@ export default function PrintLabels() {
   const [showBarcode, setShowBarcode] = useState(true);
   const [storeName, setStoreName] = useState("");
   const [barcodeFormat, setBarcodeFormat] = useState<FormatKey>("auto");
+  const [barWidth, setBarWidth] = useState(0.9);
+  const [barHeight, setBarHeight] = useState(28);
+  const [barMargin, setBarMargin] = useState(0);
+  const [cellPadding, setCellPadding] = useState(1.5); // mm
 
   const filtered = useMemo(
     () => (products || []).filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20),
