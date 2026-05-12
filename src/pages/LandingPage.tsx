@@ -54,7 +54,7 @@ export default function LandingPage() {
               <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
               <a href="#reviews" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</a>
               <Button variant="outline" size="sm" onClick={() => navigate("/login")}>Sign In</Button>
-              <Button size="sm" onClick={() => navigate("/login?tab=signup")}>Get Started</Button>
+              <Button size="sm" onClick={() => navigate("/register")}>Get Started</Button>
             </div>
             <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -67,7 +67,7 @@ export default function LandingPage() {
               <a href="#reviews" className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>Reviews</a>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate("/login")}>Sign In</Button>
-                <Button size="sm" className="flex-1" onClick={() => navigate("/login?tab=signup")}>Get Started</Button>
+                <Button size="sm" className="flex-1" onClick={() => navigate("/register")}>Get Started</Button>
               </div>
             </div>
           )}
@@ -91,7 +91,7 @@ export default function LandingPage() {
               Built for modern businesses in Bangladesh and beyond.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-base px-8 py-6" onClick={() => navigate("/login?tab=signup")}>
+              <Button size="lg" className="text-base px-8 py-6" onClick={() => navigate("/register")}>
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button size="lg" variant="outline" className="text-base px-8 py-6" onClick={() => {
@@ -217,7 +217,7 @@ export default function LandingPage() {
                   <Button
                     className="w-full mt-6"
                     variant={plan.popular ? "default" : "outline"}
-                    onClick={() => navigate("/login?tab=signup")}
+                    onClick={() => navigate("/register")}
                   >
                     Get Started
                   </Button>
@@ -269,7 +269,7 @@ export default function LandingPage() {
               Join thousands of businesses already using Prime POS. Start your free trial today.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="text-base px-8" onClick={() => navigate("/login?tab=signup")}>
+              <Button size="lg" variant="secondary" className="text-base px-8" onClick={() => navigate("/register")}>
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
