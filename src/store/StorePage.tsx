@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { StoreCtx } from "./StoreLayout";
 export default function StorePage() {
-  const { tenant } = useOutletContext<StoreCtx>();
+  const { tenant, base } = useOutletContext<StoreCtx>();
   const { pageSlug } = useParams();
   const { data, isLoading } = useQuery({
     queryKey: ["store_page", tenant.id, pageSlug],

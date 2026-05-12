@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreCheckout() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const { items, subtotal, clear } = useCart();
   const nav = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -60,14 +60,14 @@ export default function StoreCheckout() {
       const orderId = (data as any)?.order_id;
       clear();
       if (form.payment_method === "cod") {
-        nav(`/store/${tenant.slug}/order/${orderId}`);
+        nav(`${base}/order/${orderId}`);
       } else {
         const { data: pay, error: payErr } = await supabase.functions.invoke("store-payment-init", {
           body: { order_id: orderId, gateway: form.payment_method },
         });
         if (payErr || !pay?.url) {
           toast.error(pay?.error ?? payErr?.message ?? "Could not start payment");
-          nav(`/store/${tenant.slug}/order/${orderId}`);
+          nav(`${base}/order/${orderId}`);
         } else {
           window.location.href = pay.url;
         }
@@ -83,7 +83,7 @@ export default function StoreCheckout() {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold">Your cart is empty</h1>
-        <Button asChild className="mt-4"><Link to={`/store/${tenant.slug}/shop`}>Browse products</Link></Button>
+        <Button asChild className="mt-4"><Link to={`${base}/shop`}>Browse products</Link></Button>
       </div>
     );
   }

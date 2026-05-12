@@ -3,7 +3,7 @@ import { useCollectionProducts } from "@/hooks/useStorefront";
 import { ProductCard } from "./components/ProductCard";
 import type { StoreCtx } from "./StoreLayout";
 export default function StoreCollection() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const { collectionSlug } = useParams();
   const { data, isLoading } = useCollectionProducts(tenant.id, collectionSlug);
   if (isLoading) return <div className="container mx-auto px-4 py-8">Loading…</div>;

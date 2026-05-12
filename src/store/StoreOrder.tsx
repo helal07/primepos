@@ -8,7 +8,7 @@ import { CheckCircle2 } from "lucide-react";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreOrder() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const { orderId } = useParams();
   const [params] = useSearchParams();
   const paymentResult = params.get("payment");
@@ -85,7 +85,7 @@ export default function StoreOrder() {
       </Card>
 
       <div className="flex justify-center gap-2">
-        <Button asChild variant="outline"><Link to={`/store/${tenant.slug}`}>Back to store</Link></Button>
+        <Button asChild variant="outline"><Link to={`${base}`}>Back to store</Link></Button>
       </div>
     </div>
   );

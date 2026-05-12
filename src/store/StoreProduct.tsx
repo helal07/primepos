@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreProduct() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const { productSlug } = useParams();
   const { data: product, isLoading } = useStoreProduct(tenant.id, productSlug);
   const { add } = useCart();
@@ -16,7 +16,7 @@ export default function StoreProduct() {
   const [qty, setQty] = useState(1);
   const [imgIx, setImgIx] = useState(0);
   if (isLoading) return <div className="container mx-auto px-4 py-8"><Skeleton className="h-64 w-full" /></div>;
-  if (!product) return <div className="container mx-auto px-4 py-16 text-center"><h1 className="text-2xl">Product not found</h1><Button asChild variant="link"><Link to={`/store/${tenant.slug}/shop`}>Back to shop</Link></Button></div>;
+  if (!product) return <div className="container mx-auto px-4 py-16 text-center"><h1 className="text-2xl">Product not found</h1><Button asChild variant="link"><Link to={`${base}/shop`}>Back to shop</Link></Button></div>;
   const variations = (product.product_variations ?? []).filter((v: any) => v.is_active);
   const selectedVar = variations.find((v: any) => v.id === variationId);
   const price = selectedVar?.selling_price ?? product.selling_price;

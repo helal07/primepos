@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreBlog() {
-  const { tenant } = useOutletContext<StoreCtx>();
+  const { tenant, base } = useOutletContext<StoreCtx>();
   const { data: posts = [] } = useQuery({
     queryKey: ["blog_posts", tenant.id],
     queryFn: async () => {
@@ -25,7 +25,7 @@ export default function StoreBlog() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map((p: any) => (
-            <Link key={p.id} to={`/store/${tenant.slug}/blog/${p.slug}`} className="group">
+            <Link key={p.id} to={`${base}/blog/${p.slug}`} className="group">
               {p.cover_url && <img src={p.cover_url} alt={p.title} className="w-full aspect-video object-cover rounded-lg mb-3" />}
               <h2 className="font-semibold text-lg group-hover:text-primary">{p.title}</h2>
               <p className="text-sm text-muted-foreground line-clamp-3 mt-1">{p.excerpt}</p>

@@ -7,7 +7,7 @@ import { ProductCard } from "./components/ProductCard";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreShop() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
   const categoryId = params.get("category") ?? undefined;

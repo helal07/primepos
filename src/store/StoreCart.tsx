@@ -4,9 +4,9 @@ import { Trash2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import type { StoreCtx } from "./StoreLayout";
 export default function StoreCart() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const { items, setQty, remove, subtotal } = useCart();
-  if (items.length === 0) return <div className="container mx-auto px-4 py-16 text-center"><h1 className="text-2xl font-semibold">Your cart is empty</h1><Button asChild className="mt-4"><Link to={`/store/${tenant.slug}/shop`}>Browse products</Link></Button></div>;
+  if (items.length === 0) return <div className="container mx-auto px-4 py-16 text-center"><h1 className="text-2xl font-semibold">Your cart is empty</h1><Button asChild className="mt-4"><Link to={`${base}/shop`}>Browse products</Link></Button></div>;
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <h1 className="text-3xl font-bold mb-6">Cart</h1>
@@ -23,7 +23,7 @@ export default function StoreCart() {
       </div>
       <div className="mt-6 flex justify-between items-center">
         <p className="text-lg">Subtotal: <span className="font-bold">{settings.currency} {subtotal.toLocaleString()}</span></p>
-        <Button size="lg" asChild><Link to={`/store/${tenant.slug}/checkout`}>Proceed to checkout</Link></Button>
+        <Button size="lg" asChild><Link to={`${base}/checkout`}>Proceed to checkout</Link></Button>
       </div>
     </div>
   );
