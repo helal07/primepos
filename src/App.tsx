@@ -36,6 +36,7 @@ const Customers = lazy(() => import("./pages/Customers"));
 const Suppliers = lazy(() => import("./pages/Suppliers"));
 const ContactProfile = lazy(() => import("./pages/ContactProfile"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
+const ProfilePage = lazy(() => import("./pages/Profile"));
 const UsersPage = lazy(() => import("./pages/Users"));
 const RolesPage = lazy(() => import("./pages/Roles"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLog"));
@@ -240,6 +241,7 @@ const App = () => (
                         <Route path="/roles" element={<RolesPage />} />
                         <Route path="/activity-log" element={<ActivityLogPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
