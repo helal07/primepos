@@ -42,13 +42,10 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          # IMPORTANT: This is a SUBDOMAIN (pos.itsheba.bd).
-          # On Hostinger, subdomains have their own document root — NOT public_html/.
-          # Check Hostinger → Subdomains → pos.itsheba.bd → "Document Root" for the exact path.
-          # It is usually one of:
-          #   domains/pos.itsheba.bd/public_html/
-          #   public_html/pos.itsheba.bd/
-          server-dir: domains/pos.itsheba.bd/public_html/
+          # Hostinger is serving pos.itsheba.bd from this account's public_html.
+          # Do NOT use Hostinger's Git "pull" into public_html for Vite apps;
+          # it copies raw source files. This workflow builds first and uploads only dist/.
+          server-dir: public_html/
           dangerous-clean-slate: true
 
       - name: Verify live site is serving the production build
