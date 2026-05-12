@@ -177,21 +177,12 @@ const ADMIN_PATH_PREFIXES = [
 ];
 const isAdminPath = (p: string) => ADMIN_PATH_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/"));
 
-/** On a tenant host, route non-admin paths into the storefront. */
-const TenantHostCatchAll = () => {
+/** Wraps the tenant admin tree. On a tenant host with a non-admin path, render the storefront instead. */
+const TenantAreaSwitch = ({ children }: { children: React.ReactNode }) => {
+  const host = useHostTenant();
   const path = typeof window !== "undefined" ? window.location.pathname : "/";
-  if (isAdminPath(path)) {
-    return (
-      <ProtectedRoute>
-        <AppLayout>
-          <Suspense fallback={<RouteFallback />}>
-            <TenantAppRoutes />
-          </Suspense>
-        </AppLayout>
-      </ProtectedRoute>
-    );
-  }
-  return <TenantHostStorefront />;
+  if (host && !isAdminPath(path)) return <TenantHostStorefront />;
+  return <>{children}</>;
 };
 
 const SuperadminRoutes = () => (
