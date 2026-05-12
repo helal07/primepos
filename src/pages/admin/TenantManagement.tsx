@@ -53,10 +53,10 @@ const emptyForm: TenantForm = {
 };
 
 const statusColors: Record<string, string> = {
-  active: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  active: "bg-emerald-500/20 text-primary border-emerald-500/30",
   trial: "bg-amber-500/20 text-amber-400 border-amber-500/30",
   suspended: "bg-red-500/20 text-red-400 border-red-500/30",
-  expired: "bg-slate-500/20 text-slate-400 border-slate-500/30",
+  expired: "bg-slate-500/20 text-muted-foreground border-slate-500/30",
   pending_approval: "bg-blue-500/20 text-blue-400 border-blue-500/30",
 };
 
@@ -205,10 +205,10 @@ export default function TenantManagement() {
 
   const expiryBadge = (end: string | null) => {
     const days = daysLeft(end);
-    if (days === null) return <span className="text-slate-500">—</span>;
+    if (days === null) return <span className="text-muted-foreground">—</span>;
     if (days <= 0) return <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">Expired</Badge>;
     if (days <= 7) return <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/30">{days}d left</Badge>;
-    return <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">{days}d left</Badge>;
+    return <Badge variant="outline" className="bg-emerald-500/20 text-primary border-emerald-500/30">{days}d left</Badge>;
   };
 
   const toggleAll = () => {
@@ -278,24 +278,24 @@ export default function TenantManagement() {
               <ShieldCheck className="h-4 w-4 mr-1" />{pendingCount} Pending
             </Button>
           )}
-          <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={exportExcel}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
-          <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={exportCSV}><Download className="h-4 w-4 mr-1" />CSV</Button>
-          <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={exportPDF}><FileText className="h-4 w-4 mr-1" />PDF</Button>
-          <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={handlePrint}><Printer className="h-4 w-4 mr-1" />Print</Button>
-          <Button onClick={openNew} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+          <Button variant="outline" size="sm" className="border-border text-foreground/90 hover:bg-muted" onClick={exportExcel}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+          <Button variant="outline" size="sm" className="border-border text-foreground/90 hover:bg-muted" onClick={exportCSV}><Download className="h-4 w-4 mr-1" />CSV</Button>
+          <Button variant="outline" size="sm" className="border-border text-foreground/90 hover:bg-muted" onClick={exportPDF}><FileText className="h-4 w-4 mr-1" />PDF</Button>
+          <Button variant="outline" size="sm" className="border-border text-foreground/90 hover:bg-muted" onClick={handlePrint}><Printer className="h-4 w-4 mr-1" />Print</Button>
+          <Button onClick={openNew} size="sm" className="bg-primary hover:bg-primary/90 text-foreground">
             <Plus className="h-4 w-4 mr-1" /> Add Client
           </Button>
         </div>
       </PageHeader>
 
       {/* Filters */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+      <div className="rounded-xl border border-border bg-card/60 p-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-slate-400 whitespace-nowrap">Show</Label>
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Show</Label>
             <Select value={String(perPage)} onValueChange={(v) => setPerPage(+v)}>
-              <SelectTrigger className="w-20 h-8 bg-slate-800 border-slate-700 text-slate-200"><SelectValue /></SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-700">
+              <SelectTrigger className="w-20 h-8 bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+              <SelectContent className="bg-muted border-border">
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
@@ -304,19 +304,19 @@ export default function TenantManagement() {
             </Select>
           </div>
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-2 h-4 w-4 text-slate-500" />
-            <Input placeholder="Search name, email, phone, company..." className="pl-9 h-8 bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Search className="absolute left-3 top-2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search name, email, phone, company..." className="pl-9 h-8 bg-muted border-border text-foreground placeholder:text-muted-foreground" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select value={filterPackage} onValueChange={setFilterPackage}>
-            <SelectTrigger className="w-40 h-8 bg-slate-800 border-slate-700 text-slate-200"><SelectValue placeholder="All Packages" /></SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectTrigger className="w-40 h-8 bg-muted border-border text-foreground"><SelectValue placeholder="All Packages" /></SelectTrigger>
+            <SelectContent className="bg-muted border-border">
               <SelectItem value="all">All Packages</SelectItem>
               {packages?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-36 h-8 bg-slate-800 border-slate-700 text-slate-200"><SelectValue placeholder="All Types" /></SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectTrigger className="w-36 h-8 bg-muted border-border text-foreground"><SelectValue placeholder="All Types" /></SelectTrigger>
+            <SelectContent className="bg-muted border-border">
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="monthly">Monthly</SelectItem>
               <SelectItem value="yearly">Yearly</SelectItem>
@@ -324,8 +324,8 @@ export default function TenantManagement() {
             </SelectContent>
           </Select>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40 h-8 bg-slate-800 border-slate-700 text-slate-200"><SelectValue placeholder="All Status" /></SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectTrigger className="w-40 h-8 bg-muted border-border text-foreground"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectContent className="bg-muted border-border">
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="trial">Trial</SelectItem>
@@ -338,80 +338,80 @@ export default function TenantManagement() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+      <div className="rounded-xl border border-border bg-card/60 overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-800 bg-slate-900">
-                <TableHead className="w-10 text-slate-400"><Checkbox checked={selected.length === filtered?.length && (filtered?.length ?? 0) > 0} onCheckedChange={toggleAll} /></TableHead>
-                <TableHead className="text-slate-400">Name</TableHead>
-                <TableHead className="text-slate-400">Domain</TableHead>
-                <TableHead className="text-slate-400">Package</TableHead>
-                <TableHead className="text-slate-400">Type</TableHead>
-                <TableHead className="text-slate-400">Company</TableHead>
-                <TableHead className="text-slate-400">Phone</TableHead>
-                <TableHead className="text-slate-400">Email</TableHead>
-                <TableHead className="text-slate-400">Created</TableHead>
-                <TableHead className="text-slate-400">Expiry</TableHead>
-                <TableHead className="text-slate-400">Status</TableHead>
-                <TableHead className="text-right text-slate-400">Actions</TableHead>
+              <TableRow className="border-border bg-card">
+                <TableHead className="w-10 text-muted-foreground"><Checkbox checked={selected.length === filtered?.length && (filtered?.length ?? 0) > 0} onCheckedChange={toggleAll} /></TableHead>
+                <TableHead className="text-muted-foreground">Name</TableHead>
+                <TableHead className="text-muted-foreground">Domain</TableHead>
+                <TableHead className="text-muted-foreground">Package</TableHead>
+                <TableHead className="text-muted-foreground">Type</TableHead>
+                <TableHead className="text-muted-foreground">Company</TableHead>
+                <TableHead className="text-muted-foreground">Phone</TableHead>
+                <TableHead className="text-muted-foreground">Email</TableHead>
+                <TableHead className="text-muted-foreground">Created</TableHead>
+                <TableHead className="text-muted-foreground">Expiry</TableHead>
+                <TableHead className="text-muted-foreground">Status</TableHead>
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={12} className="text-center py-8 text-slate-400">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
               ) : !filtered?.length ? (
-                <TableRow><TableCell colSpan={12} className="text-center py-8 text-slate-500">No tenants found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">No tenants found</TableCell></TableRow>
               ) : filtered.map((t: any) => (
-                <TableRow key={t.id} className="border-slate-800 hover:bg-slate-800/50">
+                <TableRow key={t.id} className="border-border hover:bg-muted/50">
                   <TableCell>
                     <Checkbox checked={selected.includes(t.id)} onCheckedChange={(c) => setSelected(c ? [...selected, t.id] : selected.filter(s => s !== t.id))} />
                   </TableCell>
-                  <TableCell><p className="font-medium text-sm text-white">{t.name}</p></TableCell>
+                  <TableCell><p className="font-medium text-sm text-foreground">{t.name}</p></TableCell>
                   <TableCell>
                     {t.domain ? (
-                      <a href={`https://${t.domain}`} target="_blank" rel="noreferrer" className="text-emerald-400 text-xs hover:underline">{t.domain}</a>
-                    ) : <span className="text-slate-600 text-xs">—</span>}
+                      <a href={`https://${t.domain}`} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline">{t.domain}</a>
+                    ) : <span className="text-muted-foreground/70 text-xs">—</span>}
                   </TableCell>
-                  <TableCell className="text-sm text-slate-300">{t.saas_packages?.name ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-foreground/90">{t.saas_packages?.name ?? "—"}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-xs capitalize bg-slate-800 text-slate-300 border-slate-700">{(t.subscription_type ?? "monthly").replace("_", " ")}</Badge>
+                    <Badge variant="secondary" className="text-xs capitalize bg-muted text-foreground/90 border-border">{(t.subscription_type ?? "monthly").replace("_", " ")}</Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-300">{t.company_name ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-slate-300">{t.phone ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-slate-400">{t.email ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-slate-400">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-sm text-foreground/90">{t.company_name ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-foreground/90">{t.phone ?? "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{t.email ?? "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>{expiryBadge(t.subscription_end)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusColors[t.status] ?? "bg-slate-700 text-slate-400"}>{t.status === "pending_approval" ? "Pending" : t.status}</Badge>
+                    <Badge variant="outline" className={statusColors[t.status] ?? "bg-muted text-muted-foreground"}>{t.status === "pending_approval" ? "Pending" : t.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white"><MoreVertical className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground"><MoreVertical className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44 bg-slate-800 border-slate-700">
-                        <DropdownMenuItem onClick={() => openEdit(t)} className="text-slate-200 focus:bg-slate-700"><Pencil className="h-4 w-4 mr-2" />Edit Details</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEdit(t)} className="text-slate-200 focus:bg-slate-700"><Eye className="h-4 w-4 mr-2" />Billing Settings</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { setExtendId(t.id); setExtendDays(30); setExtendOpen(true); }} className="text-slate-200 focus:bg-slate-700">
+                      <DropdownMenuContent align="end" className="w-44 bg-muted border-border">
+                        <DropdownMenuItem onClick={() => openEdit(t)} className="text-foreground focus:bg-accent"><Pencil className="h-4 w-4 mr-2" />Edit Details</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEdit(t)} className="text-foreground focus:bg-accent"><Eye className="h-4 w-4 mr-2" />Billing Settings</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setExtendId(t.id); setExtendDays(30); setExtendOpen(true); }} className="text-foreground focus:bg-accent">
                           <CalendarPlus className="h-4 w-4 mr-2" />Extend Period
                         </DropdownMenuItem>
                         {t.status === "pending_approval" && (
-                          <DropdownMenuItem onClick={() => handleApprove(t)} className="text-emerald-400 focus:bg-slate-700">
+                          <DropdownMenuItem onClick={() => handleApprove(t)} className="text-primary focus:bg-accent">
                             <ShieldCheck className="h-4 w-4 mr-2" />Approve
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator className="bg-slate-700" />
                         {t.status !== "suspended" ? (
-                          <DropdownMenuItem onClick={() => suspend.mutate(t.id)} className="text-red-400 focus:bg-slate-700"><Ban className="h-4 w-4 mr-2" />Suspend</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => suspend.mutate(t.id)} className="text-red-400 focus:bg-accent"><Ban className="h-4 w-4 mr-2" />Suspend</DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem onClick={() => activate.mutate(t.id)} className="text-emerald-400 focus:bg-slate-700"><CheckCircle className="h-4 w-4 mr-2" />Activate</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => activate.mutate(t.id)} className="text-primary focus:bg-accent"><CheckCircle className="h-4 w-4 mr-2" />Activate</DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => { setResetUserId(t.owner_user_id); setResetTenantName(t.name); setNewPassword(""); setResetOpen(true); }} className="text-slate-200 focus:bg-slate-700">
+                        <DropdownMenuItem onClick={() => { setResetUserId(t.owner_user_id); setResetTenantName(t.name); setNewPassword(""); setResetOpen(true); }} className="text-foreground focus:bg-accent">
                           <KeyRound className="h-4 w-4 mr-2" />Reset Password
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-700" />
-                        <DropdownMenuItem className="text-red-400 focus:bg-slate-700" onClick={() => remove.mutate(t.id)}>
+                        <DropdownMenuItem className="text-red-400 focus:bg-accent" onClick={() => remove.mutate(t.id)}>
                           <Trash2 className="h-4 w-4 mr-2" />Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -424,72 +424,72 @@ export default function TenantManagement() {
         </div>
       </div>
 
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-muted-foreground">
         Showing {filtered?.length ?? 0} of {tenants?.length ?? 0} tenants
       </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col bg-slate-900 border-slate-800 text-white">
-          <DialogHeader><DialogTitle className="text-white">{editId ? "Edit Tenant" : "Add New Client"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col bg-card border-border text-foreground">
+          <DialogHeader><DialogTitle className="text-foreground">{editId ? "Edit Tenant" : "Add New Client"}</DialogTitle></DialogHeader>
 
           <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
           {!editId && (
             <>
               <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-emerald-400 flex items-center gap-2"><KeyRound className="h-4 w-4" /> Admin Account</h4>
-                <p className="text-xs text-slate-400">Create the admin user for this tenant</p>
+                <h4 className="text-sm font-semibold text-primary flex items-center gap-2"><KeyRound className="h-4 w-4" /> Admin Account</h4>
+                <p className="text-xs text-muted-foreground">Create the admin user for this tenant</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div><Label className="text-slate-300">Display Name</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.admin_display_name} onChange={(e) => setForm({ ...form, admin_display_name: e.target.value })} placeholder="Admin name" /></div>
-                <div><Label className="text-slate-300">Email *</Label><Input className="bg-slate-800 border-slate-700 text-white" type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@example.com" /></div>
-                <div><Label className="text-slate-300">Password *</Label><Input className="bg-slate-800 border-slate-700 text-white" type="password" value={form.admin_password} onChange={(e) => setForm({ ...form, admin_password: e.target.value })} placeholder="Min 6 chars" /></div>
+                <div><Label className="text-foreground/90">Display Name</Label><Input className="bg-muted border-border text-foreground" value={form.admin_display_name} onChange={(e) => setForm({ ...form, admin_display_name: e.target.value })} placeholder="Admin name" /></div>
+                <div><Label className="text-foreground/90">Email *</Label><Input className="bg-muted border-border text-foreground" type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@example.com" /></div>
+                <div><Label className="text-foreground/90">Password *</Label><Input className="bg-muted border-border text-foreground" type="password" value={form.admin_password} onChange={(e) => setForm({ ...form, admin_password: e.target.value })} placeholder="Min 6 chars" /></div>
               </div>
-              <Separator className="bg-slate-800" />
+              <Separator className="bg-muted" />
             </>
           )}
 
-          <div className="space-y-1"><h4 className="text-sm font-semibold text-emerald-400">Business Information</h4></div>
+          <div className="space-y-1"><h4 className="text-sm font-semibold text-primary">Business Information</h4></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><Label className="text-slate-300">Business Name *</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div><Label className="text-slate-300">Company Name</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} /></div>
-            <div><Label className="text-slate-300">Phone</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-            <div><Label className="text-slate-300">Email</Label><Input className="bg-slate-800 border-slate-700 text-white" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label className="text-slate-300">Address</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-            <div><Label className="text-slate-300">Domain</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="shop.example.com" /></div>
+            <div><Label className="text-foreground/90">Business Name *</Label><Input className="bg-muted border-border text-foreground" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Company Name</Label><Input className="bg-muted border-border text-foreground" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Phone</Label><Input className="bg-muted border-border text-foreground" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Email</Label><Input className="bg-muted border-border text-foreground" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Address</Label><Input className="bg-muted border-border text-foreground" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Domain</Label><Input className="bg-muted border-border text-foreground" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="shop.example.com" /></div>
           </div>
 
-          <Separator className="bg-slate-800" />
+          <Separator className="bg-muted" />
 
-          <div className="space-y-1"><h4 className="text-sm font-semibold text-emerald-400">Subscription</h4></div>
+          <div className="space-y-1"><h4 className="text-sm font-semibold text-primary">Subscription</h4></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-slate-300">Package</Label>
+              <Label className="text-foreground/90">Package</Label>
               <Select value={form.package_id} onValueChange={(v) => setForm({ ...form, package_id: v })}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder="Select package" /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue placeholder="Select package" /></SelectTrigger>
+                <SelectContent className="bg-muted border-border">
                   {packages?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} — ৳{p.price}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-slate-300">Subscription Type</Label>
+              <Label className="text-foreground/90">Subscription Type</Label>
               <Select value={form.subscription_type} onValueChange={(v) => setForm({ ...form, subscription_type: v })}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-muted border-border">
                   <SelectItem value="monthly">Monthly</SelectItem>
                   <SelectItem value="yearly">Yearly</SelectItem>
                   <SelectItem value="free_trial">Free Trial</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div><Label className="text-slate-300">Start Date</Label><Input className="bg-slate-800 border-slate-700 text-white" type="date" value={form.subscription_start} onChange={(e) => setForm({ ...form, subscription_start: e.target.value })} /></div>
-            <div><Label className="text-slate-300">End Date</Label><Input className="bg-slate-800 border-slate-700 text-white" type="date" value={form.subscription_end} onChange={(e) => setForm({ ...form, subscription_end: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Start Date</Label><Input className="bg-muted border-border text-foreground" type="date" value={form.subscription_start} onChange={(e) => setForm({ ...form, subscription_start: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">End Date</Label><Input className="bg-muted border-border text-foreground" type="date" value={form.subscription_end} onChange={(e) => setForm({ ...form, subscription_end: e.target.value })} /></div>
             <div>
-              <Label className="text-slate-300">Status</Label>
+              <Label className="text-foreground/90">Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-muted border-border">
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="trial">Trial</SelectItem>
                   <SelectItem value="pending_approval">Pending Approval</SelectItem>
@@ -500,29 +500,29 @@ export default function TenantManagement() {
             </div>
           </div>
 
-          <Separator className="bg-slate-800" />
+          <Separator className="bg-muted" />
 
-          <div className="space-y-1"><h4 className="text-sm font-semibold text-emerald-400">Payment</h4></div>
+          <div className="space-y-1"><h4 className="text-sm font-semibold text-primary">Payment</h4></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label className="text-slate-300">Payment Method</Label>
+              <Label className="text-foreground/90">Payment Method</Label>
               <Select value={form.payment_method} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-muted border-border">
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="manual">Manual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div><Label className="text-slate-300">Amount</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.payment_amount} onChange={(e) => setForm({ ...form, payment_amount: e.target.value })} placeholder="0" /></div>
+            <div><Label className="text-foreground/90">Amount</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.payment_amount} onChange={(e) => setForm({ ...form, payment_amount: e.target.value })} placeholder="0" /></div>
           </div>
 
-          <div><Label className="text-slate-300">Notes</Label><Textarea className="bg-slate-800 border-slate-700 text-white" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+          <div><Label className="text-foreground/90">Notes</Label><Textarea className="bg-muted border-border text-foreground" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
           </div>
 
-          <DialogFooter className="border-t border-slate-800 pt-4">
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={saving || !form.name || (!editId && (!form.admin_email || !form.admin_password))}>
+          <DialogFooter className="border-t border-border pt-4">
+            <Button variant="outline" className="border-border text-foreground/90 hover:bg-muted" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-foreground" disabled={saving || !form.name || (!editId && (!form.admin_email || !form.admin_password))}>
               {saving ? "Saving..." : editId ? "Update" : "Create Tenant"}
             </Button>
           </DialogFooter>
@@ -531,25 +531,25 @@ export default function TenantManagement() {
 
       {/* Extend Dialog */}
       <Dialog open={extendOpen} onOpenChange={setExtendOpen}>
-        <DialogContent className="max-w-sm bg-slate-900 border-slate-800 text-white">
-          <DialogHeader><DialogTitle className="text-white">Extend Subscription</DialogTitle></DialogHeader>
-          <div><Label className="text-slate-300">Days to add</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={extendDays} onChange={(e) => setExtendDays(+e.target.value)} /></div>
+        <DialogContent className="max-w-sm bg-card border-border text-foreground">
+          <DialogHeader><DialogTitle className="text-foreground">Extend Subscription</DialogTitle></DialogHeader>
+          <div><Label className="text-foreground/90">Days to add</Label><Input className="bg-muted border-border text-foreground" type="number" value={extendDays} onChange={(e) => setExtendDays(+e.target.value)} /></div>
           <DialogFooter>
-            <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setExtendOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => extend.mutate({ id: extendId, days: extendDays }, { onSuccess: () => setExtendOpen(false) })}>Extend</Button>
+            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setExtendOpen(false)}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-foreground" onClick={() => extend.mutate({ id: extendId, days: extendDays }, { onSuccess: () => setExtendOpen(false) })}>Extend</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Reset Password Dialog */}
       <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent className="max-w-sm bg-slate-900 border-slate-800 text-white">
-          <DialogHeader><DialogTitle className="text-white">Reset Password</DialogTitle></DialogHeader>
-          <p className="text-sm text-slate-400">Reset password for <span className="text-white font-medium">{resetTenantName}</span></p>
-          <div><Label className="text-slate-300">New Password</Label><Input className="bg-slate-800 border-slate-700 text-white" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" /></div>
+        <DialogContent className="max-w-sm bg-card border-border text-foreground">
+          <DialogHeader><DialogTitle className="text-foreground">Reset Password</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Reset password for <span className="text-foreground font-medium">{resetTenantName}</span></p>
+          <div><Label className="text-foreground/90">New Password</Label><Input className="bg-muted border-border text-foreground" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" /></div>
           <DialogFooter>
-            <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setResetOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleResetPassword} disabled={resetting || newPassword.length < 6}>
+            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setResetOpen(false)}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-foreground" onClick={handleResetPassword} disabled={resetting || newPassword.length < 6}>
               {resetting ? "Resetting..." : "Reset Password"}
             </Button>
           </DialogFooter>
