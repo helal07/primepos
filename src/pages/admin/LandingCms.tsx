@@ -21,19 +21,19 @@ function CmsSection({ sectionKey, title, fields }: {
   }, [data]);
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
-      <h4 className="text-base font-semibold text-white">{title}</h4>
+    <div className="rounded-xl border border-border bg-card/60 p-5 space-y-4">
+      <h4 className="text-base font-semibold text-foreground">{title}</h4>
       {fields.map((f) => (
         <div key={f.name}>
-          <Label className="text-slate-300">{f.label}</Label>
+          <Label className="text-foreground/90">{f.label}</Label>
           {f.type === "textarea" ? (
-            <Textarea className="bg-slate-800 border-slate-700 text-white" value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
+            <Textarea className="bg-muted border-border text-foreground" value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
           ) : (
-            <Input className="bg-slate-800 border-slate-700 text-white" value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
+            <Input className="bg-muted border-border text-foreground" value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
           )}
         </div>
       ))}
-      <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => mutation.mutate({ key: sectionKey, value: values })} disabled={mutation.isPending} size="sm">
+      <Button className="bg-primary hover:bg-primary/90 text-foreground" onClick={() => mutation.mutate({ key: sectionKey, value: values })} disabled={mutation.isPending} size="sm">
         <Save className="h-4 w-4 mr-1" /> Save
       </Button>
     </div>
@@ -46,13 +46,13 @@ export default function LandingCms() {
       <PageHeader title="Landing Page CMS" subtitle="Edit your public landing page content" />
 
       <Tabs defaultValue="hero">
-        <TabsList className="flex-wrap bg-slate-800 border-slate-700">
-          <TabsTrigger value="hero" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Hero</TabsTrigger>
-          <TabsTrigger value="features" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Features</TabsTrigger>
-          <TabsTrigger value="testimonials" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Testimonials</TabsTrigger>
-          <TabsTrigger value="cta" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">CTA Banner</TabsTrigger>
-          <TabsTrigger value="contact" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Contact</TabsTrigger>
-          <TabsTrigger value="footer" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Footer</TabsTrigger>
+        <TabsList className="flex-wrap bg-muted border-border">
+          <TabsTrigger value="hero" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Hero</TabsTrigger>
+          <TabsTrigger value="features" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Features</TabsTrigger>
+          <TabsTrigger value="testimonials" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Testimonials</TabsTrigger>
+          <TabsTrigger value="cta" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">CTA Banner</TabsTrigger>
+          <TabsTrigger value="contact" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Contact</TabsTrigger>
+          <TabsTrigger value="footer" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Footer</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hero" className="mt-4">

@@ -66,45 +66,45 @@ export default function PackageManagement() {
   return (
     <div className="space-y-6">
       <PageHeader title="Package Management" subtitle="Manage subscription plans">
-        <Button onClick={openNew} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white"><Plus className="h-4 w-4 mr-1" /> Add Package</Button>
+        <Button onClick={openNew} size="sm" className="bg-primary hover:bg-primary/90 text-foreground"><Plus className="h-4 w-4 mr-1" /> Add Package</Button>
       </PageHeader>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
+      <div className="rounded-xl border border-border bg-card/60 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-800 bg-slate-900">
-              <TableHead className="text-slate-400">Name</TableHead>
-              <TableHead className="text-slate-400">Price</TableHead>
-              <TableHead className="text-slate-400">Duration</TableHead>
-              <TableHead className="text-slate-400">Max Users</TableHead>
-              <TableHead className="text-slate-400">Locations</TableHead>
-              <TableHead className="text-slate-400">Invoices</TableHead>
-              <TableHead className="text-slate-400">Status</TableHead>
-              <TableHead className="text-right text-slate-400">Actions</TableHead>
+            <TableRow className="border-border bg-card">
+              <TableHead className="text-muted-foreground">Name</TableHead>
+              <TableHead className="text-muted-foreground">Price</TableHead>
+              <TableHead className="text-muted-foreground">Duration</TableHead>
+              <TableHead className="text-muted-foreground">Max Users</TableHead>
+              <TableHead className="text-muted-foreground">Locations</TableHead>
+              <TableHead className="text-muted-foreground">Invoices</TableHead>
+              <TableHead className="text-muted-foreground">Status</TableHead>
+              <TableHead className="text-right text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-400">Loading…</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Loading…</TableCell></TableRow>
             ) : !packages?.length ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-slate-500">No packages</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No packages</TableCell></TableRow>
             ) : packages.map((p) => (
-              <TableRow key={p.id} className="border-slate-800 hover:bg-slate-800/50">
-                <TableCell className="font-medium text-white">
+              <TableRow key={p.id} className="border-border hover:bg-muted/50">
+                <TableCell className="font-medium text-foreground">
                   {p.name} {p.is_popular && <Star className="inline h-3 w-3 text-yellow-500 ml-1" />}
                 </TableCell>
-                <TableCell className="text-slate-300">৳{p.price}</TableCell>
-                <TableCell className="text-slate-300">{p.duration_days} days</TableCell>
-                <TableCell className="text-slate-300">{p.max_users}</TableCell>
-                <TableCell className="text-slate-300">{p.max_business_location}</TableCell>
-                <TableCell className="text-slate-300">{p.max_invoice || "∞"}</TableCell>
+                <TableCell className="text-foreground/90">৳{p.price}</TableCell>
+                <TableCell className="text-foreground/90">{p.duration_days} days</TableCell>
+                <TableCell className="text-foreground/90">{p.max_users}</TableCell>
+                <TableCell className="text-foreground/90">{p.max_business_location}</TableCell>
+                <TableCell className="text-foreground/90">{p.max_invoice || "∞"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={p.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-slate-700 text-slate-400 border-slate-600"}>
+                  <Badge variant="outline" className={p.is_active ? "bg-emerald-500/20 text-primary border-emerald-500/30" : "bg-muted text-muted-foreground border-border"}>
                     {p.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
                   <Button variant="ghost" size="icon" onClick={() => remove.mutate(p.id)}><Trash2 className="h-4 w-4 text-red-400" /></Button>
                 </TableCell>
               </TableRow>
@@ -116,16 +116,16 @@ export default function PackageManagement() {
       {/* Preview */}
       {packages && packages.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-white mb-3">Landing Page Preview</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Landing Page Preview</h3>
           <div className="grid md:grid-cols-3 gap-4">
             {packages.filter((p) => p.is_active).map((p) => (
-              <div key={p.id} className={`rounded-xl border p-5 text-center space-y-2 ${p.is_popular ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-slate-800" : "border-slate-800 bg-slate-900/50"}`}>
-                {p.is_popular && <Badge className="bg-emerald-600 text-white mb-1">Popular</Badge>}
-                <h4 className="font-bold text-lg text-white">{p.name}</h4>
-                <p className="text-2xl font-bold text-white">৳{p.price}<span className="text-sm text-slate-400">/{p.duration_days}d</span></p>
+              <div key={p.id} className={`rounded-xl border p-5 text-center space-y-2 ${p.is_popular ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-muted" : "border-border bg-card/60"}`}>
+                {p.is_popular && <Badge className="bg-emerald-600 text-foreground mb-1">Popular</Badge>}
+                <h4 className="font-bold text-lg text-foreground">{p.name}</h4>
+                <p className="text-2xl font-bold text-foreground">৳{p.price}<span className="text-sm text-muted-foreground">/{p.duration_days}d</span></p>
                 <ul className="text-sm text-left space-y-1">
                   {(p.features as string[])?.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1 text-slate-300"><span className="text-emerald-400">✓</span> {f}</li>
+                    <li key={i} className="flex items-center gap-1 text-foreground/90"><span className="text-primary">✓</span> {f}</li>
                   ))}
                 </ul>
               </div>
@@ -135,48 +135,48 @@ export default function PackageManagement() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col bg-slate-900 border-slate-800 text-white">
-          <DialogHeader><DialogTitle className="text-white">{editId ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col bg-card border-border text-foreground">
+          <DialogHeader><DialogTitle className="text-foreground">{editId ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
           <div className="grid gap-4 flex-1 overflow-y-auto -mx-6 px-6">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-slate-300">Name</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label className="text-slate-300">Price (৳)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Name</Label><Input className="bg-muted border-border text-foreground" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Price (৳)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label className="text-slate-300">Duration (days)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
-              <div><Label className="text-slate-300">Max Users</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: +e.target.value })} /></div>
-              <div><Label className="text-slate-300">Max Locations</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_business_location} onChange={(e) => setForm({ ...form, max_business_location: +e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Duration (days)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Max Users</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: +e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Max Locations</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_business_location} onChange={(e) => setForm({ ...form, max_business_location: +e.target.value })} /></div>
             </div>
-            <div><Label className="text-slate-300">Max Invoices (0 = unlimited)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} /></div>
-            <div><Label className="text-slate-300">Features (comma-separated)</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" /></div>
+            <div><Label className="text-foreground/90">Max Invoices (0 = unlimited)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Features (comma-separated)</Label><Input className="bg-muted border-border text-foreground" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" /></div>
             <div>
-              <Label className="text-slate-300">Enabled Modules</Label>
-              <p className="text-xs text-slate-500 mb-2">Tenants on this plan will only see the ticked modules.</p>
-              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto rounded border border-slate-700 p-2">
+              <Label className="text-foreground/90">Enabled Modules</Label>
+              <p className="text-xs text-muted-foreground mb-2">Tenants on this plan will only see the ticked modules.</p>
+              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto rounded border border-border p-2">
                 {MODULE_CATALOG.map((m) => (
-                  <label key={m.key} className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer">
+                  <label key={m.key} className="flex items-start gap-2 text-xs text-foreground/90 cursor-pointer">
                     <Checkbox
                       checked={form.enabled_modules.includes(m.key)}
                       onCheckedChange={() => toggleModule(m.key)}
                       className="mt-0.5"
                     />
                     <span>
-                      <span className="font-medium text-slate-200">{m.label}</span>
-                      <span className="block text-slate-500 leading-tight">{m.description}</span>
+                      <span className="font-medium text-foreground">{m.label}</span>
+                      <span className="block text-muted-foreground leading-tight">{m.description}</span>
                     </span>
                   </label>
                 ))}
               </div>
             </div>
-            <div><Label className="text-slate-300">Sort Order</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Sort Order</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-slate-300">Popular</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-slate-300">Active</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-foreground/90">Popular</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-foreground/90">Active</Label></div>
             </div>
           </div>
-          <DialogFooter className="border-t border-slate-800 pt-4">
-            <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
+          <DialogFooter className="border-t border-border pt-4">
+            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-foreground" onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
               {editId ? "Update" : "Create"}
             </Button>
           </DialogFooter>

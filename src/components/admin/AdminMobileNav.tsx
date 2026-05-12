@@ -29,16 +29,16 @@ export function AdminMobileNav({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <aside className="absolute left-0 top-0 bottom-0 w-72 bg-slate-900 text-white flex flex-col animate-in slide-in-from-left">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700/50">
+      <aside className="absolute left-0 top-0 bottom-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col animate-in slide-in-from-left">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold text-sm">P</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-sidebar-foreground font-bold text-sm">P</div>
             <div>
               <span className="font-bold">Prime POS</span>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Super Admin</p>
+              <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-widest">Super Admin</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="text-sidebar-foreground/60 hover:text-sidebar-accent-foreground"><X className="h-5 w-5" /></button>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -52,7 +52,7 @@ export function AdminMobileNav({ open, onClose }: Props) {
                   "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
                   isActive
                     ? "bg-emerald-500/20 text-emerald-400"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -62,11 +62,11 @@ export function AdminMobileNav({ open, onClose }: Props) {
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-slate-700/50 space-y-1">
-          <button onClick={() => go("/dashboard")} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-white">
+        <div className="px-3 py-4 border-t border-border/50 space-y-1">
+          <button onClick={() => go("/dashboard")} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
             <LayoutDashboard className="h-4 w-4" /><span>Tenant Dashboard</span>
           </button>
-          <button onClick={() => signOut()} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-slate-400 hover:bg-red-500/20 hover:text-red-400">
+          <button onClick={() => signOut()} className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-sidebar-foreground/60 hover:bg-red-500/20 hover:text-red-400">
             <LogOut className="h-4 w-4" /><span>Logout</span>
           </button>
         </div>
