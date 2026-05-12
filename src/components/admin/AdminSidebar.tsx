@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut,
+  ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
   ArrowLeftRight,
 } from "lucide-react";
@@ -15,6 +15,8 @@ const overviewItems = [
 const platformItems = [
   { to: "/superadmin/tenants", label: "Tenants", icon: Building2 },
   { to: "/superadmin/packages", label: "Packages", icon: Package },
+  { to: "/superadmin/payments", label: "Payments", icon: Wallet2 },
+  { to: "/superadmin/payment-gateways", label: "Payment Gateways", icon: CreditCard },
   { to: "/superadmin/transactions", label: "Transactions", icon: CreditCard },
 ];
 
