@@ -104,6 +104,16 @@ const SuperPayments = lazy(() => import("./pages/admin/SuperPayments"));
 const PaymentGateways = lazy(() => import("./pages/admin/PaymentGateways"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Shipments = lazy(() => import("./pages/Shipments"));
+const StoreSettingsAdmin = lazy(() => import("./pages/StoreSettings"));
+const StoreCollectionsAdmin = lazy(() => import("./pages/StoreCollectionsAdmin"));
+const StoreShell = lazy(() => import("./store/StoreLayout"));
+const StoreHome = lazy(() => import("./store/StoreHome"));
+const StoreShop = lazy(() => import("./store/StoreShop"));
+const StoreProduct = lazy(() => import("./store/StoreProduct"));
+const StoreCollections = lazy(() => import("./store/StoreCollections"));
+const StoreCollection = lazy(() => import("./store/StoreCollection"));
+const StoreCart = lazy(() => import("./store/StoreCart"));
+const StorePage = lazy(() => import("./store/StorePage"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
 const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
@@ -152,6 +162,16 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
+            {/* Public storefront */}
+            <Route path="/store/:tenantSlug" element={<Suspense fallback={<RouteFallback />}><StoreShell /></Suspense>}>
+              <Route index element={<StoreHome />} />
+              <Route path="shop" element={<StoreShop />} />
+              <Route path="product/:productSlug" element={<StoreProduct />} />
+              <Route path="collections" element={<StoreCollections />} />
+              <Route path="collection/:collectionSlug" element={<StoreCollection />} />
+              <Route path="cart" element={<StoreCart />} />
+              <Route path="page/:pageSlug" element={<StorePage />} />
+            </Route>
             <Route path="/subscription" element={
               <ProtectedRoute>
                 <Suspense fallback={<RouteFallback />}><SubscriptionPage /></Suspense>
@@ -229,6 +249,8 @@ const App = () => (
                         <Route path="/payroll" element={<PayrollPage />} />
                         <Route path="/warranty-claims" element={<WarrantyClaims />} />
                         <Route path="/cms/pages" element={<CmsPages />} />
+                        <Route path="/ecommerce/settings" element={<ModuleGate module="ecommerce"><StoreSettingsAdmin /></ModuleGate>} />
+                        <Route path="/ecommerce/collections" element={<ModuleGate module="ecommerce"><StoreCollectionsAdmin /></ModuleGate>} />
                         <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
                         <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
                         <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />

@@ -1490,6 +1490,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          gallery_urls: string[]
           has_warranty: boolean
           id: string
           image_url: string | null
@@ -1508,6 +1509,8 @@ export type Database = {
           updated_at: string
           warranty_duration: number | null
           warranty_type: string | null
+          website_description: string | null
+          website_slug: string | null
         }
         Insert: {
           alert_quantity?: number
@@ -1517,6 +1520,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gallery_urls?: string[]
           has_warranty?: boolean
           id?: string
           image_url?: string | null
@@ -1535,6 +1539,8 @@ export type Database = {
           updated_at?: string
           warranty_duration?: number | null
           warranty_type?: string | null
+          website_description?: string | null
+          website_slug?: string | null
         }
         Update: {
           alert_quantity?: number
@@ -1544,6 +1550,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gallery_urls?: string[]
           has_warranty?: boolean
           id?: string
           image_url?: string | null
@@ -1562,6 +1569,8 @@ export type Database = {
           updated_at?: string
           warranty_duration?: number | null
           warranty_type?: string | null
+          website_description?: string | null
+          website_slug?: string | null
         }
         Relationships: [
           {
@@ -2802,6 +2811,192 @@ export type Database = {
           },
         ]
       }
+      store_collection_products: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          product_id: string
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_collection_products_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "store_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_collection_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          slug: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_settings: {
+        Row: {
+          about_html: string | null
+          address: string | null
+          banner_url: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          currency: string
+          enable_bkash: boolean
+          enable_cod: boolean
+          enable_sslcommerz: boolean
+          enabled: boolean
+          facebook_url: string | null
+          footer_html: string | null
+          free_shipping_threshold: number | null
+          hero_cta_label: string | null
+          hero_cta_url: string | null
+          hero_heading: string | null
+          hero_subheading: string | null
+          id: string
+          instagram_url: string | null
+          logo_url: string | null
+          meta_description: string | null
+          meta_title: string | null
+          primary_color: string | null
+          shipping_flat_rate: number
+          store_name: string | null
+          tagline: string | null
+          tenant_id: string
+          theme: string
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          about_html?: string | null
+          address?: string | null
+          banner_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          currency?: string
+          enable_bkash?: boolean
+          enable_cod?: boolean
+          enable_sslcommerz?: boolean
+          enabled?: boolean
+          facebook_url?: string | null
+          footer_html?: string | null
+          free_shipping_threshold?: number | null
+          hero_cta_label?: string | null
+          hero_cta_url?: string | null
+          hero_heading?: string | null
+          hero_subheading?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          primary_color?: string | null
+          shipping_flat_rate?: number
+          store_name?: string | null
+          tagline?: string | null
+          tenant_id: string
+          theme?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          about_html?: string | null
+          address?: string | null
+          banner_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          currency?: string
+          enable_bkash?: boolean
+          enable_cod?: boolean
+          enable_sslcommerz?: boolean
+          enabled?: boolean
+          facebook_url?: string | null
+          footer_html?: string | null
+          free_shipping_threshold?: number | null
+          hero_cta_label?: string | null
+          hero_cta_url?: string | null
+          hero_heading?: string | null
+          hero_subheading?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          primary_color?: string | null
+          shipping_flat_rate?: number
+          store_name?: string | null
+          tagline?: string | null
+          tenant_id?: string
+          theme?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -2993,6 +3188,7 @@ export type Database = {
           owner_user_id: string
           package_id: string | null
           phone: string | null
+          slug: string | null
           status: string
           subscription_end: string | null
           subscription_start: string
@@ -3014,6 +3210,7 @@ export type Database = {
           owner_user_id: string
           package_id?: string | null
           phone?: string | null
+          slug?: string | null
           status?: string
           subscription_end?: string | null
           subscription_start?: string
@@ -3035,6 +3232,7 @@ export type Database = {
           owner_user_id?: string
           package_id?: string | null
           phone?: string | null
+          slug?: string | null
           status?: string
           subscription_end?: string | null
           subscription_start?: string
