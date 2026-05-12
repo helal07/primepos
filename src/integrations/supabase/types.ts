@@ -2895,6 +2895,170 @@ export type Database = {
         }
         Relationships: []
       }
+      store_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          tenant_id: string
+          total: number
+          unit_price: number
+          variation_id: string | null
+          variation_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity?: number
+          tenant_id: string
+          total?: number
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          tenant_id?: string
+          total?: number
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "store_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_order_items_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_orders: {
+        Row: {
+          cancelled_at: string | null
+          city: string | null
+          confirmed_at: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          discount_amount: number
+          id: string
+          notes: string | null
+          order_number: string
+          payment_method: string
+          payment_ref: string | null
+          payment_status: string
+          sale_id: string | null
+          shipment_id: string | null
+          shipping_address: string
+          shipping_cost: number
+          status: string
+          subtotal: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          city?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          order_number: string
+          payment_method?: string
+          payment_ref?: string | null
+          payment_status?: string
+          sale_id?: string | null
+          shipment_id?: string | null
+          shipping_address: string
+          shipping_cost?: number
+          status?: string
+          subtotal?: number
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          city?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          order_number?: string
+          payment_method?: string
+          payment_ref?: string | null
+          payment_status?: string
+          sale_id?: string | null
+          shipment_id?: string | null
+          shipping_address?: string
+          shipping_cost?: number
+          status?: string
+          subtotal?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_orders_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_orders_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_settings: {
         Row: {
           about_html: string | null
@@ -3639,12 +3803,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_store_order: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: undefined
+      }
+      confirm_store_order: { Args: { p_order_id: string }; Returns: string }
       ensure_default_warehouse: {
         Args: { _tenant_id: string }
         Returns: string
       }
       generate_installment_invoice: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_store_order_number: { Args: never; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_module_permission: {
         Args: { _module: string; _permission: string; _user_id: string }
@@ -3654,6 +3824,20 @@ export type Database = {
       is_tenant_manager_or_above: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      place_store_order: {
+        Args: {
+          p_city: string
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_items: Json
+          p_notes: string
+          p_payment_method: string
+          p_shipping_address: string
+          p_tenant_slug: string
+        }
+        Returns: Json
       }
       tenant_has_module: {
         Args: { _module: string; _user_id: string }

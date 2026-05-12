@@ -198,6 +198,15 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
     ],
   },
   {
+    label: "Ecommerce",
+    module: "ecommerce",
+    items: [
+      { title: "Website Orders", url: "/ecommerce/orders", icon: ShoppingBag },
+      { title: "Collections", url: "/ecommerce/collections", icon: Layers },
+      { title: "Store Settings", url: "/ecommerce/settings", icon: Settings },
+    ],
+  },
+  {
     label: "Exchange",
     module: "exchange",
     items: [
