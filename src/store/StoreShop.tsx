@@ -24,7 +24,7 @@ export default function StoreShop() {
         </Select>
       </div>
       {isLoading ? <p className="text-muted-foreground">Loading…</p> : products && products.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{products.map((p: any) => <ProductCard key={p.id} product={p} tenantSlug={tenant.slug} currency={settings.currency} />)}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{products.map((p: any) => <ProductCard key={p.id} product={p} tenantSlug={tenant.slug} currency={settings.currency} tenantId={tenant.id} />)}</div>
       ) : <p className="text-muted-foreground py-12 text-center">No products found.</p>}
     </div>
   );
