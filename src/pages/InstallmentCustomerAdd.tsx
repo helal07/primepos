@@ -40,7 +40,9 @@ export default function InstallmentCustomerAdd() {
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
-  const uploadFile = async (file: File, folder: string) => {
+  const uploadFile = async (input: File, folder: string) => {
+    const { compressIfImage } = await import("@/lib/compressImage");
+    const file = await compressIfImage(input, { maxWidth: 1800, maxHeight: 1800, quality: 0.82 });
     const ext = file.name.split(".").pop();
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("installment-docs").upload(path, file);
