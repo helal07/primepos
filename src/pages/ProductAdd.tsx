@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowLeft, Upload, X, ImageIcon, Save, Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSellingPriceGroups, useProductGroupPrices, useProductGroupPriceMutations } from "@/hooks/usePriceGroups";
+import { QuickAddDialog } from "@/components/inventory/QuickAddDialog";
 
 const PRODUCT_TYPES = [
   { value: "general", label: "General" },
@@ -331,39 +332,48 @@ export default function ProductAdd() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select value={form.category_id || "none"} onValueChange={v => set("category_id", v === "none" ? "" : v)}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {categories?.filter(c => c.is_active).map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={form.category_id || "none"} onValueChange={v => set("category_id", v === "none" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {categories?.filter(c => c.is_active).map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <QuickAddDialog kind="category" onCreated={(id) => id && set("category_id", id)} />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Brand</Label>
-                  <Select value={form.brand_id || "none"} onValueChange={v => set("brand_id", v === "none" ? "" : v)}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {brands?.filter(b => b.is_active).map(b => (
-                        <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={form.brand_id || "none"} onValueChange={v => set("brand_id", v === "none" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {brands?.filter(b => b.is_active).map(b => (
+                          <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <QuickAddDialog kind="brand" onCreated={(id) => id && set("brand_id", id)} />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Unit</Label>
-                  <Select value={form.unit_id || "none"} onValueChange={v => set("unit_id", v === "none" ? "" : v)}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {units?.filter(u => u.is_active).map(u => (
-                        <SelectItem key={u.id} value={u.id}>{u.name} ({u.short_name})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select value={form.unit_id || "none"} onValueChange={v => set("unit_id", v === "none" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {units?.filter(u => u.is_active).map(u => (
+                          <SelectItem key={u.id} value={u.id}>{u.name} ({u.short_name})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <QuickAddDialog kind="unit" onCreated={(id) => id && set("unit_id", id)} />
+                  </div>
                 </div>
               </div>
             </CardContent>
