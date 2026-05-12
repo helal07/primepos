@@ -1151,6 +1151,143 @@ export type Database = {
           },
         ]
       }
+      payment_attempts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          gateway: string
+          gateway_ref: string | null
+          id: string
+          package_id: string | null
+          raw_payload: Json
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          gateway: string
+          gateway_ref?: string | null
+          id?: string
+          package_id?: string | null
+          raw_payload?: Json
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          gateway?: string
+          gateway_ref?: string | null
+          id?: string
+          package_id?: string | null
+          raw_payload?: Json
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "saas_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_attempts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_gateway_credentials: {
+        Row: {
+          config: Json
+          created_at: string
+          gateway_id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          gateway_id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          gateway_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_gateway_credentials_gateway_id_fkey"
+            columns: ["gateway_id"]
+            isOneToOne: true
+            referencedRelation: "payment_gateways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_gateways: {
+        Row: {
+          account_number: string | null
+          account_type: string | null
+          active: boolean
+          config: Json
+          created_at: string
+          display_name: string
+          id: string
+          instructions: string | null
+          logo_url: string | null
+          mode: string
+          provider: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          account_number?: string | null
+          account_type?: string | null
+          active?: boolean
+          config?: Json
+          created_at?: string
+          display_name: string
+          id?: string
+          instructions?: string | null
+          logo_url?: string | null
+          mode?: string
+          provider: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          account_number?: string | null
+          account_type?: string | null
+          active?: boolean
+          config?: Json
+          created_at?: string
+          display_name?: string
+          id?: string
+          instructions?: string | null
+          logo_url?: string | null
+          mode?: string
+          provider?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
       payroll: {
         Row: {
           allowances: number
@@ -2647,6 +2784,87 @@ export type Database = {
           },
         ]
       }
+      tenant_payments: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          ends_on: string | null
+          id: string
+          notes: string | null
+          package_id: string | null
+          payer_name: string | null
+          payer_phone: string | null
+          payment_method: string
+          payment_reference: string | null
+          proof_url: string | null
+          starts_on: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          package_id?: string | null
+          payer_name?: string | null
+          payer_phone?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          proof_url?: string | null
+          starts_on?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          ends_on?: string | null
+          id?: string
+          notes?: string | null
+          package_id?: string | null
+          payer_name?: string | null
+          payer_phone?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          proof_url?: string | null
+          starts_on?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "saas_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           address: string | null
@@ -3053,6 +3271,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_tenant_after_payment: {
+        Args: {
+          _amount: number
+          _gateway: string
+          _gateway_ref: string
+          _tenant_id: string
+        }
+        Returns: Json
+      }
       apply_warehouse_stock_delta: {
         Args: {
           _delta: number
