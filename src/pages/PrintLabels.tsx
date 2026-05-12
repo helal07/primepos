@@ -109,6 +109,7 @@ export default function PrintLabels() {
   const [barMargin, setBarMargin] = useState(0);
   const [cellPadding, setCellPadding] = useState(1.5); // mm
   const [autoFitBarcode, setAutoFitBarcode] = useState(true);
+  const [rotateBarcode, setRotateBarcode] = useState(false);
 
   const filtered = useMemo(
     () => (products || []).filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20),
@@ -278,6 +279,9 @@ export default function PrintLabels() {
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={autoFitBarcode} onCheckedChange={(v) => setAutoFitBarcode(!!v)} /> Auto-fit barcode to label
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={rotateBarcode} onCheckedChange={(v) => setRotateBarcode(!!v)} /> Rotate barcode 90°
+              </label>
             </div>
 
             <div className="border rounded-lg max-h-64 overflow-auto divide-y">
@@ -328,7 +332,20 @@ export default function PrintLabels() {
                     {storeName && <div className="label-store">{storeName}</div>}
                     {showName && <div className="label-name">{i.name}</div>}
                     {showBarcode && (
-                      <div className="label-barcode" style={{ height: barHeight + barMargin * 2 }}>
+                      <div
+                        className="label-barcode"
+                        style={
+                          rotateBarcode
+                            ? {
+                                width: barHeight + barMargin * 2,
+                                height: "auto",
+                                transform: "rotate(-90deg)",
+                                transformOrigin: "center",
+                                margin: "4px 0",
+                              }
+                            : { height: barHeight + barMargin * 2 }
+                        }
+                      >
                         <Barcode
                           value={i.barcode}
                           preferred={barcodeFormat}
