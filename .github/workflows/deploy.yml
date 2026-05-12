@@ -32,6 +32,8 @@ jobs:
         run: |
           test -f dist/index.html
           ! grep -q '/src/main.tsx' dist/index.html
+          test -d dist/assets
+          test -f dist/.htaccess
 
       - name: Deploy to Hostinger FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -40,5 +42,11 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: ./public_html/
+          server-dir: public_html/
           dangerous-clean-slate: true
+
+      - name: Verify live site is serving the production build
+        run: |
+          html="$(curl -fsSL https://pos.itsheba.bd/)"
+          printf '%s' "$html" | grep -q '/assets/'
+          ! printf '%s' "$html" | grep -q '/src/main.tsx'
