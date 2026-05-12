@@ -124,9 +124,12 @@ export default function ProductAdd() {
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return form.image_url || null;
     setUploading(true);
-    const ext = imageFile.name.split(".").pop();
+    const { compressImage } = await import("@/lib/compressImage");
+    const compressed = await compressImage(imageFile, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
+    const ext = compressed.name.split(".").pop();
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, imageFile);
+    const { error } = await supabase.storage.from("product-images")
+      .upload(path, compressed, { contentType: compressed.type });
     setUploading(false);
     if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); return null; }
     const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);

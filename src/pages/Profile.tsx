@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, Save, KeyRound, User as UserIcon, Upload, FileText, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { compressImage, compressIfImage } from "@/lib/compressImage";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -60,11 +61,12 @@ export default function ProfilePage() {
   };
 
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
-    if (!file.type.startsWith("image/")) return toast.error("Please choose an image");
+    const original = e.target.files?.[0];
+    if (!original || !user) return;
+    if (original.size > 10 * 1024 * 1024) return toast.error("Image must be under 10MB");
+    if (!original.type.startsWith("image/")) return toast.error("Please choose an image");
     setUploadingAvatar(true);
+    const file = await compressImage(original, { maxWidth: 512, maxHeight: 512, quality: 0.85 });
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("avatars")
@@ -79,16 +81,17 @@ export default function ProfilePage() {
   };
 
   const onDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    if (file.size > 10 * 1024 * 1024) return toast.error("File must be under 10MB");
+    const original = e.target.files?.[0];
+    if (!original || !user) return;
+    if (original.size > 15 * 1024 * 1024) return toast.error("File must be under 15MB");
     setUploadingDoc(true);
+    const file = await compressIfImage(original, { maxWidth: 2000, maxHeight: 2000, quality: 0.82 });
     const ext = file.name.split(".").pop();
     const path = `${user.id}/id-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("user-documents")
       .upload(path, file, { upsert: true, contentType: file.type });
     if (upErr) { setUploadingDoc(false); return toast.error(upErr.message); }
-    const res = await persistProfile({ id_proof_url: path, id_proof_name: file.name });
+    const res = await persistProfile({ id_proof_url: path, id_proof_name: original.name });
     setUploadingDoc(false);
     if (res?.error) toast.error(res.error.message);
     else toast.success("Document uploaded");

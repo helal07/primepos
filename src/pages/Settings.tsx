@@ -15,6 +15,7 @@ import { ThemePicker } from "@/components/settings/ThemePicker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, Loader2, Smartphone } from "lucide-react";
+import { compressImage } from "@/lib/compressImage";
 
 function BusinessTab() {
   const { data: settings, isLoading } = useSettings();
@@ -249,11 +250,12 @@ function PwaTab() {
   }, [settings]);
 
   const onIcon = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error("Icon must be under 2MB");
-    if (!file.type.startsWith("image/")) return toast.error("Please choose an image");
+    const original = e.target.files?.[0];
+    if (!original) return;
+    if (original.size > 5 * 1024 * 1024) return toast.error("Icon must be under 5MB");
+    if (!original.type.startsWith("image/")) return toast.error("Please choose an image");
     setUploading(true);
+    const file = await compressImage(original, { maxWidth: 512, maxHeight: 512, quality: 0.9, mimeType: "image/jpeg" });
     const ext = file.name.split(".").pop();
     const path = `pwa/icon-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("branding")
