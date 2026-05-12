@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, Settings, User } from "lucide-react";
+import { Bell, LogOut, Search, Settings, User, MonitorSmartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,14 @@ export function AppHeader() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={() => navigate("/pos")}
+          className="h-9 gap-1.5 font-semibold"
+        >
+          <MonitorSmartphone className="h-4 w-4" />
+          POS
+        </Button>
         <Button variant="ghost" size="icon" className="relative h-9 w-9">
           <Bell className="h-4 w-4" />
           <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
