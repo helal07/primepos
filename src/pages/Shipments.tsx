@@ -204,6 +204,21 @@ export default function Shipments() {
     setOpen(true);
   };
 
+  const sendToCourier = async (shipmentId: string, provider: "pathao" | "steadfast") => {
+    if (!confirm(`Send this shipment to ${provider}?`)) return;
+    const t = toast.loading(`Sending to ${provider}...`);
+    const { data, error } = await supabase.functions.invoke("courier-create-shipment", {
+      body: { shipment_id: shipmentId, provider },
+    });
+    toast.dismiss(t);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Failed");
+      return;
+    }
+    toast.success(`Sent. Tracking: ${(data as any)?.tracking || "-"}`);
+    qc.invalidateQueries({ queryKey: ["shipments"] });
+  };
+
   const printLabel = (s: any) => {
     const w = window.open("", "_blank", "width=400,height=600");
     if (!w) return;
