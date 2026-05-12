@@ -55,7 +55,8 @@ export default function Login() {
     if (error) {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Account created", description: "Check your email to verify your account." });
+      toast({ title: "Welcome!", description: "Your workspace is ready." });
+      navigate("/dashboard");
     }
   };
 
