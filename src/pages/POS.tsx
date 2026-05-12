@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
-  ScanBarcode, FileText, Clock, Pencil,
+  ScanBarcode, FileText, Clock, Pencil, UserPlus,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -31,6 +31,9 @@ import { cn } from "@/lib/utils";
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
@@ -78,6 +81,7 @@ export default function POS() {
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
+  const qc = useQueryClient();
   const { createSale, createSalePayments } = useSaleMutations();
   const { data: settings } = useSettings();
   const { data: priceGroups } = useSellingPriceGroups();
@@ -97,6 +101,9 @@ export default function POS() {
   const [lastInvoice, setLastInvoice] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCust, setNewCust] = useState({ name: "", phone: "", email: "", address: "" });
+  const [savingCust, setSavingCust] = useState(false);
   const [filterType, setFilterType] = useState<"category" | "brand">("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
@@ -423,6 +430,15 @@ export default function POS() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => setShowAddCustomer(true)}
+                title="Add new customer"
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -847,6 +863,86 @@ export default function POS() {
         onFinalize={handleCompleteWithPayments}
         isPending={createSale.isPending}
       />
+
+      {/* Quick Add Customer */}
+      <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Customer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Name *</Label>
+              <Input
+                value={newCust.name}
+                onChange={(e) => setNewCust((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Customer name"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Phone</Label>
+                <Input
+                  value={newCust.phone}
+                  onChange={(e) => setNewCust((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="01XXXXXXXXX"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={newCust.email}
+                  onChange={(e) => setNewCust((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Address</Label>
+              <Input
+                value={newCust.address}
+                onChange={(e) => setNewCust((p) => ({ ...p, address: e.target.value }))}
+                placeholder="Address (optional)"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCustomer(false)} disabled={savingCust}>
+              Cancel
+            </Button>
+            <Button
+              disabled={savingCust || !newCust.name.trim()}
+              onClick={async () => {
+                setSavingCust(true);
+                const { data, error } = await supabase
+                  .from("customers")
+                  .insert({
+                    name: newCust.name.trim(),
+                    phone: newCust.phone || null,
+                    email: newCust.email || null,
+                    address: newCust.address || null,
+                  })
+                  .select()
+                  .single();
+                setSavingCust(false);
+                if (error) {
+                  toast.error(error.message);
+                  return;
+                }
+                await qc.invalidateQueries({ queryKey: ["customers"] });
+                if (data?.id) setCustomerId(data.id);
+                toast.success("Customer added");
+                setNewCust({ name: "", phone: "", email: "", address: "" });
+                setShowAddCustomer(false);
+              }}
+            >
+              {savingCust ? "Saving..." : "Save Customer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
