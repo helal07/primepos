@@ -54,9 +54,9 @@ const SIZES: Record<string, { w: string; h: string; cols: number; label: string 
 };
 
 function Barcode({
-  value, preferred, barWidth, barHeight, margin,
+  value, preferred, barWidth, barHeight, margin, autoFit,
 }: {
-  value: string; preferred: FormatKey; barWidth: number; barHeight: number; margin: number;
+  value: string; preferred: FormatKey; barWidth: number; barHeight: number; margin: number; autoFit: boolean;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   useEffect(() => {
@@ -82,9 +82,16 @@ function Barcode({
           });
         } catch {}
       }
+      // Auto-fit: stretch SVG to its container so it never exceeds label width
+      if (autoFit && ref.current) {
+        ref.current.setAttribute("width", "100%");
+        ref.current.setAttribute("preserveAspectRatio", "none");
+      } else if (ref.current) {
+        ref.current.removeAttribute("preserveAspectRatio");
+      }
     }
-  }, [value, preferred, barWidth, barHeight, margin]);
-  return <svg ref={ref} className="w-full" />;
+  }, [value, preferred, barWidth, barHeight, margin, autoFit]);
+  return <svg ref={ref} className={autoFit ? "w-full h-full block" : "max-w-full block"} />;
 }
 
 export default function PrintLabels() {
