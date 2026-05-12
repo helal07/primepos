@@ -122,7 +122,7 @@ export default function AdminDashboard() {
   const kpis = [
     {
       label: "Monthly Recurring Revenue", value: `৳${Math.round(stats.mrr).toLocaleString()}`,
-      sub: `ARR ৳${Math.round(stats.arr).toLocaleString()}`, icon: DollarSign, accent: "text-emerald-400",
+      sub: `ARR ৳${Math.round(stats.arr).toLocaleString()}`, icon: DollarSign, accent: "text-primary",
     },
     {
       label: "Active Tenants", value: stats.active, sub: `${stats.total} total`,
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
   ];
 
   const statusBreakdown = [
-    { label: "Active", count: stats.active, color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30", icon: CheckCircle2 },
+    { label: "Active", count: stats.active, color: "bg-emerald-500/10 text-primary border-emerald-500/30", icon: CheckCircle2 },
     { label: "Trial", count: stats.trial, color: "bg-amber-500/10 text-amber-400 border-amber-500/30", icon: Clock },
     { label: "Pending", count: stats.pending, color: "bg-sky-500/10 text-sky-400 border-sky-500/30", icon: Activity },
     { label: "Suspended", count: stats.suspended, color: "bg-red-500/10 text-red-400 border-red-500/30", icon: AlertTriangle },

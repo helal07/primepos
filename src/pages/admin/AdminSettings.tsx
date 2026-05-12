@@ -22,21 +22,21 @@ function GatewayCard({ settingsKey, title, fields }: {
   }, [data]);
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-4">
+    <div className="rounded-xl border border-border bg-card/60 p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-base font-semibold text-white">{title}</h4>
+        <h4 className="text-base font-semibold text-foreground">{title}</h4>
         <div className="flex items-center gap-2">
-          <Label className="text-xs text-slate-400">Enabled</Label>
+          <Label className="text-xs text-muted-foreground">Enabled</Label>
           <Switch checked={!!values.enabled} onCheckedChange={(v) => setValues({ ...values, enabled: v })} />
         </div>
       </div>
       {fields.map((f) => (
         <div key={f.name}>
-          <Label className="text-slate-300">{f.label}</Label>
-          <Input className="bg-slate-800 border-slate-700 text-white" type={f.type ?? "text"} value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
+          <Label className="text-foreground/90">{f.label}</Label>
+          <Input className="bg-muted border-border text-foreground" type={f.type ?? "text"} value={values[f.name] ?? ""} onChange={(e) => setValues({ ...values, [f.name]: e.target.value })} />
         </div>
       ))}
-      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => mutation.mutate({ key: settingsKey, value: values })} disabled={mutation.isPending}>
+      <Button size="sm" className="bg-primary hover:bg-primary/90 text-foreground" onClick={() => mutation.mutate({ key: settingsKey, value: values })} disabled={mutation.isPending}>
         <Save className="h-4 w-4 mr-1" /> Save
       </Button>
     </div>
