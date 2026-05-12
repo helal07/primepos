@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,15 +14,26 @@ import { Plus, Pencil, Trash2, Package } from "lucide-react";
 import { toast } from "sonner";
 
 export default function StoreCollectionsAdmin() {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [productsOpen, setProductsOpen] = useState<string | null>(null);
   const [form, setForm] = useState<any>({ name: "", slug: "", is_active: true, is_featured: false, sort_order: 0 });
 
-  const { data: collections } = useQuery({
-    queryKey: ["admin_collections"],
+  const { data: tenantId } = useQuery({
+    queryKey: ["my_tenant", user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("store_collections").select("*").order("sort_order");
+      const { data } = await supabase.from("profiles").select("tenant_id").eq("user_id", user!.id).maybeSingle();
+      return data?.tenant_id ?? null;
+    },
+  });
+
+  const { data: collections } = useQuery({
+    queryKey: ["admin_collections", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_collections").select("*").eq("tenant_id", tenantId!).order("sort_order");
       if (error) throw error;
       return data ?? [];
     },
@@ -37,7 +49,9 @@ export default function StoreCollectionsAdmin() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { ...form };
+      if (!tenantId) throw new Error("No tenant");
+      const payload = { ...form, tenant_id: tenantId };
+      delete payload.id; delete payload.created_at; delete payload.updated_at;
       if (!payload.slug) payload.slug = payload.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
       if (form.id) {
         const { error } = await supabase.from("store_collections").update(payload).eq("id", form.id);
