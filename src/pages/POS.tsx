@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
-  ScanBarcode, FileText, Clock, Pencil,
+  ScanBarcode, FileText, Clock, Pencil, UserPlus,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -31,6 +31,9 @@ import { cn } from "@/lib/utils";
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
