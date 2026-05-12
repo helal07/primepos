@@ -1,4 +1,4 @@
-import { Link, useOutletContext, useParams } from "react-router-dom";
+import { Link, useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import type { StoreCtx } from "./StoreLayout";
 export default function StoreOrder() {
   const { tenant, settings } = useOutletContext<StoreCtx>();
   const { orderId } = useParams();
+  const [params] = useSearchParams();
+  const paymentResult = params.get("payment");
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["store_order", orderId],
@@ -45,7 +47,15 @@ export default function StoreOrder() {
         <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-2" />
         <h1 className="text-2xl font-bold">Thank you for your order!</h1>
         <p className="text-muted-foreground">Order #{order.order_number}</p>
-        <Badge className={`mt-2 ${statusColor[order.status] ?? ""}`}>{order.status}</Badge>
+        <div className="mt-2 flex justify-center gap-2">
+          <Badge className={statusColor[order.status] ?? ""}>{order.status}</Badge>
+          <Badge variant="outline">payment: {order.payment_status}</Badge>
+        </div>
+        {paymentResult && paymentResult !== "success" && (
+          <p className="mt-3 text-sm text-destructive">
+            Payment {paymentResult}. You can retry from your store or contact support.
+          </p>
+        )}
       </div>
 
       <Card>
