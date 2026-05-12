@@ -1,6 +1,7 @@
 import { Link, Outlet, useParams } from "react-router-dom";
 import { useEffect } from "react";
-import { ShoppingCart, Search, Menu } from "lucide-react";
+import { ShoppingCart, Search, Menu, Heart } from "lucide-react";
+import { NewsletterSignup } from "./components/NewsletterSignup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTenantBySlug, useStoreSettings } from "@/hooks/useStorefront";
@@ -67,6 +68,7 @@ function StoreShell() {
     { to: `/store/${tenantSlug}`, label: "Home" },
     { to: `/store/${tenantSlug}/shop`, label: "Shop" },
     { to: `/store/${tenantSlug}/collections`, label: "Collections" },
+    { to: `/store/${tenantSlug}/blog`, label: "Blog" },
   ];
 
   return (
@@ -115,6 +117,9 @@ function StoreShell() {
                 <Input name="q" placeholder="Search products..." className="pl-8 h-9" />
               </div>
             </form>
+            <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex">
+              <Link to={`/store/${tenantSlug}/wishlist`} aria-label="Wishlist"><Heart className="h-4 w-4" /></Link>
+            </Button>
             <CartButton slug={tenantSlug!} />
           </div>
         </header>
@@ -122,7 +127,7 @@ function StoreShell() {
           <Outlet context={{ tenant, settings }} />
         </main>
         <footer className="border-t mt-12 bg-muted/30">
-          <div className="container mx-auto px-4 py-8 grid gap-8 md:grid-cols-3 text-sm">
+          <div className="container mx-auto px-4 py-8 grid gap-8 md:grid-cols-4 text-sm">
             <div>
               <h3 className="font-semibold mb-2">{name}</h3>
               {settings.tagline && <p className="text-muted-foreground">{settings.tagline}</p>}
@@ -142,6 +147,11 @@ function StoreShell() {
                 {settings.instagram_url && <li><a href={settings.instagram_url} target="_blank" rel="noreferrer">Instagram</a></li>}
                 {settings.whatsapp_number && <li>WhatsApp: {settings.whatsapp_number}</li>}
               </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">Newsletter</h4>
+              <p className="text-muted-foreground mb-2 text-xs">Get updates on new arrivals & offers.</p>
+              <NewsletterSignup tenantId={tenant.id} />
             </div>
           </div>
           <div className="text-center text-xs text-muted-foreground py-4 border-t">© {new Date().getFullYear()} {name}</div>
