@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, CreditCard, CheckCircle2, Store } from "lucide-react";
+import { Loader2, Sparkles, CreditCard, CheckCircle2, Store, Eye, EyeOff } from "lucide-react";
 
 interface Pkg {
   id: string;
@@ -25,6 +25,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<"trial" | "paid" | null>(null);
   const [packages, setPackages] = useState<Pkg[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     businessName: "",
     contactName: "",
@@ -167,7 +168,12 @@ export default function Register() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pw">Password</Label>
-                <Input id="pw" type="password" required minLength={6} value={form.password} onChange={(e) => set("password", e.target.value)} />
+                <div className="relative">
+                  <Input id="pw" type={showPassword ? "text" : "password"} required minLength={6} value={form.password} onChange={(e) => set("password", e.target.value)} />
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="addr">Address</Label>
