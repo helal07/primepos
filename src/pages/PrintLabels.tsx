@@ -332,7 +332,20 @@ export default function PrintLabels() {
                     {storeName && <div className="label-store">{storeName}</div>}
                     {showName && <div className="label-name">{i.name}</div>}
                     {showBarcode && (
-                      <div className="label-barcode" style={{ height: barHeight + barMargin * 2 }}>
+                      <div
+                        className="label-barcode"
+                        style={
+                          rotateBarcode
+                            ? {
+                                width: barHeight + barMargin * 2,
+                                height: "auto",
+                                transform: "rotate(-90deg)",
+                                transformOrigin: "center",
+                                margin: "4px 0",
+                              }
+                            : { height: barHeight + barMargin * 2 }
+                        }
+                      >
                         <Barcode
                           value={i.barcode}
                           preferred={barcodeFormat}
