@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, display_name } = await req.json();
+    const { email, password, display_name, tenant_id, role_name } = await req.json();
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: "Email and password are required" }), {
@@ -75,7 +75,39 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ user_id: userData.user.id }), {
+    const newUserId = userData.user.id;
+
+    // Link the new staff user to the requested tenant
+    if (tenant_id) {
+      const { error: profileErr } = await adminClient
+        .from("profiles")
+        .upsert(
+          { user_id: newUserId, display_name: display_name || email, tenant_id },
+          { onConflict: "user_id" }
+        );
+      if (profileErr) {
+        return new Response(JSON.stringify({ error: `Profile link failed: ${profileErr.message}` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Optional role assignment (defaults to Staff via handle_new_user trigger)
+      if (role_name) {
+        const { data: role } = await adminClient
+          .from("roles")
+          .select("id")
+          .eq("name", role_name)
+          .maybeSingle();
+        if (role?.id) {
+          // Replace existing roles with the requested one for this user
+          await adminClient.from("user_roles").delete().eq("user_id", newUserId);
+          await adminClient.from("user_roles").insert({ user_id: newUserId, role_id: role.id });
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ user_id: newUserId }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
