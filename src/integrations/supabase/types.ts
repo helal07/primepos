@@ -178,6 +178,54 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_name: string | null
+          content: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          excerpt: string | null
+          id: string
+          is_published: boolean
+          published_at: string | null
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          content?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          content?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string
@@ -1216,6 +1264,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
       }
       payment_attempts: {
         Row: {
@@ -2976,6 +3048,42 @@ export type Database = {
         }
         Relationships: []
       }
+      store_layout_sections: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          is_visible: boolean
+          section_key: string
+          sort_order: number
+          tenant_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          section_key: string
+          sort_order?: number
+          tenant_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          section_key?: string
+          sort_order?: number
+          tenant_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       store_order_items: {
         Row: {
           created_at: string
@@ -3859,6 +3967,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wishlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          session_token: string
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          session_token: string
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          session_token?: string
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
