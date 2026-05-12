@@ -54,9 +54,9 @@ const SIZES: Record<string, { w: string; h: string; cols: number; label: string 
 };
 
 function Barcode({
-  value, preferred, barWidth, barHeight, margin,
+  value, preferred, barWidth, barHeight, margin, autoFit,
 }: {
-  value: string; preferred: FormatKey; barWidth: number; barHeight: number; margin: number;
+  value: string; preferred: FormatKey; barWidth: number; barHeight: number; margin: number; autoFit: boolean;
 }) {
   const ref = useRef<SVGSVGElement>(null);
   useEffect(() => {
@@ -82,9 +82,16 @@ function Barcode({
           });
         } catch {}
       }
+      // Auto-fit: stretch SVG to its container so it never exceeds label width
+      if (autoFit && ref.current) {
+        ref.current.setAttribute("width", "100%");
+        ref.current.setAttribute("preserveAspectRatio", "none");
+      } else if (ref.current) {
+        ref.current.removeAttribute("preserveAspectRatio");
+      }
     }
-  }, [value, preferred, barWidth, barHeight, margin]);
-  return <svg ref={ref} className="w-full" />;
+  }, [value, preferred, barWidth, barHeight, margin, autoFit]);
+  return <svg ref={ref} className={autoFit ? "w-full h-full block" : "max-w-full block"} />;
 }
 
 export default function PrintLabels() {
@@ -101,6 +108,7 @@ export default function PrintLabels() {
   const [barHeight, setBarHeight] = useState(28);
   const [barMargin, setBarMargin] = useState(0);
   const [cellPadding, setCellPadding] = useState(1.5); // mm
+  const [autoFitBarcode, setAutoFitBarcode] = useState(true);
 
   const filtered = useMemo(
     () => (products || []).filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20),
@@ -267,6 +275,9 @@ export default function PrintLabels() {
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={showBarcode} onCheckedChange={(v) => setShowBarcode(!!v)} /> Barcode
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={autoFitBarcode} onCheckedChange={(v) => setAutoFitBarcode(!!v)} /> Auto-fit barcode to label
+              </label>
             </div>
 
             <div className="border rounded-lg max-h-64 overflow-auto divide-y">
@@ -324,6 +335,7 @@ export default function PrintLabels() {
                           barWidth={barWidth}
                           barHeight={barHeight}
                           margin={barMargin}
+                          autoFit={autoFitBarcode}
                         />
                       </div>
                     )}
