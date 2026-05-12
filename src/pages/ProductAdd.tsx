@@ -439,6 +439,18 @@ export default function ProductAdd() {
           )}
 
           {/* Product Variations — only in edit mode */}
+          {!editId && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Product Variations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Save the product first, then add variations (e.g. Red / 128GB) here.
+                </p>
+              </CardContent>
+            </Card>
+          )}
           {editId && (
             <Card>
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
