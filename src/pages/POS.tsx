@@ -81,6 +81,7 @@ export default function POS() {
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
   const { data: customers } = useCustomers();
+  const qc = useQueryClient();
   const { createSale, createSalePayments } = useSaleMutations();
   const { data: settings } = useSettings();
   const { data: priceGroups } = useSellingPriceGroups();
@@ -100,6 +101,9 @@ export default function POS() {
   const [lastInvoice, setLastInvoice] = useState("");
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCust, setNewCust] = useState({ name: "", phone: "", email: "", address: "" });
+  const [savingCust, setSavingCust] = useState(false);
   const [filterType, setFilterType] = useState<"category" | "brand">("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
