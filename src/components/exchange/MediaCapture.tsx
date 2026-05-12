@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { compressIfImage } from "@/lib/compressImage";
 
 interface Props {
   label: string;
@@ -20,9 +21,10 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
   const [busy, setBusy] = useState(false);
   const [streaming, setStreaming] = useState(false);
 
-  const upload = async (file: File) => {
+  const upload = async (input: File) => {
     setBusy(true);
     try {
+      const file = await compressIfImage(input, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${tenantId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("exchange-docs").upload(path, file, { upsert: false });
