@@ -863,6 +863,86 @@ export default function POS() {
         onFinalize={handleCompleteWithPayments}
         isPending={createSale.isPending}
       />
+
+      {/* Quick Add Customer */}
+      <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Customer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Name *</Label>
+              <Input
+                value={newCust.name}
+                onChange={(e) => setNewCust((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Customer name"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Phone</Label>
+                <Input
+                  value={newCust.phone}
+                  onChange={(e) => setNewCust((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="01XXXXXXXXX"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={newCust.email}
+                  onChange={(e) => setNewCust((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="email@example.com"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Address</Label>
+              <Input
+                value={newCust.address}
+                onChange={(e) => setNewCust((p) => ({ ...p, address: e.target.value }))}
+                placeholder="Address (optional)"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCustomer(false)} disabled={savingCust}>
+              Cancel
+            </Button>
+            <Button
+              disabled={savingCust || !newCust.name.trim()}
+              onClick={async () => {
+                setSavingCust(true);
+                const { data, error } = await supabase
+                  .from("customers")
+                  .insert({
+                    name: newCust.name.trim(),
+                    phone: newCust.phone || null,
+                    email: newCust.email || null,
+                    address: newCust.address || null,
+                  })
+                  .select()
+                  .single();
+                setSavingCust(false);
+                if (error) {
+                  toast.error(error.message);
+                  return;
+                }
+                await qc.invalidateQueries({ queryKey: ["customers"] });
+                if (data?.id) setCustomerId(data.id);
+                toast.success("Customer added");
+                setNewCust({ name: "", phone: "", email: "", address: "" });
+                setShowAddCustomer(false);
+              }}
+            >
+              {savingCust ? "Saving..." : "Save Customer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
