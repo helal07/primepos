@@ -28,8 +28,8 @@ function Barcode({ value }: { value: string }) {
       try {
         JsBarcode(ref.current, value, {
           format: "CODE128",
-          width: 1.4,
-          height: 32,
+          width: 0.9,
+          height: 28,
           displayValue: false,
           margin: 0,
         });
