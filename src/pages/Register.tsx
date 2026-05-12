@@ -79,24 +79,24 @@ export default function Register() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
+      // Always sign in so the user can either reach the dashboard or pay
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: form.contactEmail.trim().toLowerCase(),
+        password: form.password,
+      });
+      if (signInErr) {
+        toast({ title: "Account created", description: "Please sign in to continue." });
+        navigate("/login");
+        return;
+      }
       if (choice === "trial") {
-        // Auto-login the user and go to dashboard
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email: form.contactEmail.trim().toLowerCase(),
-          password: form.password,
-        });
-        if (signInErr) {
-          toast({ title: "Account created", description: "Please sign in to continue." });
-          navigate("/login");
-          return;
-        }
         toast({ title: `Trial activated`, description: `${TRIAL_DAYS} days of full access.` });
         window.location.assign("/dashboard");
         return;
       }
-
-      setDone("paid");
-      toast({ title: "Registration submitted", description: "We'll activate your account once payment is confirmed." });
+      // Paid: send to subscription page with chosen plan to pay via gateway
+      toast({ title: "Account created", description: "Choose a payment method to activate your plan." });
+      window.location.assign(`/subscription?from=register&plan=${encodeURIComponent(packageId)}`);
     } catch (err: any) {
       toast({ title: "Registration failed", description: err.message ?? "Try again.", variant: "destructive" });
     } finally {
