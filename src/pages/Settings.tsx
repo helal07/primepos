@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings, useSaveSetting } from "@/hooks/useSettings";
 import { ThemePicker } from "@/components/settings/ThemePicker";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Upload, Loader2, Smartphone } from "lucide-react";
 
 function BusinessTab() {
   const { data: settings, isLoading } = useSettings();
@@ -228,6 +231,124 @@ function NotificationsTab() {
   );
 }
 
+function PwaTab() {
+  const { data: settings, isLoading } = useSettings();
+  const saveSetting = useSaveSetting();
+  const [form, setForm] = useState({
+    name: "Prime POS",
+    short_name: "Prime POS",
+    description: "POS, Inventory, Accounts & ERP",
+    theme_color: "#0369a1",
+    background_color: "#0f172a",
+    icon_url: "",
+  });
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (settings?.pwa) setForm((f) => ({ ...f, ...settings.pwa }));
+  }, [settings]);
+
+  const onIcon = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return toast.error("Icon must be under 2MB");
+    if (!file.type.startsWith("image/")) return toast.error("Please choose an image");
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `pwa/icon-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("branding")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (error) { setUploading(false); return toast.error(error.message); }
+    const { data: { publicUrl } } = supabase.storage.from("branding").getPublicUrl(path);
+    setForm((f) => ({ ...f, icon_url: publicUrl }));
+    setUploading(false);
+    toast.success("Icon uploaded — click Save to apply");
+    e.target.value = "";
+  };
+
+  const handleSave = () => saveSetting.mutate({ key: "pwa", value: form });
+
+  if (isLoading) return <Skeleton className="h-64 w-full" />;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Smartphone className="h-4 w-4" /> Mobile App (PWA) Branding
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>App Name</Label>
+            <Input value={form.name} maxLength={60}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="My Shop POS" />
+          </div>
+          <div className="space-y-2">
+            <Label>Short Name (home screen)</Label>
+            <Input value={form.short_name} maxLength={30}
+              onChange={(e) => setForm({ ...form, short_name: e.target.value })}
+              placeholder="MyShop" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Description</Label>
+            <Input value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Theme Color</Label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.theme_color}
+                onChange={(e) => setForm({ ...form, theme_color: e.target.value })}
+                className="h-10 w-14 rounded border bg-transparent" />
+              <Input value={form.theme_color}
+                onChange={(e) => setForm({ ...form, theme_color: e.target.value })} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Background Color</Label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.background_color}
+                onChange={(e) => setForm({ ...form, background_color: e.target.value })}
+                className="h-10 w-14 rounded border bg-transparent" />
+              <Input value={form.background_color}
+                onChange={(e) => setForm({ ...form, background_color: e.target.value })} />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="space-y-2">
+          <Label>App Icon (square PNG, 512x512 recommended)</Label>
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-2xl border bg-muted/30 overflow-hidden flex items-center justify-center">
+              {form.icon_url
+                ? <img src={form.icon_url} alt="App icon" className="h-full w-full object-cover" />
+                : <span className="text-xs text-muted-foreground">No icon</span>}
+            </div>
+            <label htmlFor="pwa-icon" className="inline-flex items-center gap-2 px-4 py-2 rounded-md border bg-background hover:bg-muted cursor-pointer text-sm">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {uploading ? "Uploading..." : "Upload Icon"}
+              <input id="pwa-icon" type="file" accept="image/png,image/jpeg,image/webp"
+                className="hidden" onChange={onIcon} disabled={uploading} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Existing installed apps won't update automatically — users must reinstall to see new branding.
+          </p>
+        </div>
+
+        <Separator />
+        <Button onClick={handleSave} disabled={saveSetting.isPending}>
+          {saveSetting.isPending ? "Saving..." : "Save PWA Settings"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
@@ -239,6 +360,7 @@ export default function SettingsPage() {
           <TabsTrigger value="tax">Tax</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="pwa">Mobile App</TabsTrigger>
         </TabsList>
         <TabsContent value="business"><BusinessTab /></TabsContent>
         <TabsContent value="invoice"><InvoiceTab /></TabsContent>
@@ -247,6 +369,7 @@ export default function SettingsPage() {
         <TabsContent value="appearance">
           <Card><CardContent className="pt-6"><ThemePicker /></CardContent></Card>
         </TabsContent>
+        <TabsContent value="pwa"><PwaTab /></TabsContent>
       </Tabs>
     </div>
   );
