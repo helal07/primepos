@@ -59,7 +59,19 @@ export default function StoreCheckout() {
       if (error) throw error;
       const orderId = (data as any)?.order_id;
       clear();
-      nav(`/store/${tenant.slug}/order/${orderId}`);
+      if (form.payment_method === "cod") {
+        nav(`/store/${tenant.slug}/order/${orderId}`);
+      } else {
+        const { data: pay, error: payErr } = await supabase.functions.invoke("store-payment-init", {
+          body: { order_id: orderId, gateway: form.payment_method },
+        });
+        if (payErr || !pay?.url) {
+          toast.error(pay?.error ?? payErr?.message ?? "Could not start payment");
+          nav(`/store/${tenant.slug}/order/${orderId}`);
+        } else {
+          window.location.href = pay.url;
+        }
+      }
     } catch (e: any) {
       toast.error(e.message || "Could not place order");
     } finally {
@@ -102,15 +114,15 @@ export default function StoreCheckout() {
                 </label>
               )}
               {settings.enable_sslcommerz && (
-                <label className="flex items-center gap-3 border rounded p-3 cursor-pointer opacity-60">
-                  <RadioGroupItem value="sslcommerz" disabled />
-                  <div><p className="font-medium">SSLCommerz <span className="text-xs">(coming soon)</span></p></div>
+                <label className="flex items-center gap-3 border rounded p-3 cursor-pointer">
+                  <RadioGroupItem value="sslcommerz" />
+                  <div><p className="font-medium">SSLCommerz</p><p className="text-sm text-muted-foreground">Pay with cards, Nagad, Rocket and more.</p></div>
                 </label>
               )}
               {settings.enable_bkash && (
-                <label className="flex items-center gap-3 border rounded p-3 cursor-pointer opacity-60">
-                  <RadioGroupItem value="bkash" disabled />
-                  <div><p className="font-medium">bKash <span className="text-xs">(coming soon)</span></p></div>
+                <label className="flex items-center gap-3 border rounded p-3 cursor-pointer">
+                  <RadioGroupItem value="bkash" />
+                  <div><p className="font-medium">bKash</p><p className="text-sm text-muted-foreground">Pay with your bKash account.</p></div>
                 </label>
               )}
             </RadioGroup>
