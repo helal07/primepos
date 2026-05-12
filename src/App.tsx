@@ -220,9 +220,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+          <TenantHostProvider>
           <DynamicManifest />
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<RootRoute />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
             {/* Public storefront */}
@@ -252,6 +253,7 @@ const App = () => (
             <Route
               path="/*"
               element={
+                <TenantAreaSwitch>
                 <ProtectedRoute>
                   <AppLayout>
                     <Suspense fallback={<RouteFallback />}>
@@ -360,9 +362,11 @@ const App = () => (
                     </Suspense>
                   </AppLayout>
                 </ProtectedRoute>
+                </TenantAreaSwitch>
               }
             />
             </Routes>
+          </TenantHostProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
