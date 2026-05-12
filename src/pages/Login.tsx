@@ -1,29 +1,22 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
+import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-
-  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
-
   const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [signupData, setSignupData] = useState({ email: "", password: "", displayName: "" });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,26 +29,6 @@ export default function Login() {
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
     } else {
-      navigate("/dashboard");
-    }
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: signupData.email,
-      password: signupData.password,
-      options: {
-        data: { display_name: signupData.displayName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Signup failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Welcome!", description: "Your workspace is ready." });
       navigate("/dashboard");
     }
   };
@@ -113,14 +86,7 @@ export default function Login() {
           </div>
         </div>
 
-        <Tabs defaultValue={defaultTab}>
-          <TabsList className="grid w-full grid-cols-2 mx-auto px-6">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="login">
-            <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin}>
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
@@ -136,45 +102,17 @@ export default function Login() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col gap-3">
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="mr-2 h-4 w-4" />
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Don't have an account?{" "}
+                  <Link to="/register" className="text-primary hover:underline">Register your business</Link>
+                </p>
               </CardFooter>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="signup">
-            <form onSubmit={handleSignup}>
-              <CardContent className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input id="signup-name" placeholder="John Doe" required value={signupData.displayName} onChange={(e) => setSignupData({ ...signupData, displayName: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="you@company.com" required value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Input id="signup-password" type={showSignupPassword ? "text" : "password"} placeholder="Min 6 characters" required minLength={6} value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} />
-                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowSignupPassword(!showSignupPassword)} aria-label={showSignupPassword ? "Hide password" : "Show password"}>
-                      {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  {loading ? "Creating account..." : "Create Account"}
-                </Button>
-              </CardFooter>
-            </form>
-          </TabsContent>
-        </Tabs>
+        </form>
       </Card>
     </div>
   );
