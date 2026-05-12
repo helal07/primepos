@@ -7,7 +7,7 @@ import { ProductCard } from "./components/ProductCard";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreShop() {
-  const { tenant, settings } = useOutletContext<StoreCtx>();
+  const { tenant, settings, base } = useOutletContext<StoreCtx>();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
   const categoryId = params.get("category") ?? undefined;
@@ -24,7 +24,7 @@ export default function StoreShop() {
         </Select>
       </div>
       {isLoading ? <p className="text-muted-foreground">Loading…</p> : products && products.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{products.map((p: any) => <ProductCard key={p.id} product={p} tenantSlug={tenant.slug} currency={settings.currency} tenantId={tenant.id} />)}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{products.map((p: any) => <ProductCard key={p.id} product={p} tenantSlug={tenant.slug} currency={settings.currency} tenantId={tenant.id} base={base} />)}</div>
       ) : <p className="text-muted-foreground py-12 text-center">No products found.</p>}
     </div>
   );

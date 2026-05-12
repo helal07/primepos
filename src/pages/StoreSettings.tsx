@@ -17,6 +17,9 @@ export default function StoreSettings() {
   const qc = useQueryClient();
   const [form, setForm] = useState<any>({ enabled: false, theme: "default", currency: "BDT", enable_cod: true });
   const [tenantSlug, setTenantSlug] = useState<string>("");
+  const [tenantDomain, setTenantDomain] = useState<string>("");
+  const [domainVerifiedAt, setDomainVerifiedAt] = useState<string | null>(null);
+  const [savingDomain, setSavingDomain] = useState(false);
 
   const { data: tenantId } = useQuery({
     queryKey: ["my_tenant", user?.id],
@@ -24,8 +27,10 @@ export default function StoreSettings() {
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("tenant_id").eq("user_id", user!.id).maybeSingle();
       if (data?.tenant_id) {
-        const { data: t } = await supabase.from("tenants").select("slug").eq("id", data.tenant_id).maybeSingle();
+        const { data: t } = await supabase.from("tenants").select("slug, domain, domain_verified_at").eq("id", data.tenant_id).maybeSingle();
         setTenantSlug(t?.slug ?? "");
+        setTenantDomain((t as any)?.domain ?? "");
+        setDomainVerifiedAt((t as any)?.domain_verified_at ?? null);
       }
       return data?.tenant_id ?? null;
     },
@@ -60,7 +65,16 @@ export default function StoreSettings() {
   });
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
-  const storefrontUrl = tenantSlug ? `${window.location.origin}/store/${tenantSlug}` : null;
+  const storefrontUrl = tenantDomain ? `https://${tenantDomain}` : (tenantSlug ? `${window.location.origin}/store/${tenantSlug}` : null);
+
+  const saveDomain = async () => {
+    if (!tenantId) return;
+    setSavingDomain(true);
+    const cleaned = tenantDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const { error } = await supabase.from("tenants").update({ domain: cleaned || null, domain_verified_at: null }).eq("id", tenantId);
+    setSavingDomain(false);
+    if (error) toast.error(error.message); else { toast.success("Domain saved"); setTenantDomain(cleaned); setDomainVerifiedAt(null); }
+  };
 
   return (
     <div className="space-y-4">
@@ -85,6 +99,36 @@ export default function StoreSettings() {
             <div><Label>Theme</Label><Input value={form.theme ?? "default"} onChange={(e) => set("theme", e.target.value)} placeholder="default | fashion (coming)" /></div>
             <div><Label>Logo URL</Label><Input value={form.logo_url ?? ""} onChange={(e) => set("logo_url", e.target.value)} /></div>
             <div><Label>Banner URL</Label><Input value={form.banner_url ?? ""} onChange={(e) => set("banner_url", e.target.value)} /></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Custom domain</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="shop.example.com"
+              value={tenantDomain}
+              onChange={(e) => setTenantDomain(e.target.value)}
+            />
+            <Button onClick={saveDomain} disabled={savingDomain}>{savingDomain ? "Saving…" : "Save domain"}</Button>
+          </div>
+          {tenantDomain && (
+            <p className="text-xs">
+              Status:{" "}
+              {domainVerifiedAt
+                ? <span className="text-green-600 font-medium">Verified ({new Date(domainVerifiedAt).toLocaleDateString()})</span>
+                : <span className="text-amber-600 font-medium">Pending DNS</span>}
+            </p>
+          )}
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Point your domain to our hosting and visitors will land on your storefront. <code>{tenantDomain || "yourdomain.com"}/login</code> opens your admin panel.</p>
+            <p><strong>DNS records to add at your registrar:</strong></p>
+            <pre className="bg-muted p-2 rounded text-[11px] leading-snug overflow-x-auto">
+A    @     185.158.133.1{"\n"}A    www   185.158.133.1
+            </pre>
+            <p>SSL is provisioned automatically once DNS resolves (allow up to 72 h).</p>
           </div>
         </CardContent>
       </Card>

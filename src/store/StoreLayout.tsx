@@ -1,4 +1,4 @@
-import { Link, Outlet, useParams } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { useEffect } from "react";
 import { ShoppingCart, Search, Menu, Heart } from "lucide-react";
 import { NewsletterSignup } from "./components/NewsletterSignup";
@@ -8,12 +8,13 @@ import { useTenantBySlug, useStoreSettings } from "@/hooks/useStorefront";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useStoreBase } from "@/hooks/useStoreBase";
 
-function CartButton({ slug }: { slug: string }) {
+function CartButton({ base }: { base: string }) {
   const { count } = useCart();
   return (
     <Button asChild variant="outline" size="sm" className="relative">
-      <Link to={`/store/${slug}/cart`}>
+      <Link to={`${base}/cart`}>
         <ShoppingCart className="h-4 w-4" />
         {count > 0 && (
           <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
@@ -26,7 +27,8 @@ function CartButton({ slug }: { slug: string }) {
 }
 
 function StoreShell() {
-  const { tenantSlug } = useParams();
+  const { base, slug } = useStoreBase();
+  const tenantSlug = slug || undefined;
   const { data: tenant, isLoading: loadingTenant } = useTenantBySlug(tenantSlug);
   const { data: settings, isLoading: loadingSettings } = useStoreSettings(tenant?.id);
 
@@ -65,10 +67,10 @@ function StoreShell() {
 
   const name = settings.store_name ?? tenant.name;
   const navLinks = [
-    { to: `/store/${tenantSlug}`, label: "Home" },
-    { to: `/store/${tenantSlug}/shop`, label: "Shop" },
-    { to: `/store/${tenantSlug}/collections`, label: "Collections" },
-    { to: `/store/${tenantSlug}/blog`, label: "Blog" },
+    { to: `${base}/`.replace(/\/$/, "") || "/", label: "Home" },
+    { to: `${base}/shop`, label: "Shop" },
+    { to: `${base}/collections`, label: "Collections" },
+    { to: `${base}/blog`, label: "Blog" },
   ];
 
   return (
@@ -92,7 +94,7 @@ function StoreShell() {
                 </nav>
               </SheetContent>
             </Sheet>
-            <Link to={`/store/${tenantSlug}`} className="flex items-center gap-2 font-bold text-lg">
+            <Link to={base || "/"} className="flex items-center gap-2 font-bold text-lg">
               {settings.logo_url && <img src={settings.logo_url} alt={name} className="h-8 w-8 rounded object-cover" />}
               <span>{name}</span>
             </Link>
@@ -109,7 +111,7 @@ function StoreShell() {
                 e.preventDefault();
                 const fd = new FormData(e.currentTarget);
                 const q = String(fd.get("q") ?? "");
-                window.location.href = `/store/${tenantSlug}/shop?q=${encodeURIComponent(q)}`;
+                window.location.href = `${base}/shop?q=${encodeURIComponent(q)}`;
               }}
             >
               <div className="relative w-full">
@@ -118,13 +120,13 @@ function StoreShell() {
               </div>
             </form>
             <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex">
-              <Link to={`/store/${tenantSlug}/wishlist`} aria-label="Wishlist"><Heart className="h-4 w-4" /></Link>
+              <Link to={`${base}/wishlist`} aria-label="Wishlist"><Heart className="h-4 w-4" /></Link>
             </Button>
-            <CartButton slug={tenantSlug!} />
+            <CartButton base={base} />
           </div>
         </header>
         <main className="flex-1">
-          <Outlet context={{ tenant, settings }} />
+          <Outlet context={{ tenant, settings, base }} />
         </main>
         <footer className="border-t mt-12 bg-muted/30">
           <div className="container mx-auto px-4 py-8 grid gap-8 md:grid-cols-4 text-sm">
@@ -166,4 +168,6 @@ export default StoreShell;
 export interface StoreCtx {
   tenant: { id: string; name: string; slug: string };
   settings: import("@/hooks/useStorefront").StoreSettings;
+  /** URL prefix for storefront links: "/store/<slug>" on platform host, "" on custom domain. */
+  base: string;
 }

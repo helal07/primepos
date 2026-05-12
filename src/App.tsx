@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TenantHostProvider, useHostTenant } from "@/contexts/TenantHostContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SuperadminRoute } from "@/components/admin/SuperadminRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -131,6 +132,59 @@ const queryClient = new QueryClient();
 
 const RouteFallback = () => <div className="flex items-center justify-center p-8 text-muted-foreground">Loading…</div>;
 
+/** Renders storefront routes at root paths when on a tenant's custom domain. */
+const TenantHostStorefront = () => (
+  <Suspense fallback={<RouteFallback />}>
+    <Routes>
+      <Route path="/" element={<StoreShell />}>
+        <Route index element={<StoreHome />} />
+        <Route path="shop" element={<StoreShop />} />
+        <Route path="product/:productSlug" element={<StoreProduct />} />
+        <Route path="collections" element={<StoreCollections />} />
+        <Route path="collection/:collectionSlug" element={<StoreCollection />} />
+        <Route path="cart" element={<StoreCart />} />
+        <Route path="page/:pageSlug" element={<StorePage />} />
+        <Route path="checkout" element={<StoreCheckout />} />
+        <Route path="order/:orderId" element={<StoreOrder />} />
+        <Route path="wishlist" element={<StoreWishlist />} />
+        <Route path="blog" element={<StoreBlog />} />
+        <Route path="blog/:postSlug" element={<StoreBlogPost />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </Suspense>
+);
+
+/** Routes the root "/" path. On a tenant host, show the storefront. Otherwise the marketing landing. */
+const RootRoute = () => {
+  const host = useHostTenant();
+  return host ? <TenantHostStorefront /> : <LandingPage />;
+};
+
+/** Admin paths that should remain accessible on a tenant's custom domain. */
+const ADMIN_PATH_PREFIXES = [
+  "/login","/register","/subscription","/superadmin","/admin",
+  "/dashboard","/products","/categories","/brands","/units","/variations",
+  "/stock-adjustments","/stock-transfers","/warehouses","/warranties",
+  "/pos","/sales","/invoices","/quotations","/shipments",
+  "/purchases","/purchase-orders",
+  "/customers","/suppliers","/contacts",
+  "/accounts","/transactions","/journal","/trial-balance","/cash-flow","/account-list",
+  "/employees","/attendance","/leave","/payroll",
+  "/warranty-claims","/cms","/ecommerce","/exchange",
+  "/reports","/installment",
+  "/users","/roles","/activity-log","/settings","/profile",
+];
+const isAdminPath = (p: string) => ADMIN_PATH_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/"));
+
+/** Wraps the tenant admin tree. On a tenant host with a non-admin path, render the storefront instead. */
+const TenantAreaSwitch = ({ children }: { children: React.ReactNode }) => {
+  const host = useHostTenant();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  if (host && !isAdminPath(path)) return <TenantHostStorefront />;
+  return <>{children}</>;
+};
+
 const SuperadminRoutes = () => (
   <ProtectedRoute>
     <SuperadminRoute>
@@ -166,9 +220,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+          <TenantHostProvider>
           <DynamicManifest />
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<RootRoute />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
             {/* Public storefront */}
@@ -198,6 +253,7 @@ const App = () => (
             <Route
               path="/*"
               element={
+                <TenantAreaSwitch>
                 <ProtectedRoute>
                   <AppLayout>
                     <Suspense fallback={<RouteFallback />}>
@@ -306,9 +362,11 @@ const App = () => (
                     </Suspense>
                   </AppLayout>
                 </ProtectedRoute>
+                </TenantAreaSwitch>
               }
             />
             </Routes>
+          </TenantHostProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

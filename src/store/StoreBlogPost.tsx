@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { StoreCtx } from "./StoreLayout";
 
 export default function StoreBlogPost() {
-  const { tenant } = useOutletContext<StoreCtx>();
+  const { tenant, base } = useOutletContext<StoreCtx>();
   const { postSlug } = useParams();
   const { data: post, isLoading } = useQuery({
     queryKey: ["blog_post", tenant.id, postSlug],
@@ -16,7 +16,7 @@ export default function StoreBlogPost() {
     },
   });
   if (isLoading) return <div className="container mx-auto px-4 py-8">Loading…</div>;
-  if (!post) return <div className="container mx-auto px-4 py-8">Post not found. <Link className="text-primary underline" to={`/store/${tenant.slug}/blog`}>Back to blog</Link></div>;
+  if (!post) return <div className="container mx-auto px-4 py-8">Post not found. <Link className="text-primary underline" to={`${base}/blog`}>Back to blog</Link></div>;
   return (
     <article className="container mx-auto px-4 py-8 max-w-3xl">
       {post.cover_url && <img src={post.cover_url} alt={post.title} className="w-full aspect-video object-cover rounded-lg mb-6" />}
