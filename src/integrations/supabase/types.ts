@@ -2368,6 +2368,118 @@ export type Database = {
         }
         Relationships: []
       }
+      shipment_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          note: string | null
+          shipment_id: string
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          shipment_id: string
+          status: string
+          tenant_id?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          shipment_id?: string
+          status?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_status_history_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipments: {
+        Row: {
+          city: string | null
+          courier: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          sale_id: string | null
+          shipped_at: string | null
+          shipping_address: string | null
+          shipping_cost: number
+          status: string
+          tenant_id: string | null
+          tracking_no: string | null
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          city?: string | null
+          courier?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          sale_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          shipping_cost?: number
+          status?: string
+          tenant_id?: string | null
+          tracking_no?: string | null
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          city?: string | null
+          courier?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          sale_id?: string | null
+          shipped_at?: string | null
+          shipping_address?: string | null
+          shipping_cost?: number
+          status?: string
+          tenant_id?: string | null
+          tracking_no?: string | null
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sitemap_entries: {
         Row: {
           changefreq: string
