@@ -4,10 +4,11 @@ import { Heart } from "lucide-react";
 import { useWishlist } from "@/hooks/useWishlist";
 import { cn } from "@/lib/utils";
 
-export function ProductCard({ product, tenantSlug, currency, tenantId }: { product: any; tenantSlug: string; currency: string; tenantId?: string }) {
+export function ProductCard({ product, tenantSlug, currency, tenantId, base }: { product: any; tenantSlug: string; currency: string; tenantId?: string; base?: string }) {
   const slug = product.website_slug ?? product.id;
   const { ids, toggle } = useWishlist(tenantId);
   const liked = ids.has(product.id);
+  const linkBase = base ?? `/store/${tenantSlug}`;
   return (
     <div className="relative group h-full">
       <button
@@ -18,7 +19,7 @@ export function ProductCard({ product, tenantSlug, currency, tenantId }: { produ
       >
         <Heart className={cn("h-4 w-4", liked ? "fill-destructive text-destructive" : "text-muted-foreground")} />
       </button>
-      <Link to={`/store/${tenantSlug}/product/${slug}`}>
+      <Link to={`${linkBase}/product/${slug}`}>
         <Card className="overflow-hidden hover:shadow-md transition h-full flex flex-col">
           <div className="aspect-square bg-muted relative overflow-hidden">
             {product.image_url ? (
