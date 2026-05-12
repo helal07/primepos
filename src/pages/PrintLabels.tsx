@@ -307,7 +307,6 @@ export default function PrintLabels() {
         }
         .label-cell {
           border: 1px dashed #ccc;
-          padding: 1.5mm;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -318,7 +317,7 @@ export default function PrintLabels() {
         }
         .label-store { font-size: 8px; font-weight: 600; }
         .label-name { font-size: 9px; font-weight: 600; line-height: 1.1; max-height: 22px; overflow: hidden; }
-        .label-barcode { width: 80%; height: 28px; display: flex; justify-content: center; }
+        .label-barcode { width: 80%; display: flex; justify-content: center; align-items: center; }
         .label-code { font-size: 7px; letter-spacing: 0.5px; }
         .label-price { font-size: 11px; font-weight: 700; }
         @media print {
