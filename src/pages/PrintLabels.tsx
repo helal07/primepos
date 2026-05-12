@@ -279,6 +279,9 @@ export default function PrintLabels() {
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={autoFitBarcode} onCheckedChange={(v) => setAutoFitBarcode(!!v)} /> Auto-fit barcode to label
               </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={rotateBarcode} onCheckedChange={(v) => setRotateBarcode(!!v)} /> Rotate barcode 90°
+              </label>
             </div>
 
             <div className="border rounded-lg max-h-64 overflow-auto divide-y">
