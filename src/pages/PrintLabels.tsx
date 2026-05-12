@@ -28,8 +28,8 @@ function Barcode({ value }: { value: string }) {
       try {
         JsBarcode(ref.current, value, {
           format: "CODE128",
-          width: 1.4,
-          height: 32,
+          width: 0.9,
+          height: 28,
           displayValue: false,
           margin: 0,
         });
@@ -240,7 +240,7 @@ export default function PrintLabels() {
         }
         .label-store { font-size: 8px; font-weight: 600; }
         .label-name { font-size: 9px; font-weight: 600; line-height: 1.1; max-height: 22px; overflow: hidden; }
-        .label-barcode { width: 100%; height: 32px; }
+        .label-barcode { width: 80%; height: 28px; display: flex; justify-content: center; }
         .label-code { font-size: 7px; letter-spacing: 0.5px; }
         .label-price { font-size: 11px; font-weight: 700; }
         @media print {
