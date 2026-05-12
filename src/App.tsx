@@ -103,6 +103,7 @@ const SmsPurchases = lazy(() => import("./pages/admin/SmsPurchases"));
 const SuperPayments = lazy(() => import("./pages/admin/SuperPayments"));
 const PaymentGateways = lazy(() => import("./pages/admin/PaymentGateways"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Shipments = lazy(() => import("./pages/Shipments"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
 const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
@@ -205,7 +206,7 @@ const App = () => (
                         <Route path="/sales/returns" element={
                           <Sales defaultStatus="returned" title="Sale Returns" description="Returned sales" hideStatusFilter />
                         } />
-                        <Route path="/shipments" element={<PlaceholderPage title="Shipments" />} />
+                        <Route path="/shipments" element={<Shipments />} />
                         <Route path="/purchases/add" element={<PurchaseAdd />} />
                         <Route path="/purchases" element={<Purchases />} />
                         <Route path="/purchases/:id" element={<PurchaseView />} />
