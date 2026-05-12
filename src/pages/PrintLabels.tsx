@@ -254,7 +254,7 @@ export default function PrintLabels() {
                   <div key={idx} className="label-cell" style={{ width: conf.w, height: conf.h }}>
                     {storeName && <div className="label-store">{storeName}</div>}
                     {showName && <div className="label-name">{i.name}</div>}
-                    {showBarcode && <div className="label-barcode"><Barcode value={i.barcode} /></div>}
+                    {showBarcode && <div className="label-barcode"><Barcode value={i.barcode} preferred={barcodeFormat} /></div>}
                     {showBarcode && <div className="label-code">{i.barcode}</div>}
                     {showPrice && <div className="label-price">৳{i.price.toLocaleString()}</div>}
                   </div>
