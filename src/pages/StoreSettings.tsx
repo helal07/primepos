@@ -17,6 +17,9 @@ export default function StoreSettings() {
   const qc = useQueryClient();
   const [form, setForm] = useState<any>({ enabled: false, theme: "default", currency: "BDT", enable_cod: true });
   const [tenantSlug, setTenantSlug] = useState<string>("");
+  const [tenantDomain, setTenantDomain] = useState<string>("");
+  const [domainVerifiedAt, setDomainVerifiedAt] = useState<string | null>(null);
+  const [savingDomain, setSavingDomain] = useState(false);
 
   const { data: tenantId } = useQuery({
     queryKey: ["my_tenant", user?.id],
@@ -24,8 +27,10 @@ export default function StoreSettings() {
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("tenant_id").eq("user_id", user!.id).maybeSingle();
       if (data?.tenant_id) {
-        const { data: t } = await supabase.from("tenants").select("slug").eq("id", data.tenant_id).maybeSingle();
+        const { data: t } = await supabase.from("tenants").select("slug, domain, domain_verified_at").eq("id", data.tenant_id).maybeSingle();
         setTenantSlug(t?.slug ?? "");
+        setTenantDomain((t as any)?.domain ?? "");
+        setDomainVerifiedAt((t as any)?.domain_verified_at ?? null);
       }
       return data?.tenant_id ?? null;
     },
@@ -60,7 +65,16 @@ export default function StoreSettings() {
   });
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
-  const storefrontUrl = tenantSlug ? `${window.location.origin}/store/${tenantSlug}` : null;
+  const storefrontUrl = tenantDomain ? `https://${tenantDomain}` : (tenantSlug ? `${window.location.origin}/store/${tenantSlug}` : null);
+
+  const saveDomain = async () => {
+    if (!tenantId) return;
+    setSavingDomain(true);
+    const cleaned = tenantDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/$/, "");
+    const { error } = await supabase.from("tenants").update({ domain: cleaned || null, domain_verified_at: null }).eq("id", tenantId);
+    setSavingDomain(false);
+    if (error) toast.error(error.message); else { toast.success("Domain saved"); setTenantDomain(cleaned); setDomainVerifiedAt(null); }
+  };
 
   return (
     <div className="space-y-4">
