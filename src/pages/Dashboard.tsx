@@ -89,6 +89,16 @@ export default function Dashboard() {
       <PageHeader
         title="Dashboard"
         description="Overview of your business performance"
+        actions={
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => navigate("/sales/add")}>
+              <Plus className="h-4 w-4 mr-1" /> New Sale
+            </Button>
+            <Button size="sm" onClick={() => navigate("/pos")}>
+              <MonitorSmartphone className="h-4 w-4 mr-1" /> POS
+            </Button>
+          </div>
+        }
       />
 
       {/* Summary Cards */}

@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { TenantHostProvider, useHostTenant } from "@/contexts/TenantHostContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SuperadminRoute } from "@/components/admin/SuperadminRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -105,25 +104,6 @@ const SuperPayments = lazy(() => import("./pages/admin/SuperPayments"));
 const PaymentGateways = lazy(() => import("./pages/admin/PaymentGateways"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Shipments = lazy(() => import("./pages/Shipments"));
-const StoreSettingsAdmin = lazy(() => import("./pages/StoreSettings"));
-const StoreCollectionsAdmin = lazy(() => import("./pages/StoreCollectionsAdmin"));
-const StoreShell = lazy(() => import("./store/StoreLayout"));
-const StoreHome = lazy(() => import("./store/StoreHome"));
-const StoreShop = lazy(() => import("./store/StoreShop"));
-const StoreProduct = lazy(() => import("./store/StoreProduct"));
-const StoreCollections = lazy(() => import("./store/StoreCollections"));
-const StoreCollection = lazy(() => import("./store/StoreCollection"));
-const StoreCart = lazy(() => import("./store/StoreCart"));
-const StorePage = lazy(() => import("./store/StorePage"));
-const StoreCheckout = lazy(() => import("./store/StoreCheckout"));
-const StoreOrder = lazy(() => import("./store/StoreOrder"));
-const StoreOrdersAdmin = lazy(() => import("./pages/StoreOrdersAdmin"));
-const CourierSettings = lazy(() => import("./pages/CourierSettings"));
-const BlogAdmin = lazy(() => import("./pages/BlogAdmin"));
-const NewsletterAdmin = lazy(() => import("./pages/NewsletterAdmin"));
-const StoreWishlist = lazy(() => import("./store/StoreWishlist"));
-const StoreBlog = lazy(() => import("./store/StoreBlog"));
-const StoreBlogPost = lazy(() => import("./store/StoreBlogPost"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
 const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
@@ -131,59 +111,6 @@ const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigat
 const queryClient = new QueryClient();
 
 const RouteFallback = () => <div className="flex items-center justify-center p-8 text-muted-foreground">Loading…</div>;
-
-/** Renders storefront routes at root paths when on a tenant's custom domain. */
-const TenantHostStorefront = () => (
-  <Suspense fallback={<RouteFallback />}>
-    <Routes>
-      <Route path="/" element={<StoreShell />}>
-        <Route index element={<StoreHome />} />
-        <Route path="shop" element={<StoreShop />} />
-        <Route path="product/:productSlug" element={<StoreProduct />} />
-        <Route path="collections" element={<StoreCollections />} />
-        <Route path="collection/:collectionSlug" element={<StoreCollection />} />
-        <Route path="cart" element={<StoreCart />} />
-        <Route path="page/:pageSlug" element={<StorePage />} />
-        <Route path="checkout" element={<StoreCheckout />} />
-        <Route path="order/:orderId" element={<StoreOrder />} />
-        <Route path="wishlist" element={<StoreWishlist />} />
-        <Route path="blog" element={<StoreBlog />} />
-        <Route path="blog/:postSlug" element={<StoreBlogPost />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  </Suspense>
-);
-
-/** Routes the root "/" path. On a tenant host, show the storefront. Otherwise the marketing landing. */
-const RootRoute = () => {
-  const host = useHostTenant();
-  return host ? <TenantHostStorefront /> : <LandingPage />;
-};
-
-/** Admin paths that should remain accessible on a tenant's custom domain. */
-const ADMIN_PATH_PREFIXES = [
-  "/login","/register","/subscription","/superadmin","/admin",
-  "/dashboard","/products","/categories","/brands","/units","/variations",
-  "/stock-adjustments","/stock-transfers","/warehouses","/warranties",
-  "/pos","/sales","/invoices","/quotations","/shipments",
-  "/purchases","/purchase-orders",
-  "/customers","/suppliers","/contacts",
-  "/accounts","/transactions","/journal","/trial-balance","/cash-flow","/account-list",
-  "/employees","/attendance","/leave","/payroll",
-  "/warranty-claims","/cms","/ecommerce","/exchange",
-  "/reports","/installment",
-  "/users","/roles","/activity-log","/settings","/profile",
-];
-const isAdminPath = (p: string) => ADMIN_PATH_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/"));
-
-/** Wraps the tenant admin tree. On a tenant host with a non-admin path, render the storefront instead. */
-const TenantAreaSwitch = ({ children }: { children: React.ReactNode }) => {
-  const host = useHostTenant();
-  const path = typeof window !== "undefined" ? window.location.pathname : "/";
-  if (host && !isAdminPath(path)) return <TenantHostStorefront />;
-  return <>{children}</>;
-};
 
 const SuperadminRoutes = () => (
   <ProtectedRoute>
@@ -220,27 +147,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-          <TenantHostProvider>
           <DynamicManifest />
           <Routes>
-            <Route path="/" element={<RootRoute />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
-            {/* Public storefront */}
-            <Route path="/store/:tenantSlug" element={<Suspense fallback={<RouteFallback />}><StoreShell /></Suspense>}>
-              <Route index element={<StoreHome />} />
-              <Route path="shop" element={<StoreShop />} />
-              <Route path="product/:productSlug" element={<StoreProduct />} />
-              <Route path="collections" element={<StoreCollections />} />
-              <Route path="collection/:collectionSlug" element={<StoreCollection />} />
-              <Route path="cart" element={<StoreCart />} />
-              <Route path="page/:pageSlug" element={<StorePage />} />
-              <Route path="checkout" element={<StoreCheckout />} />
-              <Route path="order/:orderId" element={<StoreOrder />} />
-              <Route path="wishlist" element={<StoreWishlist />} />
-              <Route path="blog" element={<StoreBlog />} />
-              <Route path="blog/:postSlug" element={<StoreBlogPost />} />
-            </Route>
             <Route path="/subscription" element={
               <ProtectedRoute>
                 <Suspense fallback={<RouteFallback />}><SubscriptionPage /></Suspense>
@@ -253,7 +164,6 @@ const App = () => (
             <Route
               path="/*"
               element={
-                <TenantAreaSwitch>
                 <ProtectedRoute>
                   <AppLayout>
                     <Suspense fallback={<RouteFallback />}>
@@ -319,12 +229,6 @@ const App = () => (
                         <Route path="/payroll" element={<PayrollPage />} />
                         <Route path="/warranty-claims" element={<WarrantyClaims />} />
                         <Route path="/cms/pages" element={<CmsPages />} />
-                        <Route path="/ecommerce/settings" element={<ModuleGate module="ecommerce"><StoreSettingsAdmin /></ModuleGate>} />
-                        <Route path="/ecommerce/collections" element={<ModuleGate module="ecommerce"><StoreCollectionsAdmin /></ModuleGate>} />
-                        <Route path="/ecommerce/orders" element={<ModuleGate module="ecommerce"><StoreOrdersAdmin /></ModuleGate>} />
-                        <Route path="/ecommerce/couriers" element={<ModuleGate module="ecommerce"><CourierSettings /></ModuleGate>} />
-                        <Route path="/ecommerce/blog" element={<ModuleGate module="ecommerce"><BlogAdmin /></ModuleGate>} />
-                        <Route path="/ecommerce/newsletter" element={<ModuleGate module="ecommerce"><NewsletterAdmin /></ModuleGate>} />
                         <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
                         <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
                         <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />
@@ -362,11 +266,9 @@ const App = () => (
                     </Suspense>
                   </AppLayout>
                 </ProtectedRoute>
-                </TenantAreaSwitch>
               }
             />
             </Routes>
-          </TenantHostProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
