@@ -3532,6 +3532,7 @@ export type Database = {
           created_at: string
           db_name: string | null
           domain: string | null
+          domain_verified_at: string | null
           email: string | null
           enabled_modules: string[] | null
           id: string
@@ -3554,6 +3555,7 @@ export type Database = {
           created_at?: string
           db_name?: string | null
           domain?: string | null
+          domain_verified_at?: string | null
           email?: string | null
           enabled_modules?: string[] | null
           id?: string
@@ -3576,6 +3578,7 @@ export type Database = {
           created_at?: string
           db_name?: string | null
           domain?: string | null
+          domain_verified_at?: string | null
           email?: string | null
           enabled_modules?: string[] | null
           id?: string
@@ -4031,6 +4034,16 @@ export type Database = {
       generate_installment_invoice: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_store_order_number: { Args: never; Returns: string }
+      get_tenant_by_host: {
+        Args: { _host: string }
+        Returns: {
+          domain: string
+          domain_verified_at: string
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_module_permission: {
         Args: { _module: string; _permission: string; _user_id: string }

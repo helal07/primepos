@@ -1,102 +1,104 @@
-## Ecommerce Module — Phased Build
+## Goal
 
-A SalePro-style storefront is a large surface area. To keep each iteration shippable and reviewable, I'll deliver it in 5 phases. Each phase ends with a working app you can test.
+Let each tenant attach a custom domain (e.g. `myshop.com`). When a visitor opens that domain, they land on the tenant's storefront. When a logged‑in tenant user opens that same domain at `/login` or `/dashboard`, they land in the admin panel — all from the same Lovable app.
 
-Storefront URL pattern: `/store/:tenantSlug` (public, no auth required).
-Admin lives under existing `/cms/*` and a new `/ecommerce/*` section in the sidebar.
-
----
-
-### Phase 1 — Foundations (storefront skeleton + product catalog)
-
-**Backend**
-- Add `ecommerce` to `MODULE_CATALOG` (gated like other modules).
-- Add `slug` (unique) to `tenants` so URLs resolve. Auto-generate from name on signup.
-- New tables (all RLS, tenant-scoped writes, **public read** for published rows):
-  - `store_settings` — per tenant: theme, logo, banner, currency, contact, social, SEO defaults, enabled (bool).
-  - `store_collections` — name, slug, image, sort_order, is_featured.
-  - `store_collection_products` — collection_id, product_id.
-- `products` already has `show_on_website`. Add `website_description`, `gallery_urls[]`, `slug`.
-- Public read RLS: anon can SELECT products where `show_on_website=true AND is_active=true` and tenant store is enabled.
-
-**Frontend (storefront, all public routes)**
-- `/store/:slug` — Home (hero, featured collections, featured products).
-- `/store/:slug/shop` — Catalog with category/brand/price filter, AJAX search w/ preview, sort.
-- `/store/:slug/product/:productSlug` — PDP with gallery, variant selector, Add to cart.
-- `/store/:slug/collection/:collectionSlug`.
-- `/store/:slug/page/:pageSlug` — renders existing CMS pages.
-- Cart in localStorage; cart drawer.
-- SEO: dynamic `<title>`, meta description, OG tags, JSON-LD Product schema, sitemap route.
-
-**Admin**
-- `/ecommerce/settings` — store settings form.
-- `/ecommerce/collections` — CRUD collections + assign products.
-- Add "Show on website" + website fields to product edit form.
+The `tenants.domain` column already exists and is shown in the admin form. We just need to (a) make it work as a routing key and (b) document/automate the DNS pointing flow.
 
 ---
 
-### Phase 2 — Checkout, orders, COD
+## How it will work
 
-**Backend**
-- `store_orders` (order_no, tenant_id, customer info, address, subtotal, shipping, total, payment_method, payment_status, fulfillment_status, notes).
-- `store_order_items` (order_id, product_id, variation_id, qty, unit_price, total).
-- Trigger: on order paid/confirmed → insert into existing `sales` + `sale_items` (so admin reports stay accurate) → trigger then auto-creates a `shipments` row (pending). Stock deducts via existing sale_items trigger.
-- Public INSERT policy on `store_orders` for guest checkout (validates totals server-side via edge function `place-order`).
+```text
+visitor → myshop.com  ─┐
+                       ├─► Lovable hosting (DNS A record → 185.158.133.1)
+admin → myshop.com/login ─┘
+                       │
+                       ▼
+              React app boots
+                       │
+       hostname === "myshop.com" ?
+                       │
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+  Lookup tenant by         Path starts with /login,
+  tenants.domain           /dashboard, /pos, etc.?
+         │                           │
+         ▼                           ▼
+  Render storefront        Render admin (existing
+  routes (StoreShell)      AppLayout) scoped to
+  WITHOUT needing the      that tenant
+  /store/:slug prefix
+```
 
-**Frontend**
-- `/store/:slug/cart`, `/store/:slug/checkout` — guest or logged-in, address form, shipping method, COD option.
-- `/store/:slug/orders/:orderNo` — order confirmation + tracking lookup by phone/order#.
-- Admin: `/ecommerce/orders` list with filters; click → opens existing Sale + Shipment views.
+Two URL shapes will coexist:
 
----
-
-### Phase 3 — Online payments (SSLCommerz + bKash)
-
-- Edge functions: `store-payment-init` (creates session, redirect URL), `sslcommerz-callback`, `bkash-callback` (verify signature, mark order paid → triggers fulfillment).
-- Reuses existing `payment_gateways` config rows (already in DB).
-- Admin: enable/disable per tenant in `/ecommerce/settings`.
-
----
-
-### Phase 4 — Couriers (Pathao + Steadfast)
-
-- `courier_credentials` (tenant_id, provider, api_key/secret, store_id) — encrypted via secrets where possible.
-- Edge function `courier-create-shipment` — called from Shipments page "Send to courier" button: creates consignment, stores tracking_no + courier label URL on `shipments` row.
-- Webhook endpoints `pathao-webhook`, `steadfast-webhook` to sync status back into `shipment_status_history`.
-- Admin: `/ecommerce/couriers` to configure credentials and set default courier.
-
----
-
-### Phase 5 — Engagement features
-
-- Wishlist (per customer or per session token).
-- Blog: new `blog_posts` table + `/store/:slug/blog` and `/store/:slug/blog/:postSlug`.
-- Newsletter signup: `newsletter_subscribers` table + simple admin export.
-- Multiple themes: `default` + `fashion`. Theme = a swappable layout component set selected in store_settings.
-- Drag-and-drop home layout (extends existing CMS section editor with section order/visibility).
+1. **Lovable subdomain** (today): `primepos.lovable.app/store/<slug>` — unchanged.
+2. **Custom domain** (new): `myshop.com/` → storefront home, `myshop.com/login` → admin login, `myshop.com/dashboard` → admin.
 
 ---
 
-### Out of scope (for now, can add later)
+## Plan
 
-- Stripe/PayPal/Razorpay/Mpesa/Xendit (only BD gateways requested).
-- Multi-currency.
-- Advanced theme editor / true visual page builder.
-- Per-tenant custom domains.
+### 1. Tenant create/edit form
+
+- The Domain input already exists in `TenantManagement.tsx`. Add:
+  - Inline help text with the exact DNS records to set:
+    - `A  @     185.158.133.1`
+    - `A  www   185.158.133.1`
+  - A "Verify DNS" button that does a quick fetch to confirm the domain resolves to our app, and shows ✅ / ⚠️.
+  - Validation: domain must be lowercase, no protocol, no trailing slash, unique across tenants.
+- Mirror the same field in the tenant‑side **Store Settings** page so a tenant owner can set their own domain without superadmin help (optional toggle controlled by superadmin).
+
+### 2. Database
+
+- Add a unique index on `tenants.domain` (case‑insensitive) so two tenants can't claim the same domain.
+- Add `domain_verified_at timestamptz` so we can show a verified badge.
+- A small RPC `get_tenant_by_domain(host text)` that returns `{id, name, slug}` (SECURITY DEFINER, public read) so the storefront can resolve the host without exposing the whole tenants table.
+
+### 3. Frontend routing (`src/App.tsx`)
+
+- Add a `useTenantHost()` hook that:
+  - Reads `window.location.hostname`.
+  - Skips lookup for known hosts (`localhost`, `*.lovable.app`, `*.lovable.dev`).
+  - Otherwise calls `get_tenant_by_domain(host)` and caches the result in React Query.
+- Wrap `<Routes>` with that context. When a custom‑domain tenant is detected:
+  - Mount the storefront at `/`, `/shop`, `/product/:slug`, `/cart`, `/checkout`, `/order/:no`, `/blog`, `/wishlist`, `/page/:slug` — same components as today, just without the `/store/:tenantSlug` prefix.
+  - Keep `/login`, `/register`, `/dashboard`, `/pos`, `/sales/*`, `/ecommerce/*`, etc. pointing at the existing admin shell, but pre‑scoped to that tenant.
+  - After successful login on a custom domain, redirect to `/dashboard` (admin), not the storefront.
+- On the Lovable subdomain everything stays exactly as today.
+
+### 4. Storefront components
+
+- Replace hard‑coded `/store/${slug}/...` links with a small helper `storeUrl(path)` that returns `/store/${slug}${path}` on the Lovable subdomain and just `${path}` on a custom domain. Touches `StoreLayout`, `ProductCard`, cart, checkout, blog, wishlist, etc.
+
+### 5. Admin login redirect
+
+- In `Login.tsx`, after auth: if on a custom domain, route to `/dashboard`. If on the Lovable subdomain, keep current behavior.
+
+### 6. Docs panel
+
+- Small "Custom domain setup" card in **Store Settings** showing:
+  - Required A records (`@` and `www` → `185.158.133.1`).
+  - Status: Pending DNS / Verified.
+  - Note: SSL is provisioned automatically by Lovable hosting once DNS resolves; allow up to 72 h.
 
 ---
 
-### Technical notes
+## Important caveats (please read)
 
-- All public storefront routes mounted outside `<AppLayout>` (no admin sidebar). New `<StoreLayout>` per theme.
-- Public Supabase reads use the existing anon key — RLS does the gating.
-- Module gate: storefront only loads if tenant has `ecommerce` in `enabled_modules` AND `store_settings.enabled = true`; otherwise show a 404.
-- Each phase is its own migration + PR-sized change set.
+- **Lovable hosting only serves one custom domain per project today.** The platform's domain feature attaches `myshop.com` to the whole `primepos.lovable.app` project, not to an individual tenant. So for this feature to actually work end‑to‑end:
+  - The superadmin (you) still has to add each tenant's domain inside **Project Settings → Domains** in Lovable once. The tenant just points DNS; you click "Connect domain" once per tenant.
+  - Or the customer keeps Cloudflare/their own proxy in front and CNAMEs to `primepos.lovable.app`.
+- The app code in this plan handles the routing/identification side. The DNS + SSL side still depends on Lovable's domain UI for each domain you want to accept.
+- If you'd rather restrict this to **subdomains of one root you own** (e.g. `tenantA.yourerp.com`, `tenantB.yourerp.com`) you only have to add a single wildcard `*.yourerp.com` once and every new tenant works automatically — much less manual work. Worth considering.
 
 ---
 
-### What I'll do next if you approve
+## Open question
 
-Implement **Phase 1** end-to-end: migration, public storefront routes, admin settings + collections page, sidebar entry. Phases 2–5 follow as separate requests so you can review and test between.
+Do you want:
 
-Reply "go" to start Phase 1, or tell me to adjust scope/order.
+- **A.** Full custom domains per tenant (`myshop.com`) — requires you to manually attach each domain in Lovable Project Settings, or
+- **B.** Wildcard subdomains under one root you own (`<tenant>.yourerp.com`) — set up once, fully automatic for new tenants, or
+- **hostinger**
+  Want B at hostinger
