@@ -136,6 +136,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+          <DynamicManifest />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
