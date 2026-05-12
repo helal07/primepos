@@ -1,55 +1,10 @@
-name: Deploy Lovable App to Hostinger
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Project
-        run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
-
-      - name: Verify production build
-        run: |
-          test -f dist/index.html
-          ! grep -q '/src/main.tsx' dist/index.html
-          test -d dist/assets
-          test -f dist/.htaccess
-
-      - name: Deploy to Hostinger FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-          # Hostinger is serving pos.itsheba.bd from this account's public_html.
-          # Do NOT use Hostinger's Git "pull" into public_html for Vite apps;
-          # it copies raw source files. This workflow builds first and uploads only dist/.
-          server-dir: public_html/
-          dangerous-clean-slate: true
-
-      - name: Verify live site is serving the production build
-        run: |
-          html="$(curl -fsSL https://pos.itsheba.bd/)"
-          printf '%s' "$html" | grep -q '/assets/'
-          ! printf '%s' "$html" | grep -q '/src/main.tsx'
+- name: Deploy via SSH
+  uses: easingthemes/ssh-deploy@main
+  with:
+    SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    REMOTE_HOST: ${{ secrets.SSH_HOST }}
+    REMOTE_PORT: ${{ secrets.SSH_PORT }}
+    REMOTE_USER: ${{ secrets.SSH_USERNAME }}
+    SOURCE: "dist/"
+    TARGET: "/home/u123456789/domains/pos.itsheba.bd/public_html/"
+    ARGS: "-rltgoDzvO --delete"
