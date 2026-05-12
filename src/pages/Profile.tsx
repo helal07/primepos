@@ -8,13 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, EyeOff, Save, KeyRound, User as UserIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Eye, EyeOff, Save, KeyRound, User as UserIcon, Upload, FileText, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState({ display_name: "", phone: "", company: "", avatar_url: "" });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [profile, setProfile] = useState({
+    display_name: "", phone: "", company: "", avatar_url: "",
+    address: "", id_proof_url: "", id_proof_name: "",
+  });
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
   const [show, setShow] = useState({ current: false, next: false, confirm: false });
 
@@ -23,7 +29,7 @@ export default function ProfilePage() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, phone, company, avatar_url")
+        .select("display_name, phone, company, avatar_url, address, id_proof_url, id_proof_name")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) setProfile({
@@ -31,6 +37,9 @@ export default function ProfilePage() {
         phone: data.phone ?? "",
         company: data.company ?? "",
         avatar_url: data.avatar_url ?? "",
+        address: (data as any).address ?? "",
+        id_proof_url: (data as any).id_proof_url ?? "",
+        id_proof_name: (data as any).id_proof_name ?? "",
       });
     })();
   }, [user]);
@@ -38,18 +47,77 @@ export default function ProfilePage() {
   const initials = (profile.display_name || user?.email || "??")
     .split(" ").map(s => s[0]).join("").toUpperCase().slice(0, 2);
 
+  const persistProfile = async (patch: Partial<typeof profile>) => {
+    if (!user) return;
+    const { data: existing } = await supabase
+      .from("profiles").select("id").eq("user_id", user.id).maybeSingle();
+    const next = { ...profile, ...patch };
+    setProfile(next);
+    const payload = { ...next, user_id: user.id };
+    return existing
+      ? supabase.from("profiles").update(payload).eq("user_id", user.id)
+      : supabase.from("profiles").insert(payload);
+  };
+
+  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("Please choose an image");
+    setUploadingAvatar(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploadingAvatar(false); return toast.error(upErr.message); }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const res = await persistProfile({ avatar_url: publicUrl });
+    setUploadingAvatar(false);
+    if (res?.error) toast.error(res.error.message);
+    else toast.success("Avatar updated");
+    e.target.value = "";
+  };
+
+  const onDocChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 10 * 1024 * 1024) return toast.error("File must be under 10MB");
+    setUploadingDoc(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/id-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("user-documents")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploadingDoc(false); return toast.error(upErr.message); }
+    const res = await persistProfile({ id_proof_url: path, id_proof_name: file.name });
+    setUploadingDoc(false);
+    if (res?.error) toast.error(res.error.message);
+    else toast.success("Document uploaded");
+    e.target.value = "";
+  };
+
+  const removeDoc = async () => {
+    if (!profile.id_proof_url) return;
+    await supabase.storage.from("user-documents").remove([profile.id_proof_url]);
+    const res = await persistProfile({ id_proof_url: "", id_proof_name: "" });
+    if (res?.error) toast.error(res.error.message);
+    else toast.success("Document removed");
+  };
+
+  const viewDoc = async () => {
+    if (!profile.id_proof_url) return;
+    const { data, error } = await supabase.storage.from("user-documents")
+      .createSignedUrl(profile.id_proof_url, 60);
+    if (error || !data) return toast.error("Could not open document");
+    window.open(data.signedUrl, "_blank");
+  };
+
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setLoading(true);
-    const { data: existing } = await supabase
-      .from("profiles").select("id").eq("user_id", user.id).maybeSingle();
-    const payload = { ...profile, user_id: user.id };
-    const { error } = existing
-      ? await supabase.from("profiles").update(payload).eq("user_id", user.id)
-      : await supabase.from("profiles").insert(payload);
+    const res = await persistProfile({});
     setLoading(false);
-    if (error) toast.error(error.message);
+    if (res?.error) toast.error(res.error.message);
     else toast.success("Profile updated");
   };
 
@@ -93,14 +161,22 @@ export default function ProfilePage() {
       <PageHeader title="My Profile" description="Manage your personal information and password" />
 
       <Card>
-        <CardContent className="flex items-center gap-4 p-6">
-          <Avatar className="h-20 w-20">
-            {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl">{initials}</AvatarFallback>
-          </Avatar>
-          <div>
+        <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 p-6">
+          <div className="relative">
+            <Avatar className="h-24 w-24">
+              {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
+              <AvatarFallback className="bg-primary text-primary-foreground text-2xl">{initials}</AvatarFallback>
+            </Avatar>
+            <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer hover:opacity-90 shadow-md">
+              {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              <input id="avatar-upload" type="file" accept="image/*" className="hidden"
+                onChange={onAvatarChange} disabled={uploadingAvatar} />
+            </label>
+          </div>
+          <div className="flex-1">
             <h2 className="text-lg font-semibold">{profile.display_name || "Unnamed"}</h2>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
+            <p className="text-xs text-muted-foreground mt-1">Click the upload icon to change your photo (max 5MB)</p>
           </div>
         </CardContent>
       </Card>
@@ -139,9 +215,34 @@ export default function ProfilePage() {
                     onChange={(e) => setProfile({ ...profile, company: e.target.value })} />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="avatar_url">Avatar URL</Label>
-                  <Input id="avatar_url" placeholder="https://..." value={profile.avatar_url}
-                    onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })} />
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea id="address" rows={3} placeholder="Street, City, State, Country"
+                    value={profile.address}
+                    onChange={(e) => setProfile({ ...profile, address: e.target.value })} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>ID Proof / Document</Label>
+                  {profile.id_proof_url ? (
+                    <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <button type="button" onClick={viewDoc}
+                        className="flex-1 text-left text-sm font-medium hover:underline truncate">
+                        {profile.id_proof_name || "View document"}
+                      </button>
+                      <Button type="button" variant="ghost" size="icon" onClick={removeDoc}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label htmlFor="doc-upload"
+                      className="flex items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/30">
+                      {uploadingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <span>{uploadingDoc ? "Uploading..." : "Upload ID proof or document (PDF/Image, max 10MB)"}</span>
+                      <input id="doc-upload" type="file" className="hidden"
+                        accept="image/*,application/pdf"
+                        onChange={onDocChange} disabled={uploadingDoc} />
+                    </label>
+                  )}
                 </div>
                 <div className="md:col-span-2 flex justify-end">
                   <Button type="submit" disabled={loading}>
