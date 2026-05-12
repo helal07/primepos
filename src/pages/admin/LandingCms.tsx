@@ -47,12 +47,12 @@ export default function LandingCms() {
 
       <Tabs defaultValue="hero">
         <TabsList className="flex-wrap bg-muted border-border">
-          <TabsTrigger value="hero" className="data-[state=active]:bg-slate-700 data-[state=active]:text-foreground text-muted-foreground">Hero</TabsTrigger>
-          <TabsTrigger value="features" className="data-[state=active]:bg-slate-700 data-[state=active]:text-foreground text-muted-foreground">Features</TabsTrigger>
-          <TabsTrigger value="testimonials" className="data-[state=active]:bg-slate-700 data-[state=active]:text-foreground text-muted-foreground">Testimonials</TabsTrigger>
-          <TabsTrigger value="cta" className="data-[state=active]:bg-slate-700 data-[state=active]:text-foreground text-muted-foreground">CTA Banner</TabsTrigger>
-          <TabsTrigger value="contact" className="data-[state=active]:bg-slate-700 data-[state=active]:text-foreground text-muted-foreground">Contact</TabsTrigger>
-          <TabsTrigger value="footer" className="data-[state=active]:bg-slate-700 data-[state=active]:text-foreground text-muted-foreground">Footer</TabsTrigger>
+          <TabsTrigger value="hero" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Hero</TabsTrigger>
+          <TabsTrigger value="features" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Features</TabsTrigger>
+          <TabsTrigger value="testimonials" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Testimonials</TabsTrigger>
+          <TabsTrigger value="cta" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">CTA Banner</TabsTrigger>
+          <TabsTrigger value="contact" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Contact</TabsTrigger>
+          <TabsTrigger value="footer" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Footer</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hero" className="mt-4">

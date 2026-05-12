@@ -99,7 +99,7 @@ export default function PackageManagement() {
                 <TableCell className="text-foreground/90">{p.max_business_location}</TableCell>
                 <TableCell className="text-foreground/90">{p.max_invoice || "∞"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={p.is_active ? "bg-emerald-500/20 text-primary border-emerald-500/30" : "bg-slate-700 text-muted-foreground border-slate-600"}>
+                  <Badge variant="outline" className={p.is_active ? "bg-emerald-500/20 text-primary border-emerald-500/30" : "bg-muted text-muted-foreground border-border"}>
                     {p.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </TableCell>

@@ -37,7 +37,7 @@ export default function AdminTransactions() {
                     <Badge variant="outline" className={
                       t.status === "active" ? "bg-emerald-500/20 text-primary border-emerald-500/30" :
                       t.status === "suspended" ? "bg-red-500/20 text-red-400 border-red-500/30" :
-                      "bg-slate-700 text-muted-foreground border-slate-600"
+                      "bg-muted text-muted-foreground border-border"
                     }>{t.status}</Badge>
                   </TableCell>
                   <TableCell className="text-foreground/90">{t.subscription_end ?? "—"}</TableCell>

@@ -401,7 +401,7 @@ export default function TenantManagement() {
                             <ShieldCheck className="h-4 w-4 mr-2" />Approve
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuSeparator className="bg-slate-700" />
+                        <DropdownMenuSeparator className="bg-muted" />
                         {t.status !== "suspended" ? (
                           <DropdownMenuItem onClick={() => suspend.mutate(t.id)} className="text-red-400 focus:bg-accent"><Ban className="h-4 w-4 mr-2" />Suspend</DropdownMenuItem>
                         ) : (
@@ -410,7 +410,7 @@ export default function TenantManagement() {
                         <DropdownMenuItem onClick={() => { setResetUserId(t.owner_user_id); setResetTenantName(t.name); setNewPassword(""); setResetOpen(true); }} className="text-foreground focus:bg-accent">
                           <KeyRound className="h-4 w-4 mr-2" />Reset Password
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator className="bg-slate-700" />
+                        <DropdownMenuSeparator className="bg-muted" />
                         <DropdownMenuItem className="text-red-400 focus:bg-accent" onClick={() => remove.mutate(t.id)}>
                           <Trash2 className="h-4 w-4 mr-2" />Delete
                         </DropdownMenuItem>
