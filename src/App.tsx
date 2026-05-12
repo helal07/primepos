@@ -24,6 +24,9 @@ const ProductAdd = lazy(() => import("./pages/ProductAdd"));
 const Categories = lazy(() => import("./pages/Categories"));
 const Brands = lazy(() => import("./pages/Brands"));
 const Warranties = lazy(() => import("./pages/Warranties"));
+const ProductBulkImport = lazy(() => import("./pages/ProductBulkImport"));
+const ProductExport = lazy(() => import("./pages/ProductExport"));
+const PrintLabels = lazy(() => import("./pages/PrintLabels"));
 const SellingPriceGroups = lazy(() => import("./pages/SellingPriceGroups"));
 const CustomerGroups = lazy(() => import("./pages/CustomerGroups"));
 const Units = lazy(() => import("./pages/Units"));
@@ -179,9 +182,9 @@ const App = () => (
                         <Route path="/warehouses" element={<ModuleGate module="warehouses"><Warehouses /></ModuleGate>} />
                         <Route path="/warehouses/stock" element={<ModuleGate module="warehouses"><WarehouseStock /></ModuleGate>} />
                         <Route path="/warranties" element={<Warranties />} />
-                        <Route path="/products/import" element={<PlaceholderPage title="Bulk Import" />} />
-                        <Route path="/products/export" element={<PlaceholderPage title="Export" />} />
-                        <Route path="/products/labels" element={<PlaceholderPage title="Print Labels" />} />
+                        <Route path="/products/import" element={<ProductBulkImport />} />
+                        <Route path="/products/export" element={<ProductExport />} />
+                        <Route path="/products/labels" element={<PrintLabels />} />
                         <Route path="/pos" element={<POS />} />
                         <Route path="/sales" element={<Sales />} />
                         <Route path="/sales/add" element={<SaleAdd />} />
