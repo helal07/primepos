@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -9,111 +10,116 @@ import { SuperadminRoute } from "@/components/admin/SuperadminRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
-import Login from "./pages/Login";
-import LandingPage from "./pages/LandingPage";
-import Dashboard from "./pages/Dashboard";
-import Products from "./pages/Products";
-import ProductAdd from "./pages/ProductAdd";
-import Categories from "./pages/Categories";
-import Brands from "./pages/Brands";
-import SellingPriceGroups from "./pages/SellingPriceGroups";
-import CustomerGroups from "./pages/CustomerGroups";
-import Units from "./pages/Units";
-import Variations from "./pages/Variations";
-import StockAdjustments from "./pages/StockAdjustments";
-import StockTransfers from "./pages/StockTransfers";
-import Warehouses from "./pages/Warehouses";
-import WarehouseStock from "./pages/WarehouseStock";
-import Sales from "./pages/Sales";
-import SaleAdd from "./pages/SaleAdd";
-import SaleView from "./pages/SaleView";
-import POS from "./pages/POS";
-import Customers from "./pages/Customers";
-import Suppliers from "./pages/Suppliers";
-import ContactProfile from "./pages/ContactProfile";
-import SettingsPage from "./pages/Settings";
-import UsersPage from "./pages/Users";
-import RolesPage from "./pages/Roles";
-import ActivityLogPage from "./pages/ActivityLog";
-import Purchases from "./pages/Purchases";
-import PurchaseAdd from "./pages/PurchaseAdd";
-import PurchaseView from "./pages/PurchaseView";
-import PurchaseOrders from "./pages/PurchaseOrders";
-import ChartOfAccounts from "./pages/ChartOfAccounts";
-import Transactions from "./pages/Transactions";
-import JournalEntries from "./pages/JournalEntries";
-import TrialBalance from "./pages/TrialBalance";
-import CashFlow from "./pages/CashFlow";
-import Employees from "./pages/Employees";
-import Attendance from "./pages/Attendance";
-import LeaveManagement from "./pages/LeaveManagement";
-import PayrollPage from "./pages/Payroll";
-import WarrantyClaims from "./pages/WarrantyClaims";
-import CmsPages from "./pages/CmsPages";
-import Exchange from "./pages/Exchange";
-import ExchangePurchases from "./pages/ExchangePurchases";
-import ExchangePurchaseAdd from "./pages/ExchangePurchaseAdd";
-import ExchangePurchaseView from "./pages/ExchangePurchaseView";
-import ExchangeAgreement from "./pages/ExchangeAgreement";
-import ExchangeSell from "./pages/ExchangeSell";
 import { ModuleGate } from "@/components/ModuleGate";
-import Reports from "./pages/Reports";
-import ProfitLossReport from "./pages/reports/ProfitLossReport";
-import StockReport from "./pages/reports/StockReport";
-import TaxReport from "./pages/reports/TaxReport";
-import DailySummaryReport from "./pages/reports/DailySummaryReport";
-import DueSaleReport from "./pages/reports/DueSaleReport";
-import ProductProfitReport from "./pages/reports/ProductProfitReport";
-import PurchaseSaleReport from "./pages/reports/PurchaseSaleReport";
-import ContactsReport from "./pages/reports/ContactsReport";
-import ItemsReport from "./pages/reports/ItemsReport";
-import TrendingProductsReport from "./pages/reports/TrendingProductsReport";
-import InstallmentReport from "./pages/reports/InstallmentReport";
-import ExpenseReport from "./pages/reports/ExpenseReport";
-import RegisterReport from "./pages/reports/RegisterReport";
-import InstallmentCustomerAdd from "./pages/InstallmentCustomerAdd";
-import InstallmentCustomers from "./pages/InstallmentCustomers";
-import InstallmentSaleAdd from "./pages/InstallmentSaleAdd";
-import InstallmentSales from "./pages/InstallmentSales";
-import InstallmentCollections from "./pages/InstallmentCollections";
-import InstallmentSchedule from "./pages/InstallmentSchedule";
-import InstallmentAgreement from "./pages/InstallmentAgreement";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import TenantManagement from "./pages/admin/TenantManagement";
-import PackageManagement from "./pages/admin/PackageManagement";
-import LandingCms from "./pages/admin/LandingCms";
-import AdminTransactions from "./pages/admin/AdminTransactions";
-import AdminSettings from "./pages/admin/AdminSettings";
-import TenantDetail from "./pages/admin/TenantDetail";
-import Sitemap from "./pages/admin/Sitemap";
-import SmsProviders from "./pages/admin/SmsProviders";
-import SmsPlans from "./pages/admin/SmsPlans";
-import SmsPurchases from "./pages/admin/SmsPurchases";
-import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
+
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Products = lazy(() => import("./pages/Products"));
+const ProductAdd = lazy(() => import("./pages/ProductAdd"));
+const Categories = lazy(() => import("./pages/Categories"));
+const Brands = lazy(() => import("./pages/Brands"));
+const SellingPriceGroups = lazy(() => import("./pages/SellingPriceGroups"));
+const CustomerGroups = lazy(() => import("./pages/CustomerGroups"));
+const Units = lazy(() => import("./pages/Units"));
+const Variations = lazy(() => import("./pages/Variations"));
+const StockAdjustments = lazy(() => import("./pages/StockAdjustments"));
+const StockTransfers = lazy(() => import("./pages/StockTransfers"));
+const Warehouses = lazy(() => import("./pages/Warehouses"));
+const WarehouseStock = lazy(() => import("./pages/WarehouseStock"));
+const Sales = lazy(() => import("./pages/Sales"));
+const SaleAdd = lazy(() => import("./pages/SaleAdd"));
+const SaleView = lazy(() => import("./pages/SaleView"));
+const POS = lazy(() => import("./pages/POS"));
+const Customers = lazy(() => import("./pages/Customers"));
+const Suppliers = lazy(() => import("./pages/Suppliers"));
+const ContactProfile = lazy(() => import("./pages/ContactProfile"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+const UsersPage = lazy(() => import("./pages/Users"));
+const RolesPage = lazy(() => import("./pages/Roles"));
+const ActivityLogPage = lazy(() => import("./pages/ActivityLog"));
+const Purchases = lazy(() => import("./pages/Purchases"));
+const PurchaseAdd = lazy(() => import("./pages/PurchaseAdd"));
+const PurchaseView = lazy(() => import("./pages/PurchaseView"));
+const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
+const ChartOfAccounts = lazy(() => import("./pages/ChartOfAccounts"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const JournalEntries = lazy(() => import("./pages/JournalEntries"));
+const TrialBalance = lazy(() => import("./pages/TrialBalance"));
+const CashFlow = lazy(() => import("./pages/CashFlow"));
+const Employees = lazy(() => import("./pages/Employees"));
+const Attendance = lazy(() => import("./pages/Attendance"));
+const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
+const PayrollPage = lazy(() => import("./pages/Payroll"));
+const WarrantyClaims = lazy(() => import("./pages/WarrantyClaims"));
+const CmsPages = lazy(() => import("./pages/CmsPages"));
+const Exchange = lazy(() => import("./pages/Exchange"));
+const ExchangePurchases = lazy(() => import("./pages/ExchangePurchases"));
+const ExchangePurchaseAdd = lazy(() => import("./pages/ExchangePurchaseAdd"));
+const ExchangePurchaseView = lazy(() => import("./pages/ExchangePurchaseView"));
+const ExchangeAgreement = lazy(() => import("./pages/ExchangeAgreement"));
+const ExchangeSell = lazy(() => import("./pages/ExchangeSell"));
+const Reports = lazy(() => import("./pages/Reports"));
+const ProfitLossReport = lazy(() => import("./pages/reports/ProfitLossReport"));
+const StockReport = lazy(() => import("./pages/reports/StockReport"));
+const TaxReport = lazy(() => import("./pages/reports/TaxReport"));
+const DailySummaryReport = lazy(() => import("./pages/reports/DailySummaryReport"));
+const DueSaleReport = lazy(() => import("./pages/reports/DueSaleReport"));
+const ProductProfitReport = lazy(() => import("./pages/reports/ProductProfitReport"));
+const PurchaseSaleReport = lazy(() => import("./pages/reports/PurchaseSaleReport"));
+const ContactsReport = lazy(() => import("./pages/reports/ContactsReport"));
+const ItemsReport = lazy(() => import("./pages/reports/ItemsReport"));
+const TrendingProductsReport = lazy(() => import("./pages/reports/TrendingProductsReport"));
+const InstallmentReport = lazy(() => import("./pages/reports/InstallmentReport"));
+const ExpenseReport = lazy(() => import("./pages/reports/ExpenseReport"));
+const RegisterReport = lazy(() => import("./pages/reports/RegisterReport"));
+const InstallmentCustomerAdd = lazy(() => import("./pages/InstallmentCustomerAdd"));
+const InstallmentCustomers = lazy(() => import("./pages/InstallmentCustomers"));
+const InstallmentSaleAdd = lazy(() => import("./pages/InstallmentSaleAdd"));
+const InstallmentSales = lazy(() => import("./pages/InstallmentSales"));
+const InstallmentCollections = lazy(() => import("./pages/InstallmentCollections"));
+const InstallmentSchedule = lazy(() => import("./pages/InstallmentSchedule"));
+const InstallmentAgreement = lazy(() => import("./pages/InstallmentAgreement"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const TenantManagement = lazy(() => import("./pages/admin/TenantManagement"));
+const PackageManagement = lazy(() => import("./pages/admin/PackageManagement"));
+const LandingCms = lazy(() => import("./pages/admin/LandingCms"));
+const AdminTransactions = lazy(() => import("./pages/admin/AdminTransactions"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const TenantDetail = lazy(() => import("./pages/admin/TenantDetail"));
+const Sitemap = lazy(() => import("./pages/admin/Sitemap"));
+const SmsProviders = lazy(() => import("./pages/admin/SmsProviders"));
+const SmsPlans = lazy(() => import("./pages/admin/SmsPlans"));
+const SmsPurchases = lazy(() => import("./pages/admin/SmsPurchases"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
 const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
 
 const queryClient = new QueryClient();
 
+const RouteFallback = () => <div className="flex items-center justify-center p-8 text-muted-foreground">Loading…</div>;
+
 const SuperadminRoutes = () => (
   <ProtectedRoute>
     <SuperadminRoute>
       <AdminLayout>
-        <Routes>
-          <Route index element={<AdminDashboard />} />
-          <Route path="tenants" element={<TenantManagement />} />
-          <Route path="tenants/:id" element={<TenantDetail />} />
-          <Route path="packages" element={<PackageManagement />} />
-          <Route path="cms" element={<LandingCms />} />
-          <Route path="sitemap" element={<Sitemap />} />
-          <Route path="sms/providers" element={<SmsProviders />} />
-          <Route path="sms/plans" element={<SmsPlans />} />
-          <Route path="sms/purchases" element={<SmsPurchases />} />
-          <Route path="transactions" element={<AdminTransactions />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route index element={<AdminDashboard />} />
+            <Route path="tenants" element={<TenantManagement />} />
+            <Route path="tenants/:id" element={<TenantDetail />} />
+            <Route path="packages" element={<PackageManagement />} />
+            <Route path="cms" element={<LandingCms />} />
+            <Route path="sitemap" element={<Sitemap />} />
+            <Route path="sms/providers" element={<SmsProviders />} />
+            <Route path="sms/plans" element={<SmsPlans />} />
+            <Route path="sms/purchases" element={<SmsPurchases />} />
+            <Route path="transactions" element={<AdminTransactions />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </AdminLayout>
     </SuperadminRoute>
   </ProtectedRoute>
@@ -128,7 +134,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             {/* SaaS Admin — separate layout */}
             <Route path="/superadmin/*" element={<SuperadminRoutes />} />
             <Route path="/admin/*" element={<Navigate to="/superadmin" replace />} />
@@ -138,101 +144,103 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <Routes>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/products" element={<Products />} />
-                      <Route path="/products/add" element={<ProductAdd />} />
-                      <Route path="/products/edit/:id" element={<ProductAdd />} />
-                      <Route path="/categories" element={<Categories />} />
-                      <Route path="/brands" element={<Brands />} />
-                      <Route path="/products/price-groups" element={<SellingPriceGroups />} />
-                      <Route path="/contacts/customer-groups" element={<CustomerGroups />} />
-                      <Route path="/units" element={<Units />} />
-                      <Route path="/variations" element={<Variations />} />
-                      <Route path="/stock-adjustments" element={<StockAdjustments />} />
-                      <Route path="/stock-transfers" element={<StockTransfers />} />
-                      <Route path="/warehouses" element={<ModuleGate module="warehouses"><Warehouses /></ModuleGate>} />
-                      <Route path="/warehouses/stock" element={<ModuleGate module="warehouses"><WarehouseStock /></ModuleGate>} />
-                      <Route path="/warranties" element={<PlaceholderPage title="Warranties" />} />
-                      <Route path="/products/import" element={<PlaceholderPage title="Bulk Import" />} />
-                      <Route path="/products/export" element={<PlaceholderPage title="Export" />} />
-                      <Route path="/products/labels" element={<PlaceholderPage title="Print Labels" />} />
-                      <Route path="/pos" element={<POS />} />
-                      <Route path="/sales" element={<Sales />} />
-                      <Route path="/sales/add" element={<SaleAdd />} />
-                      <Route path="/sales/:id" element={<SaleView />} />
-                      <Route path="/sales/:id/edit" element={<SaleEditRedirect />} />
-                      <Route path="/sales/orders" element={
-                        <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Order" addPath="/sales/add?status=order" />
-                      } />
-                      <Route path="/invoices" element={
-                        <Sales defaultStatus="completed" title="Invoices" description="All completed sale invoices" hideStatusFilter />
-                      } />
-                      <Route path="/sales/drafts" element={
-                        <Sales defaultStatus="draft" title="Drafts" description="Draft sales" hideStatusFilter addLabel="Add Draft" />
-                      } />
-                      <Route path="/quotations" element={
-                        <Sales defaultStatus="quotation" title="Quotations" description="Customer quotations" hideStatusFilter addLabel="Add Quotation" addPath="/sales/add?status=quotation" />
-                      } />
-                      <Route path="/sales/returns" element={
-                        <Sales defaultStatus="returned" title="Sale Returns" description="Returned sales" hideStatusFilter />
-                      } />
-                      <Route path="/shipments" element={<PlaceholderPage title="Shipments" />} />
-                      <Route path="/purchases/add" element={<PurchaseAdd />} />
-                      <Route path="/purchases" element={<Purchases />} />
-                      <Route path="/purchases/:id" element={<PurchaseView />} />
-                      <Route path="/purchases/:id/edit" element={<PurchaseEditRedirect />} />
-                      <Route path="/purchase-orders" element={<PurchaseOrders />} />
-                      <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/customers/:id" element={<ContactProfile kind="customer" />} />
-                      <Route path="/suppliers" element={<Suppliers />} />
-                      <Route path="/suppliers/:id" element={<ContactProfile kind="supplier" />} />
-                      <Route path="/accounts" element={<ChartOfAccounts />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/journal" element={<JournalEntries />} />
-                      <Route path="/trial-balance" element={<TrialBalance />} />
-                      <Route path="/cash-flow" element={<CashFlow />} />
-                      <Route path="/account-list" element={<PlaceholderPage title="Account List" />} />
-                      <Route path="/employees" element={<Employees />} />
-                      <Route path="/attendance" element={<Attendance />} />
-                      <Route path="/leave" element={<LeaveManagement />} />
-                      <Route path="/payroll" element={<PayrollPage />} />
-                      <Route path="/warranty-claims" element={<WarrantyClaims />} />
-                      <Route path="/cms/pages" element={<CmsPages />} />
-                      <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
-                      <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
-                      <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />
-                      <Route path="/exchange/purchases/:id" element={<ModuleGate module="exchange"><ExchangePurchaseView /></ModuleGate>} />
-                      <Route path="/exchange/agreement/:id" element={<ModuleGate module="exchange"><ExchangeAgreement /></ModuleGate>} />
-                      <Route path="/exchange/sell" element={<ModuleGate module="exchange"><ExchangeSell /></ModuleGate>} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
-                      <Route path="/reports/stock" element={<StockReport />} />
-                      <Route path="/reports/tax" element={<TaxReport />} />
-                      <Route path="/reports/daily-summary" element={<DailySummaryReport />} />
-                      <Route path="/reports/due-sales" element={<DueSaleReport />} />
-                      <Route path="/reports/product-profit" element={<ProductProfitReport />} />
-                      <Route path="/reports/purchase-sale" element={<PurchaseSaleReport />} />
-                      <Route path="/reports/contacts" element={<ContactsReport />} />
-                      <Route path="/reports/items" element={<ItemsReport />} />
-                      <Route path="/reports/trending" element={<TrendingProductsReport />} />
-                      <Route path="/reports/installment" element={<InstallmentReport />} />
-                      <Route path="/reports/expense" element={<ExpenseReport />} />
-                      <Route path="/reports/register" element={<RegisterReport />} />
-                      <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
-                      <Route path="/installment/customers" element={<InstallmentCustomers />} />
-                      <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
-                      <Route path="/installment/sales" element={<InstallmentSales />} />
-                      <Route path="/installment/collections" element={<InstallmentCollections />} />
-                      <Route path="/installment/schedule" element={<InstallmentSchedule />} />
-                      <Route path="/installment/agreement/:id" element={<InstallmentAgreement />} />
-                      <Route path="/users" element={<UsersPage />} />
-                      <Route path="/roles" element={<RolesPage />} />
-                      <Route path="/activity-log" element={<ActivityLogPage />} />
-                      <Route path="/settings" element={<SettingsPage />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <Suspense fallback={<RouteFallback />}>
+                      <Routes>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/products" element={<Products />} />
+                        <Route path="/products/add" element={<ProductAdd />} />
+                        <Route path="/products/edit/:id" element={<ProductAdd />} />
+                        <Route path="/categories" element={<Categories />} />
+                        <Route path="/brands" element={<Brands />} />
+                        <Route path="/products/price-groups" element={<SellingPriceGroups />} />
+                        <Route path="/contacts/customer-groups" element={<CustomerGroups />} />
+                        <Route path="/units" element={<Units />} />
+                        <Route path="/variations" element={<Variations />} />
+                        <Route path="/stock-adjustments" element={<StockAdjustments />} />
+                        <Route path="/stock-transfers" element={<StockTransfers />} />
+                        <Route path="/warehouses" element={<ModuleGate module="warehouses"><Warehouses /></ModuleGate>} />
+                        <Route path="/warehouses/stock" element={<ModuleGate module="warehouses"><WarehouseStock /></ModuleGate>} />
+                        <Route path="/warranties" element={<PlaceholderPage title="Warranties" />} />
+                        <Route path="/products/import" element={<PlaceholderPage title="Bulk Import" />} />
+                        <Route path="/products/export" element={<PlaceholderPage title="Export" />} />
+                        <Route path="/products/labels" element={<PlaceholderPage title="Print Labels" />} />
+                        <Route path="/pos" element={<POS />} />
+                        <Route path="/sales" element={<Sales />} />
+                        <Route path="/sales/add" element={<SaleAdd />} />
+                        <Route path="/sales/:id" element={<SaleView />} />
+                        <Route path="/sales/:id/edit" element={<SaleEditRedirect />} />
+                        <Route path="/sales/orders" element={
+                          <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Order" addPath="/sales/add?status=order" />
+                        } />
+                        <Route path="/invoices" element={
+                          <Sales defaultStatus="completed" title="Invoices" description="All completed sale invoices" hideStatusFilter />
+                        } />
+                        <Route path="/sales/drafts" element={
+                          <Sales defaultStatus="draft" title="Drafts" description="Draft sales" hideStatusFilter addLabel="Add Draft" />
+                        } />
+                        <Route path="/quotations" element={
+                          <Sales defaultStatus="quotation" title="Quotations" description="Customer quotations" hideStatusFilter addLabel="Add Quotation" addPath="/sales/add?status=quotation" />
+                        } />
+                        <Route path="/sales/returns" element={
+                          <Sales defaultStatus="returned" title="Sale Returns" description="Returned sales" hideStatusFilter />
+                        } />
+                        <Route path="/shipments" element={<PlaceholderPage title="Shipments" />} />
+                        <Route path="/purchases/add" element={<PurchaseAdd />} />
+                        <Route path="/purchases" element={<Purchases />} />
+                        <Route path="/purchases/:id" element={<PurchaseView />} />
+                        <Route path="/purchases/:id/edit" element={<PurchaseEditRedirect />} />
+                        <Route path="/purchase-orders" element={<PurchaseOrders />} />
+                        <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
+                        <Route path="/customers" element={<Customers />} />
+                        <Route path="/customers/:id" element={<ContactProfile kind="customer" />} />
+                        <Route path="/suppliers" element={<Suppliers />} />
+                        <Route path="/suppliers/:id" element={<ContactProfile kind="supplier" />} />
+                        <Route path="/accounts" element={<ChartOfAccounts />} />
+                        <Route path="/transactions" element={<Transactions />} />
+                        <Route path="/journal" element={<JournalEntries />} />
+                        <Route path="/trial-balance" element={<TrialBalance />} />
+                        <Route path="/cash-flow" element={<CashFlow />} />
+                        <Route path="/account-list" element={<PlaceholderPage title="Account List" />} />
+                        <Route path="/employees" element={<Employees />} />
+                        <Route path="/attendance" element={<Attendance />} />
+                        <Route path="/leave" element={<LeaveManagement />} />
+                        <Route path="/payroll" element={<PayrollPage />} />
+                        <Route path="/warranty-claims" element={<WarrantyClaims />} />
+                        <Route path="/cms/pages" element={<CmsPages />} />
+                        <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
+                        <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
+                        <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />
+                        <Route path="/exchange/purchases/:id" element={<ModuleGate module="exchange"><ExchangePurchaseView /></ModuleGate>} />
+                        <Route path="/exchange/agreement/:id" element={<ModuleGate module="exchange"><ExchangeAgreement /></ModuleGate>} />
+                        <Route path="/exchange/sell" element={<ModuleGate module="exchange"><ExchangeSell /></ModuleGate>} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
+                        <Route path="/reports/stock" element={<StockReport />} />
+                        <Route path="/reports/tax" element={<TaxReport />} />
+                        <Route path="/reports/daily-summary" element={<DailySummaryReport />} />
+                        <Route path="/reports/due-sales" element={<DueSaleReport />} />
+                        <Route path="/reports/product-profit" element={<ProductProfitReport />} />
+                        <Route path="/reports/purchase-sale" element={<PurchaseSaleReport />} />
+                        <Route path="/reports/contacts" element={<ContactsReport />} />
+                        <Route path="/reports/items" element={<ItemsReport />} />
+                        <Route path="/reports/trending" element={<TrendingProductsReport />} />
+                        <Route path="/reports/installment" element={<InstallmentReport />} />
+                        <Route path="/reports/expense" element={<ExpenseReport />} />
+                        <Route path="/reports/register" element={<RegisterReport />} />
+                        <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
+                        <Route path="/installment/customers" element={<InstallmentCustomers />} />
+                        <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
+                        <Route path="/installment/sales" element={<InstallmentSales />} />
+                        <Route path="/installment/collections" element={<InstallmentCollections />} />
+                        <Route path="/installment/schedule" element={<InstallmentSchedule />} />
+                        <Route path="/installment/agreement/:id" element={<InstallmentAgreement />} />
+                        <Route path="/users" element={<UsersPage />} />
+                        <Route path="/roles" element={<RolesPage />} />
+                        <Route path="/activity-log" element={<ActivityLogPage />} />
+                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
                   </AppLayout>
                 </ProtectedRoute>
               }
