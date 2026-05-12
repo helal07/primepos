@@ -430,6 +430,15 @@ export default function POS() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => setShowAddCustomer(true)}
+                title="Add new customer"
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
