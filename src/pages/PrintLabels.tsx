@@ -109,6 +109,7 @@ export default function PrintLabels() {
   const [barMargin, setBarMargin] = useState(0);
   const [cellPadding, setCellPadding] = useState(1.5); // mm
   const [autoFitBarcode, setAutoFitBarcode] = useState(true);
+  const [rotateBarcode, setRotateBarcode] = useState(false);
 
   const filtered = useMemo(
     () => (products || []).filter((p: any) => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 20),
