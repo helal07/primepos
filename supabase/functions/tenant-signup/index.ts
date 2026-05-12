@@ -32,8 +32,14 @@ Deno.serve(async (req) => {
     if (!businessName || !contactEmail || !password || !contactName) {
       return json({ error: "Missing required fields" }, 400);
     }
-    if (typeof password !== "string" || password.length < 6) {
-      return json({ error: "Password must be at least 6 characters" }, 400);
+    if (typeof password !== "string" || password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return json({ error: "Password must be at least 8 characters and include letters and numbers" }, 400);
+    }
+    if (typeof contactEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+      return json({ error: "Invalid email address" }, 400);
+    }
+    if (String(businessName).length > 200 || String(contactName).length > 120) {
+      return json({ error: "Name fields too long" }, 400);
     }
 
     const choice: "trial" | "paid" = registrationChoice === "paid" ? "paid" : "trial";

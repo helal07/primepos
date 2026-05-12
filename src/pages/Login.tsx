@@ -27,7 +27,12 @@ export default function Login() {
     });
     setLoading(false);
     if (error) {
-      toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      // Generic message — don't reveal whether the email exists
+      toast({
+        title: "Login failed",
+        description: "Invalid email or password.",
+        variant: "destructive",
+      });
     } else {
       navigate("/dashboard");
     }
