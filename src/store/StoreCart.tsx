@@ -23,7 +23,7 @@ export default function StoreCart() {
       </div>
       <div className="mt-6 flex justify-between items-center">
         <p className="text-lg">Subtotal: <span className="font-bold">{settings.currency} {subtotal.toLocaleString()}</span></p>
-        <Button size="lg" disabled>Checkout (Phase 2)</Button>
+        <Button size="lg" asChild><Link to={`/store/${tenant.slug}/checkout`}>Proceed to checkout</Link></Button>
       </div>
     </div>
   );
