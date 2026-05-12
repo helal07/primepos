@@ -1,26 +1,26 @@
-RewriteEngine On
-RewriteBase /
+# ============================================================
+# Robust .htaccess for Vite/React SPA on Hostinger (Apache)
+# ============================================================
 
-RewriteRule ^index\.html$ - [L]
-
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-
-RewriteRule . /index.html [L]
-
-# Correct MIME types (Hostinger sometimes serves JS modules as text/plain)
+# ---------- 1. Correct MIME types ----------
+# Hostinger sometimes serves ES modules as text/plain, which breaks
+# `<script type="module">`. AddType registers the correct type.
 <IfModule mod_mime.c>
-  AddType application/javascript .js
-  AddType application/javascript .mjs
-  AddType text/css .css
-  AddType application/json .json
-  AddType application/wasm .wasm
-  AddType image/svg+xml .svg
-  AddType font/woff .woff
-  AddType font/woff2 .woff2
+  AddType application/javascript          .js
+  AddType application/javascript          .mjs
+  AddType text/css                        .css
+  AddType application/json                .json
+  AddType application/wasm                .wasm
+  AddType image/svg+xml                   .svg
+  AddType image/webp                      .webp
+  AddType image/avif                      .avif
+  AddType font/woff                       .woff
+  AddType font/woff2                      .woff2
+  AddType application/manifest+json       .webmanifest
 </IfModule>
 
-# Force correct Content-Type for JS modules built by Vite
+# ---------- 2. Force Content-Type (overrides any upstream config) ----------
+# `Header set` wins over server-level defaults that may still send text/plain.
 <IfModule mod_headers.c>
   <FilesMatch "\.(js|mjs)$">
     Header set Content-Type "application/javascript; charset=utf-8"
@@ -28,4 +28,77 @@ RewriteRule . /index.html [L]
   <FilesMatch "\.css$">
     Header set Content-Type "text/css; charset=utf-8"
   </FilesMatch>
+  <FilesMatch "\.json$">
+    Header set Content-Type "application/json; charset=utf-8"
+  </FilesMatch>
+  <FilesMatch "\.wasm$">
+    Header set Content-Type "application/wasm"
+  </FilesMatch>
+  <FilesMatch "\.svg$">
+    Header set Content-Type "image/svg+xml"
+  </FilesMatch>
+  <FilesMatch "\.(woff2)$">
+    Header set Content-Type "font/woff2"
+  </FilesMatch>
 </IfModule>
+
+# ---------- 3. Long-term caching for hashed Vite assets ----------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault                          "access plus 1 hour"
+  ExpiresByType text/html                 "access plus 0 seconds"
+  ExpiresByType application/javascript    "access plus 1 year"
+  ExpiresByType text/css                  "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType image/avif                "access plus 1 year"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/jpeg                "access plus 1 year"
+  ExpiresByType font/woff                 "access plus 1 year"
+  ExpiresByType font/woff2                "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Hashed files in /assets/ are immutable — cache forever.
+  <FilesMatch "\.(js|mjs|css|woff2|woff|svg|webp|avif|png|jpg|jpeg|gif|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # Never cache the HTML shell so users get new asset hashes immediately.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ---------- 4. Gzip / Brotli compression ----------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml \
+    application/javascript application/json application/xml image/svg+xml \
+    font/woff font/woff2
+</IfModule>
+
+# ---------- 5. Security headers ----------
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# ---------- 6. SPA fallback — must come last ----------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Don't rewrite the index file itself.
+  RewriteRule ^index\.html$ - [L]
+
+  # Skip real files and directories (assets, images, etc.).
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # Everything else → React Router handles it.
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# ---------- 7. Default charset ----------
+AddDefaultCharset UTF-8
