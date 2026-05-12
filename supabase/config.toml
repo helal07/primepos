@@ -2,3 +2,9 @@ project_id = "pekekgjysecbwznrvojp"
 
 [functions.tenant-signup]
 verify_jwt = false
+
+[functions.bkash-callback]
+verify_jwt = false
+
+[functions.eps-callback]
+verify_jwt = false
