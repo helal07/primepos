@@ -411,6 +411,72 @@ export type Database = {
           },
         ]
       }
+      courier_credentials: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          pathao_access_token: string | null
+          pathao_base_url: string | null
+          pathao_client_id: string | null
+          pathao_client_secret: string | null
+          pathao_password: string | null
+          pathao_refresh_token: string | null
+          pathao_store_id: string | null
+          pathao_token_expires_at: string | null
+          pathao_username: string | null
+          provider: string
+          steadfast_api_key: string | null
+          steadfast_base_url: string | null
+          steadfast_secret_key: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          pathao_access_token?: string | null
+          pathao_base_url?: string | null
+          pathao_client_id?: string | null
+          pathao_client_secret?: string | null
+          pathao_password?: string | null
+          pathao_refresh_token?: string | null
+          pathao_store_id?: string | null
+          pathao_token_expires_at?: string | null
+          pathao_username?: string | null
+          provider: string
+          steadfast_api_key?: string | null
+          steadfast_base_url?: string | null
+          steadfast_secret_key?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          pathao_access_token?: string | null
+          pathao_base_url?: string | null
+          pathao_client_id?: string | null
+          pathao_client_secret?: string | null
+          pathao_password?: string | null
+          pathao_refresh_token?: string | null
+          pathao_store_id?: string | null
+          pathao_token_expires_at?: string | null
+          pathao_username?: string | null
+          provider?: string
+          steadfast_api_key?: string | null
+          steadfast_base_url?: string | null
+          steadfast_secret_key?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_groups: {
         Row: {
           created_at: string
@@ -2419,6 +2485,11 @@ export type Database = {
         Row: {
           city: string | null
           courier: string | null
+          courier_consignment_id: string | null
+          courier_label_url: string | null
+          courier_payload: Json | null
+          courier_provider: string | null
+          courier_status: string | null
           created_at: string
           created_by: string | null
           delivered_at: string | null
@@ -2440,6 +2511,11 @@ export type Database = {
         Insert: {
           city?: string | null
           courier?: string | null
+          courier_consignment_id?: string | null
+          courier_label_url?: string | null
+          courier_payload?: Json | null
+          courier_provider?: string | null
+          courier_status?: string | null
           created_at?: string
           created_by?: string | null
           delivered_at?: string | null
@@ -2461,6 +2537,11 @@ export type Database = {
         Update: {
           city?: string | null
           courier?: string | null
+          courier_consignment_id?: string | null
+          courier_label_url?: string | null
+          courier_payload?: Json | null
+          courier_provider?: string | null
+          courier_status?: string | null
           created_at?: string
           created_by?: string | null
           delivered_at?: string | null

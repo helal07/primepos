@@ -8,3 +8,18 @@ verify_jwt = false
 
 [functions.eps-callback]
 verify_jwt = false
+
+[functions.pathao-webhook]
+verify_jwt = false
+
+[functions.steadfast-webhook]
+verify_jwt = false
+
+[functions.store-bkash-callback]
+verify_jwt = false
+
+[functions.store-sslcommerz-callback]
+verify_jwt = false
+
+[functions.store-payment-init]
+verify_jwt = false

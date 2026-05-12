@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Search, Truck, History, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Truck, History, Printer, Send } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUSES = ["pending", "packed", "shipped", "in_transit", "delivered", "returned", "cancelled"] as const;
@@ -204,6 +204,21 @@ export default function Shipments() {
     setOpen(true);
   };
 
+  const sendToCourier = async (shipmentId: string, provider: "pathao" | "steadfast") => {
+    if (!confirm(`Send this shipment to ${provider}?`)) return;
+    const t = toast.loading(`Sending to ${provider}...`);
+    const { data, error } = await supabase.functions.invoke("courier-create-shipment", {
+      body: { shipment_id: shipmentId, provider },
+    });
+    toast.dismiss(t);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || error?.message || "Failed");
+      return;
+    }
+    toast.success(`Sent. Tracking: ${(data as any)?.tracking || "-"}`);
+    qc.invalidateQueries({ queryKey: ["shipments"] });
+  };
+
   const printLabel = (s: any) => {
     const w = window.open("", "_blank", "width=400,height=600");
     if (!w) return;
@@ -299,6 +314,12 @@ export default function Shipments() {
                       <TableCell className="text-sm">{s.expected_delivery || "-"}</TableCell>
                       <TableCell className="text-right">
                         <Button size="icon" variant="ghost" onClick={() => printLabel(s)} title="Print label"><Printer className="h-4 w-4" /></Button>
+                        {!s.tracking_no && (
+                          <>
+                            <Button size="icon" variant="ghost" title="Send to Steadfast" onClick={() => sendToCourier(s.id, "steadfast")}><Send className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" title="Send to Pathao" onClick={() => sendToCourier(s.id, "pathao")}><Truck className="h-4 w-4" /></Button>
+                          </>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => setHistoryId(s.id)} title="History"><History className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete this shipment?")) remove.mutate(s.id); }}>

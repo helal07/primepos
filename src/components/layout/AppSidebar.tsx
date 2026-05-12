@@ -203,6 +203,7 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
     items: [
       { title: "Website Orders", url: "/ecommerce/orders", icon: ShoppingBag },
       { title: "Collections", url: "/ecommerce/collections", icon: Layers },
+      { title: "Couriers", url: "/ecommerce/couriers", icon: Truck },
       { title: "Store Settings", url: "/ecommerce/settings", icon: Settings },
     ],
   },
