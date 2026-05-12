@@ -17,6 +17,7 @@ import LandingPage from "./pages/LandingPage";
 
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
+const SubscriptionPage = lazy(() => import("./pages/Subscription"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Products = lazy(() => import("./pages/Products"));
 const ProductAdd = lazy(() => import("./pages/ProductAdd"));
@@ -95,6 +96,8 @@ const Sitemap = lazy(() => import("./pages/admin/Sitemap"));
 const SmsProviders = lazy(() => import("./pages/admin/SmsProviders"));
 const SmsPlans = lazy(() => import("./pages/admin/SmsPlans"));
 const SmsPurchases = lazy(() => import("./pages/admin/SmsPurchases"));
+const SuperPayments = lazy(() => import("./pages/admin/SuperPayments"));
+const PaymentGateways = lazy(() => import("./pages/admin/PaymentGateways"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
@@ -119,6 +122,8 @@ const SuperadminRoutes = () => (
             <Route path="sms/providers" element={<SmsProviders />} />
             <Route path="sms/plans" element={<SmsPlans />} />
             <Route path="sms/purchases" element={<SmsPurchases />} />
+            <Route path="payments" element={<SuperPayments />} />
+            <Route path="payment-gateways" element={<PaymentGateways />} />
             <Route path="transactions" element={<AdminTransactions />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="*" element={<NotFound />} />
@@ -142,6 +147,11 @@ const App = () => (
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
+            <Route path="/subscription" element={
+              <ProtectedRoute>
+                <Suspense fallback={<RouteFallback />}><SubscriptionPage /></Suspense>
+              </ProtectedRoute>
+            } />
             {/* SaaS Admin — separate layout */}
             <Route path="/superadmin/*" element={<SuperadminRoutes />} />
             <Route path="/admin/*" element={<Navigate to="/superadmin" replace />} />
