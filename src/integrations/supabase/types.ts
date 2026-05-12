@@ -178,6 +178,54 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_name: string | null
+          content: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          excerpt: string | null
+          id: string
+          is_published: boolean
+          published_at: string | null
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          content?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          content?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string
@@ -410,6 +458,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      courier_credentials: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          pathao_access_token: string | null
+          pathao_base_url: string | null
+          pathao_client_id: string | null
+          pathao_client_secret: string | null
+          pathao_password: string | null
+          pathao_refresh_token: string | null
+          pathao_store_id: string | null
+          pathao_token_expires_at: string | null
+          pathao_username: string | null
+          provider: string
+          steadfast_api_key: string | null
+          steadfast_base_url: string | null
+          steadfast_secret_key: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          pathao_access_token?: string | null
+          pathao_base_url?: string | null
+          pathao_client_id?: string | null
+          pathao_client_secret?: string | null
+          pathao_password?: string | null
+          pathao_refresh_token?: string | null
+          pathao_store_id?: string | null
+          pathao_token_expires_at?: string | null
+          pathao_username?: string | null
+          provider: string
+          steadfast_api_key?: string | null
+          steadfast_base_url?: string | null
+          steadfast_secret_key?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          pathao_access_token?: string | null
+          pathao_base_url?: string | null
+          pathao_client_id?: string | null
+          pathao_client_secret?: string | null
+          pathao_password?: string | null
+          pathao_refresh_token?: string | null
+          pathao_store_id?: string | null
+          pathao_token_expires_at?: string | null
+          pathao_username?: string | null
+          provider?: string
+          steadfast_api_key?: string | null
+          steadfast_base_url?: string | null
+          steadfast_secret_key?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       customer_groups: {
         Row: {
@@ -1151,6 +1265,30 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       payment_attempts: {
         Row: {
           amount: number
@@ -1490,6 +1628,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          gallery_urls: string[]
           has_warranty: boolean
           id: string
           image_url: string | null
@@ -1508,6 +1647,8 @@ export type Database = {
           updated_at: string
           warranty_duration: number | null
           warranty_type: string | null
+          website_description: string | null
+          website_slug: string | null
         }
         Insert: {
           alert_quantity?: number
@@ -1517,6 +1658,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gallery_urls?: string[]
           has_warranty?: boolean
           id?: string
           image_url?: string | null
@@ -1535,6 +1677,8 @@ export type Database = {
           updated_at?: string
           warranty_duration?: number | null
           warranty_type?: string | null
+          website_description?: string | null
+          website_slug?: string | null
         }
         Update: {
           alert_quantity?: number
@@ -1544,6 +1688,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          gallery_urls?: string[]
           has_warranty?: boolean
           id?: string
           image_url?: string | null
@@ -1562,6 +1707,8 @@ export type Database = {
           updated_at?: string
           warranty_duration?: number | null
           warranty_type?: string | null
+          website_description?: string | null
+          website_slug?: string | null
         }
         Relationships: [
           {
@@ -2410,6 +2557,11 @@ export type Database = {
         Row: {
           city: string | null
           courier: string | null
+          courier_consignment_id: string | null
+          courier_label_url: string | null
+          courier_payload: Json | null
+          courier_provider: string | null
+          courier_status: string | null
           created_at: string
           created_by: string | null
           delivered_at: string | null
@@ -2431,6 +2583,11 @@ export type Database = {
         Insert: {
           city?: string | null
           courier?: string | null
+          courier_consignment_id?: string | null
+          courier_label_url?: string | null
+          courier_payload?: Json | null
+          courier_provider?: string | null
+          courier_status?: string | null
           created_at?: string
           created_by?: string | null
           delivered_at?: string | null
@@ -2452,6 +2609,11 @@ export type Database = {
         Update: {
           city?: string | null
           courier?: string | null
+          courier_consignment_id?: string | null
+          courier_label_url?: string | null
+          courier_payload?: Json | null
+          courier_provider?: string | null
+          courier_status?: string | null
           created_at?: string
           created_by?: string | null
           delivered_at?: string | null
@@ -2802,6 +2964,392 @@ export type Database = {
           },
         ]
       }
+      store_collection_products: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          product_id: string
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_collection_products_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "store_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_collection_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          slug: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_layout_sections: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          is_visible: boolean
+          section_key: string
+          sort_order: number
+          tenant_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          section_key: string
+          sort_order?: number
+          tenant_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          section_key?: string
+          sort_order?: number
+          tenant_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          tenant_id: string
+          total: number
+          unit_price: number
+          variation_id: string | null
+          variation_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          product_name: string
+          quantity?: number
+          tenant_id: string
+          total?: number
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          tenant_id?: string
+          total?: number
+          unit_price?: number
+          variation_id?: string | null
+          variation_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "store_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_order_items_variation_id_fkey"
+            columns: ["variation_id"]
+            isOneToOne: false
+            referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_orders: {
+        Row: {
+          cancelled_at: string | null
+          city: string | null
+          confirmed_at: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string
+          discount_amount: number
+          id: string
+          notes: string | null
+          order_number: string
+          payment_method: string
+          payment_ref: string | null
+          payment_status: string
+          sale_id: string | null
+          shipment_id: string | null
+          shipping_address: string
+          shipping_cost: number
+          status: string
+          subtotal: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          city?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone: string
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          order_number: string
+          payment_method?: string
+          payment_ref?: string | null
+          payment_status?: string
+          sale_id?: string | null
+          shipment_id?: string | null
+          shipping_address: string
+          shipping_cost?: number
+          status?: string
+          subtotal?: number
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          city?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          order_number?: string
+          payment_method?: string
+          payment_ref?: string | null
+          payment_status?: string
+          sale_id?: string | null
+          shipment_id?: string | null
+          shipping_address?: string
+          shipping_cost?: number
+          status?: string
+          subtotal?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_orders_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_orders_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings: {
+        Row: {
+          about_html: string | null
+          address: string | null
+          banner_url: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          currency: string
+          enable_bkash: boolean
+          enable_cod: boolean
+          enable_sslcommerz: boolean
+          enabled: boolean
+          facebook_url: string | null
+          footer_html: string | null
+          free_shipping_threshold: number | null
+          hero_cta_label: string | null
+          hero_cta_url: string | null
+          hero_heading: string | null
+          hero_subheading: string | null
+          id: string
+          instagram_url: string | null
+          logo_url: string | null
+          meta_description: string | null
+          meta_title: string | null
+          primary_color: string | null
+          shipping_flat_rate: number
+          store_name: string | null
+          tagline: string | null
+          tenant_id: string
+          theme: string
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          about_html?: string | null
+          address?: string | null
+          banner_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          currency?: string
+          enable_bkash?: boolean
+          enable_cod?: boolean
+          enable_sslcommerz?: boolean
+          enabled?: boolean
+          facebook_url?: string | null
+          footer_html?: string | null
+          free_shipping_threshold?: number | null
+          hero_cta_label?: string | null
+          hero_cta_url?: string | null
+          hero_heading?: string | null
+          hero_subheading?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          primary_color?: string | null
+          shipping_flat_rate?: number
+          store_name?: string | null
+          tagline?: string | null
+          tenant_id: string
+          theme?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          about_html?: string | null
+          address?: string | null
+          banner_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          currency?: string
+          enable_bkash?: boolean
+          enable_cod?: boolean
+          enable_sslcommerz?: boolean
+          enabled?: boolean
+          facebook_url?: string | null
+          footer_html?: string | null
+          free_shipping_threshold?: number | null
+          hero_cta_label?: string | null
+          hero_cta_url?: string | null
+          hero_heading?: string | null
+          hero_subheading?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          primary_color?: string | null
+          shipping_flat_rate?: number
+          store_name?: string | null
+          tagline?: string | null
+          tenant_id?: string
+          theme?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -2984,6 +3532,7 @@ export type Database = {
           created_at: string
           db_name: string | null
           domain: string | null
+          domain_verified_at: string | null
           email: string | null
           enabled_modules: string[] | null
           id: string
@@ -2993,6 +3542,7 @@ export type Database = {
           owner_user_id: string
           package_id: string | null
           phone: string | null
+          slug: string | null
           status: string
           subscription_end: string | null
           subscription_start: string
@@ -3005,6 +3555,7 @@ export type Database = {
           created_at?: string
           db_name?: string | null
           domain?: string | null
+          domain_verified_at?: string | null
           email?: string | null
           enabled_modules?: string[] | null
           id?: string
@@ -3014,6 +3565,7 @@ export type Database = {
           owner_user_id: string
           package_id?: string | null
           phone?: string | null
+          slug?: string | null
           status?: string
           subscription_end?: string | null
           subscription_start?: string
@@ -3026,6 +3578,7 @@ export type Database = {
           created_at?: string
           db_name?: string | null
           domain?: string | null
+          domain_verified_at?: string | null
           email?: string | null
           enabled_modules?: string[] | null
           id?: string
@@ -3035,6 +3588,7 @@ export type Database = {
           owner_user_id?: string
           package_id?: string | null
           phone?: string | null
+          slug?: string | null
           status?: string
           subscription_end?: string | null
           subscription_start?: string
@@ -3417,6 +3971,33 @@ export type Database = {
           },
         ]
       }
+      wishlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          session_token: string
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          session_token: string
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          session_token?: string
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -3441,12 +4022,28 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_store_order: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: undefined
+      }
+      confirm_store_order: { Args: { p_order_id: string }; Returns: string }
       ensure_default_warehouse: {
         Args: { _tenant_id: string }
         Returns: string
       }
       generate_installment_invoice: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_store_order_number: { Args: never; Returns: string }
+      get_tenant_by_host: {
+        Args: { _host: string }
+        Returns: {
+          domain: string
+          domain_verified_at: string
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       has_module_permission: {
         Args: { _module: string; _permission: string; _user_id: string }
@@ -3456,6 +4053,20 @@ export type Database = {
       is_tenant_manager_or_above: {
         Args: { _user_id: string }
         Returns: boolean
+      }
+      place_store_order: {
+        Args: {
+          p_city: string
+          p_customer_email: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_items: Json
+          p_notes: string
+          p_payment_method: string
+          p_shipping_address: string
+          p_tenant_slug: string
+        }
+        Returns: Json
       }
       tenant_has_module: {
         Args: { _module: string; _user_id: string }
