@@ -114,6 +114,9 @@ const StoreCollections = lazy(() => import("./store/StoreCollections"));
 const StoreCollection = lazy(() => import("./store/StoreCollection"));
 const StoreCart = lazy(() => import("./store/StoreCart"));
 const StorePage = lazy(() => import("./store/StorePage"));
+const StoreCheckout = lazy(() => import("./store/StoreCheckout"));
+const StoreOrder = lazy(() => import("./store/StoreOrder"));
+const StoreOrdersAdmin = lazy(() => import("./pages/StoreOrdersAdmin"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
 const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
@@ -171,6 +174,8 @@ const App = () => (
               <Route path="collection/:collectionSlug" element={<StoreCollection />} />
               <Route path="cart" element={<StoreCart />} />
               <Route path="page/:pageSlug" element={<StorePage />} />
+              <Route path="checkout" element={<StoreCheckout />} />
+              <Route path="order/:orderId" element={<StoreOrder />} />
             </Route>
             <Route path="/subscription" element={
               <ProtectedRoute>
@@ -251,6 +256,7 @@ const App = () => (
                         <Route path="/cms/pages" element={<CmsPages />} />
                         <Route path="/ecommerce/settings" element={<ModuleGate module="ecommerce"><StoreSettingsAdmin /></ModuleGate>} />
                         <Route path="/ecommerce/collections" element={<ModuleGate module="ecommerce"><StoreCollectionsAdmin /></ModuleGate>} />
+                        <Route path="/ecommerce/orders" element={<ModuleGate module="ecommerce"><StoreOrdersAdmin /></ModuleGate>} />
                         <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
                         <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
                         <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />
