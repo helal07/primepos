@@ -104,6 +104,36 @@ export default function StoreSettings() {
       </Card>
 
       <Card>
+        <CardHeader><CardTitle>Custom domain</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              placeholder="shop.example.com"
+              value={tenantDomain}
+              onChange={(e) => setTenantDomain(e.target.value)}
+            />
+            <Button onClick={saveDomain} disabled={savingDomain}>{savingDomain ? "Saving…" : "Save domain"}</Button>
+          </div>
+          {tenantDomain && (
+            <p className="text-xs">
+              Status:{" "}
+              {domainVerifiedAt
+                ? <span className="text-green-600 font-medium">Verified ({new Date(domainVerifiedAt).toLocaleDateString()})</span>
+                : <span className="text-amber-600 font-medium">Pending DNS</span>}
+            </p>
+          )}
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Point your domain to our hosting and visitors will land on your storefront. <code>{tenantDomain || "yourdomain.com"}/login</code> opens your admin panel.</p>
+            <p><strong>DNS records to add at your registrar:</strong></p>
+            <pre className="bg-muted p-2 rounded text-[11px] leading-snug overflow-x-auto">
+A    @     185.158.133.1{"\n"}A    www   185.158.133.1
+            </pre>
+            <p>SSL is provisioned automatically once DNS resolves (allow up to 72 h).</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle>Hero</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div><Label>Heading</Label><Input value={form.hero_heading ?? ""} onChange={(e) => set("hero_heading", e.target.value)} /></div>
