@@ -53,7 +53,11 @@ const SIZES: Record<string, { w: string; h: string; cols: number; label: string 
   large: { w: "70mm", h: "40mm", cols: 2, label: "Large (70×40mm)" },
 };
 
-function Barcode({ value, preferred }: { value: string; preferred: FormatKey }) {
+function Barcode({
+  value, preferred, barWidth, barHeight, margin,
+}: {
+  value: string; preferred: FormatKey; barWidth: number; barHeight: number; margin: number;
+}) {
   const ref = useRef<SVGSVGElement>(null);
   useEffect(() => {
     if (ref.current && value) {
@@ -61,25 +65,25 @@ function Barcode({ value, preferred }: { value: string; preferred: FormatKey }) 
       try {
         JsBarcode(ref.current, encoded, {
           format,
-          width: 0.9,
-          height: 28,
+          width: barWidth,
+          height: barHeight,
           displayValue: false,
-          margin: 0,
+          margin,
         });
       } catch {
         // Fallback to CODE128 if the chosen format rejects the value
         try {
           JsBarcode(ref.current, value, {
             format: "CODE128",
-            width: 0.9,
-            height: 28,
+            width: barWidth,
+            height: barHeight,
             displayValue: false,
-            margin: 0,
+            margin,
           });
         } catch {}
       }
     }
-  }, [value, preferred]);
+  }, [value, preferred, barWidth, barHeight, margin]);
   return <svg ref={ref} className="w-full" />;
 }
 
