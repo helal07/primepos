@@ -135,9 +135,9 @@ export default function PackageManagement() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col bg-slate-900 border-slate-800 text-white">
           <DialogHeader><DialogTitle className="text-white">{editId ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
-          <div className="grid gap-4">
+          <div className="grid gap-4 flex-1 overflow-y-auto -mx-6 px-6">
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-slate-300">Name</Label><Input className="bg-slate-800 border-slate-700 text-white" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div><Label className="text-slate-300">Price (৳)</Label><Input className="bg-slate-800 border-slate-700 text-white" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
@@ -174,7 +174,7 @@ export default function PackageManagement() {
               <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-slate-300">Active</Label></div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t border-slate-800 pt-4">
             <Button variant="outline" className="border-slate-700 text-slate-300" onClick={() => setOpen(false)}>Cancel</Button>
             <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
               {editId ? "Update" : "Create"}
