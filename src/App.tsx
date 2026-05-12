@@ -161,6 +161,39 @@ const RootRoute = () => {
   return host ? <TenantHostStorefront /> : <LandingPage />;
 };
 
+/** Admin paths that should remain accessible on a tenant's custom domain. */
+const ADMIN_PATH_PREFIXES = [
+  "/login","/register","/subscription","/superadmin","/admin",
+  "/dashboard","/products","/categories","/brands","/units","/variations",
+  "/stock-adjustments","/stock-transfers","/warehouses","/warranties",
+  "/pos","/sales","/invoices","/quotations","/shipments",
+  "/purchases","/purchase-orders",
+  "/customers","/suppliers","/contacts",
+  "/accounts","/transactions","/journal","/trial-balance","/cash-flow","/account-list",
+  "/employees","/attendance","/leave","/payroll",
+  "/warranty-claims","/cms","/ecommerce","/exchange",
+  "/reports","/installment",
+  "/users","/roles","/activity-log","/settings","/profile",
+];
+const isAdminPath = (p: string) => ADMIN_PATH_PREFIXES.some(prefix => p === prefix || p.startsWith(prefix + "/"));
+
+/** On a tenant host, route non-admin paths into the storefront. */
+const TenantHostCatchAll = () => {
+  const path = typeof window !== "undefined" ? window.location.pathname : "/";
+  if (isAdminPath(path)) {
+    return (
+      <ProtectedRoute>
+        <AppLayout>
+          <Suspense fallback={<RouteFallback />}>
+            <TenantAppRoutes />
+          </Suspense>
+        </AppLayout>
+      </ProtectedRoute>
+    );
+  }
+  return <TenantHostStorefront />;
+};
+
 const SuperadminRoutes = () => (
   <ProtectedRoute>
     <SuperadminRoute>
