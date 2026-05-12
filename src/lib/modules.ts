@@ -11,7 +11,8 @@ export type ModuleKey =
   | "installments"
   | "reports"
   | "exchange"
-  | "warehouses";
+  | "warehouses"
+  | "ecommerce";
 
 export interface ModuleDef {
   key: ModuleKey;
@@ -33,6 +34,7 @@ export const MODULE_CATALOG: ModuleDef[] = [
   { key: "reports", label: "Reports", description: "All business reports." },
   { key: "exchange", label: "Exchange", description: "Used phone buy/sell with seller KYC, IMEI tracking and printable agreements." },
   { key: "warehouses", label: "Warehouses", description: "Multi-location inventory: per-warehouse stock and transfers." },
+  { key: "ecommerce", label: "Ecommerce", description: "Public storefront, product catalog, cart, checkout and online orders." },
 ];
 
 export const DEFAULT_MODULES: ModuleKey[] = [
