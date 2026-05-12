@@ -92,6 +92,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // The handle_new_user trigger auto-creates a tenant for every signup.
+      // For staff invites, remove that orphan tenant so only the assigned tenant remains.
+      await adminClient
+        .from("tenants")
+        .delete()
+        .eq("owner_user_id", newUserId)
+        .neq("id", tenant_id);
+
       // Optional role assignment (defaults to Staff via handle_new_user trigger)
       if (role_name) {
         const { data: role } = await adminClient
