@@ -1,11 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, Settings2, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings, useSaveSetting } from "@/hooks/useSettings";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function numberToWordsBn(n: number): string {
   // Simple english words (kept generic for any locale)
@@ -23,10 +27,31 @@ function numberToWordsBn(n: number): string {
   return inWords(Math.floor(n)) + " Taka Only";
 }
 
+const DEFAULT_TITLE = "USED DEVICE BUYING AGREEMENT";
+const DEFAULT_INTRO =
+  `This agreement is made on {{date}} between {{business_name}} (the "Buyer") and {{seller_name}} (the "Seller"), residing at {{seller_address}}, NID No. {{seller_nid}}, phone {{seller_phone}}.
+
+The Seller hereby sells to the Buyer the following used device, which the Seller declares to be legally owned, free of any liens, and not stolen or otherwise illegally obtained:`;
+const DEFAULT_TERMS = `The Seller confirms ownership of the device and provides valid government ID.
+The Seller takes full legal responsibility if the device is later found to be stolen or disputed.
+Once payment is received and this agreement is signed, the device becomes the property of the Buyer.
+The Seller has had the opportunity to remove all personal data prior to handover.`;
+const DEFAULT_FOOTER = "";
+
+function applyTemplate(tpl: string, vars: Record<string, string>): string {
+  return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
+}
+
 export default function ExchangeAgreement() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: settings } = useSettings();
+  const saveSetting = useSaveSetting();
+  const [editOpen, setEditOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftIntro, setDraftIntro] = useState("");
+  const [draftTerms, setDraftTerms] = useState("");
+  const [draftFooter, setDraftFooter] = useState("");
 
   const { data: r } = useQuery({
     queryKey: ["exchange_purchase", id],
@@ -49,11 +74,73 @@ export default function ExchangeAgreement() {
   const bizAddr = biz.address || "";
   const bizPhone = biz.phone || "";
 
+  const tplTitle: string = biz.exchange_agreement_title || DEFAULT_TITLE;
+  const tplIntro: string = biz.exchange_agreement_intro || DEFAULT_INTRO;
+  const tplTerms: string = biz.exchange_agreement_terms || DEFAULT_TERMS;
+  const tplFooter: string = biz.exchange_agreement_footer ?? DEFAULT_FOOTER;
+
+  const vars: Record<string, string> = {
+    date: format(new Date(r.purchase_date), "dd MMMM yyyy"),
+    reference_no: r.reference_no,
+    business_name: bizName,
+    business_address: bizAddr,
+    business_phone: bizPhone,
+    seller_name: r.seller_name || "",
+    seller_address: r.seller_address || "—",
+    seller_nid: r.seller_nid_no || "—",
+    seller_phone: r.seller_phone || "—",
+    product_name: r.product_name || "",
+    brand: r.brand || "",
+    model: r.model || "",
+    imei: r.imei || "—",
+    condition: r.condition_notes || "—",
+    price: Number(r.purchase_price).toLocaleString(),
+    price_words: numberToWordsBn(Number(r.purchase_price)),
+    paid: Number(r.paid_amount).toLocaleString(),
+    payment_method: r.payment_method || "",
+  };
+
+  const renderedIntro = applyTemplate(tplIntro, vars);
+  const renderedFooter = applyTemplate(tplFooter, vars);
+  const termLines = tplTerms
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => applyTemplate(l, vars));
+
+  const openEditor = () => {
+    setDraftTitle(tplTitle);
+    setDraftIntro(tplIntro);
+    setDraftTerms(tplTerms);
+    setDraftFooter(tplFooter);
+    setEditOpen(true);
+  };
+
+  const saveTemplate = async () => {
+    await Promise.all([
+      saveSetting.mutateAsync({ key: "exchange_agreement_title", value: draftTitle }),
+      saveSetting.mutateAsync({ key: "exchange_agreement_intro", value: draftIntro }),
+      saveSetting.mutateAsync({ key: "exchange_agreement_terms", value: draftTerms }),
+      saveSetting.mutateAsync({ key: "exchange_agreement_footer", value: draftFooter }),
+    ]);
+    setEditOpen(false);
+  };
+
+  const resetToDefault = () => {
+    setDraftTitle(DEFAULT_TITLE);
+    setDraftIntro(DEFAULT_INTRO);
+    setDraftTerms(DEFAULT_TERMS);
+    setDraftFooter(DEFAULT_FOOTER);
+  };
+
   return (
     <div className="max-w-3xl mx-auto py-4 px-4 print:p-0">
       <div className="flex justify-between mb-4 print:hidden">
         <Button variant="outline" size="sm" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4 mr-1" /> Back</Button>
-        <Button size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={openEditor}><Settings2 className="h-4 w-4 mr-1" /> Customize</Button>
+          <Button size="sm" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Print</Button>
+        </div>
       </div>
 
       <div className="border rounded p-8 bg-white text-black space-y-4 print:border-0 print:shadow-none">
@@ -61,21 +148,13 @@ export default function ExchangeAgreement() {
           <h1 className="text-xl font-bold">{bizName}</h1>
           {bizAddr && <p className="text-sm">{bizAddr}</p>}
           {bizPhone && <p className="text-sm">Phone: {bizPhone}</p>}
-          <h2 className="text-lg font-semibold mt-3 underline">USED DEVICE BUYING AGREEMENT</h2>
+          <h2 className="text-lg font-semibold mt-3 underline">{tplTitle}</h2>
           <p className="text-xs mt-1">Reference: {r.reference_no} • Date: {format(new Date(r.purchase_date), "dd MMM yyyy")}</p>
         </div>
 
-        <p className="text-sm leading-6">
-          This agreement is made on <b>{format(new Date(r.purchase_date), "dd MMMM yyyy")}</b> between
-          <b> {bizName}</b> (the "Buyer") and <b>{r.seller_name}</b> (the "Seller"),
-          residing at <b>{r.seller_address || "—"}</b>, NID No. <b>{r.seller_nid_no || "—"}</b>,
-          phone <b>{r.seller_phone || "—"}</b>.
-        </p>
-
-        <p className="text-sm leading-6">
-          The Seller hereby sells to the Buyer the following used device, which the Seller declares to be
-          legally owned, free of any liens, and not stolen or otherwise illegally obtained:
-        </p>
+        {renderedIntro.split(/\n\s*\n/).map((para, i) => (
+          <p key={i} className="text-sm leading-6 whitespace-pre-line">{para}</p>
+        ))}
 
         <table className="w-full text-sm border">
           <tbody>
@@ -88,12 +167,15 @@ export default function ExchangeAgreement() {
           </tbody>
         </table>
 
-        <ol className="text-sm leading-6 list-decimal pl-5 space-y-1">
-          <li>The Seller confirms ownership of the device and provides valid government ID.</li>
-          <li>The Seller takes full legal responsibility if the device is later found to be stolen or disputed.</li>
-          <li>Once payment is received and this agreement is signed, the device becomes the property of the Buyer.</li>
-          <li>The Seller has had the opportunity to remove all personal data prior to handover.</li>
-        </ol>
+        {termLines.length > 0 && (
+          <ol className="text-sm leading-6 list-decimal pl-5 space-y-1">
+            {termLines.map((t, i) => (<li key={i}>{t}</li>))}
+          </ol>
+        )}
+
+        {renderedFooter.trim() && (
+          <div className="text-sm leading-6 whitespace-pre-line pt-2 border-t">{renderedFooter}</div>
+        )}
 
         {(r.seller_nid_url || r.seller_photo_url) && (
           <div className="flex gap-3 pt-2">
@@ -113,6 +195,55 @@ export default function ExchangeAgreement() {
           </div>
         </div>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Customize Agreement Template</DialogTitle>
+            <DialogDescription>
+              Edit the wording shown on every printed exchange agreement. Use placeholders like
+              {" "}<code className="text-xs">{"{{seller_name}}"}</code>,{" "}
+              <code className="text-xs">{"{{product_name}}"}</code>,{" "}
+              <code className="text-xs">{"{{price}}"}</code>,{" "}
+              <code className="text-xs">{"{{date}}"}</code>, etc.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Title</Label>
+              <Input value={draftTitle} onChange={(e) => setDraftTitle(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Intro Paragraph(s) — separate paragraphs with a blank line</Label>
+              <Textarea rows={6} value={draftIntro} onChange={(e) => setDraftIntro(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Terms & Conditions — one item per line (numbered automatically)</Label>
+              <Textarea rows={6} value={draftTerms} onChange={(e) => setDraftTerms(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Footer Note (optional)</Label>
+              <Textarea rows={3} value={draftFooter} onChange={(e) => setDraftFooter(e.target.value)} />
+            </div>
+
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer">Available placeholders</summary>
+              <div className="grid grid-cols-2 gap-1 pt-2 font-mono">
+                {Object.keys(vars).map((k) => (
+                  <span key={k}>{`{{${k}}}`}</span>
+                ))}
+              </div>
+            </details>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" size="sm" onClick={resetToDefault}><RotateCcw className="h-4 w-4 mr-1" /> Reset to default</Button>
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={saveTemplate} disabled={saveSetting.isPending}>Save Template</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
