@@ -1,13 +1,16 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftRight, Plus, ListOrdered, ShoppingCart, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, Plus, ListOrdered, ShoppingCart, TrendingUp, FileSignature } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AgreementTemplateDialog } from "@/components/exchange/AgreementTemplateDialog";
 
 export default function Exchange() {
   const navigate = useNavigate();
+  const [agreementOpen, setAgreementOpen] = useState(false);
 
   const { data: stats } = useQuery({
     queryKey: ["exchange_stats"],
@@ -49,6 +52,9 @@ export default function Exchange() {
             <Button onClick={() => navigate("/exchange/sell")} size="sm" variant="outline">
               <ShoppingCart className="h-4 w-4 mr-1" /> Sell
             </Button>
+            <Button onClick={() => setAgreementOpen(true)} size="sm" variant="outline">
+              <FileSignature className="h-4 w-4 mr-1" /> Customize Agreement
+            </Button>
           </>
         }
       />
@@ -83,8 +89,13 @@ export default function Exchange() {
           <Button variant="outline" onClick={() => navigate("/exchange/sell")}>
             <ShoppingCart className="h-4 w-4 mr-2" /> Sell from stock
           </Button>
+          <Button variant="outline" onClick={() => setAgreementOpen(true)}>
+            <FileSignature className="h-4 w-4 mr-2" /> Customize agreement
+          </Button>
         </CardContent>
       </Card>
+
+      <AgreementTemplateDialog open={agreementOpen} onOpenChange={setAgreementOpen} />
     </div>
   );
 }
