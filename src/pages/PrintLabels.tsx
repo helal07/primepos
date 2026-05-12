@@ -195,6 +195,21 @@ export default function PrintLabels() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label>Barcode Format</Label>
+              <Select value={barcodeFormat} onValueChange={(v) => setBarcodeFormat(v as FormatKey)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FORMATS.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                EAN/UPC are much narrower than CODE128 but require numeric codes of an exact length. Auto picks the shortest valid format per item.
+              </p>
+            </div>
+
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={showName} onCheckedChange={(v) => setShowName(!!v)} /> Name
