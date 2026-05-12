@@ -16,6 +16,7 @@ import { DynamicManifest } from "@/components/DynamicManifest";
 import LandingPage from "./pages/LandingPage";
 
 const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Products = lazy(() => import("./pages/Products"));
 const ProductAdd = lazy(() => import("./pages/ProductAdd"));
@@ -140,6 +141,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
+            <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
             {/* SaaS Admin — separate layout */}
             <Route path="/superadmin/*" element={<SuperadminRoutes />} />
             <Route path="/admin/*" element={<Navigate to="/superadmin" replace />} />
