@@ -3186,6 +3186,45 @@ export type Database = {
         }
         Relationships: []
       }
+      warranties: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration: number
+          duration_type: string
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: number
+          duration_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: number
+          duration_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       warranty_claims: {
         Row: {
           claim_date: string
