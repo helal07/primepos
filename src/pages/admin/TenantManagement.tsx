@@ -430,9 +430,10 @@ export default function TenantManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-800 text-white">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col bg-slate-900 border-slate-800 text-white">
           <DialogHeader><DialogTitle className="text-white">{editId ? "Edit Tenant" : "Add New Client"}</DialogTitle></DialogHeader>
 
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-4">
           {!editId && (
             <>
               <div className="space-y-1">
@@ -517,8 +518,9 @@ export default function TenantManagement() {
           </div>
 
           <div><Label className="text-slate-300">Notes</Label><Textarea className="bg-slate-800 border-slate-700 text-white" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="border-t border-slate-800 pt-4">
             <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={saving || !form.name || (!editId && (!form.admin_email || !form.admin_password))}>
               {saving ? "Saving..." : editId ? "Update" : "Create Tenant"}
