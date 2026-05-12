@@ -218,6 +218,45 @@ export default function PrintLabels() {
               </p>
             </div>
 
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Bar Width</Label>
+                <Input
+                  type="number" step={0.1} min={0.5} max={4}
+                  value={barWidth}
+                  onChange={(e) => setBarWidth(Math.max(0.3, Number(e.target.value) || 0.9))}
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Bar Height (px)</Label>
+                <Input
+                  type="number" step={1} min={10} max={120}
+                  value={barHeight}
+                  onChange={(e) => setBarHeight(Math.max(8, Number(e.target.value) || 28))}
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Quiet Zone</Label>
+                <Input
+                  type="number" step={1} min={0} max={20}
+                  value={barMargin}
+                  onChange={(e) => setBarMargin(Math.max(0, Number(e.target.value) || 0))}
+                  className="h-8"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Cell Padding (mm)</Label>
+                <Input
+                  type="number" step={0.1} min={0} max={5}
+                  value={cellPadding}
+                  onChange={(e) => setCellPadding(Math.max(0, Number(e.target.value) || 0))}
+                  className="h-8"
+                />
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-3">
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={showName} onCheckedChange={(v) => setShowName(!!v)} /> Name
