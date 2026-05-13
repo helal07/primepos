@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles, CreditCard, CheckCircle2, Store, Eye, EyeOff } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 interface Pkg {
   id: string;
@@ -132,6 +133,15 @@ export default function Register() {
   }
 
   return (
+    <>
+      <Helmet>
+        <title>Register your business — Prime POS</title>
+        <meta name="description" content="Create your Prime POS account and start a free trial of the all-in-one POS, inventory, accounting, HRM and BI platform for your business." />
+        <link rel="canonical" href="https://primepos.lovable.app/register" />
+        <meta property="og:title" content="Register your business — Prime POS" />
+        <meta property="og:description" content="Create your Prime POS account and start a free trial of the all-in-one POS, inventory, accounting, HRM and BI platform for your business." />
+        <meta property="og:url" content="https://primepos.lovable.app/register" />
+      </Helmet>
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <div className="w-full max-w-lg">
         <div className="mb-6 flex flex-col items-center gap-2">
@@ -254,5 +264,6 @@ export default function Register() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
