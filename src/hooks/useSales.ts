@@ -15,6 +15,11 @@ export interface SaleItem {
   serial_number?: string | null;
   product_name?: string;
   variation_name?: string;
+  warranty_id?: string | null;
+  warranty_name?: string | null;
+  imei_text?: string | null;
+  discount_type?: string;
+  unit?: string | null;
 }
 
 export interface SaleFormData {
@@ -32,6 +37,17 @@ export interface SaleFormData {
   payment_status: string;
   notes?: string;
   items: SaleItem[];
+  pay_term_number?: number | null;
+  pay_term_unit?: string | null;
+  order_no?: string | null;
+  attach_document_url?: string | null;
+  shipping_details?: string | null;
+  shipping_address?: string | null;
+  shipping_status?: string | null;
+  delivered_to?: string | null;
+  delivery_person_id?: string | null;
+  shipping_documents_url?: string | null;
+  additional_expenses?: { name: string; amount: number }[];
 }
 
 export function useSales() {
@@ -120,6 +136,11 @@ export function useSaleMutations() {
           tax_percent: item.tax_percent,
           total: item.total,
           serial_number: item.serial_number || null,
+          warranty_id: item.warranty_id || null,
+          warranty_name: item.warranty_name || null,
+          imei_text: item.imei_text || null,
+          discount_type: item.discount_type || 'fixed',
+          unit: item.unit || null,
         }));
         const { error: itemsError } = await supabase
           .from("sale_items")
@@ -189,6 +210,11 @@ export function useSaleMutations() {
           tax_percent: item.tax_percent,
           total: item.total,
           serial_number: item.serial_number || null,
+          warranty_id: item.warranty_id || null,
+          warranty_name: item.warranty_name || null,
+          imei_text: item.imei_text || null,
+          discount_type: item.discount_type || 'fixed',
+          unit: item.unit || null,
         }));
         const { error: itemsError } = await supabase
           .from("sale_items")
