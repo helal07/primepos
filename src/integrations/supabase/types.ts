@@ -3631,7 +3631,7 @@ export type Database = {
           last_login_at: string | null
           name: string
           notes: string | null
-          owner_user_id: string
+          owner_user_id: string | null
           package_id: string | null
           phone: string | null
           slug: string | null
@@ -3654,7 +3654,7 @@ export type Database = {
           last_login_at?: string | null
           name: string
           notes?: string | null
-          owner_user_id: string
+          owner_user_id?: string | null
           package_id?: string | null
           phone?: string | null
           slug?: string | null
@@ -3677,7 +3677,7 @@ export type Database = {
           last_login_at?: string | null
           name?: string
           notes?: string | null
-          owner_user_id?: string
+          owner_user_id?: string | null
           package_id?: string | null
           phone?: string | null
           slug?: string | null
