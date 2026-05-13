@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
-  ArrowLeftRight, FileText, UserCircle2,
+  FileText, UserCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,7 +46,6 @@ interface Props {
 
 export function AdminSidebar({ onNavigate }: Props) {
   const { signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const smsActive = location.pathname.startsWith("/superadmin/sms");
   const [smsOpen, setSmsOpen] = useState(smsActive);
@@ -197,13 +196,6 @@ export function AdminSidebar({ onNavigate }: Props) {
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
-        <button
-          onClick={() => { navigate("/dashboard"); onNavigate?.(); }}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-        >
-          <ArrowLeftRight className="h-[18px] w-[18px]" />
-          Switch to App
-        </button>
         <button
           onClick={() => signOut()}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-destructive/10 hover:text-destructive"
