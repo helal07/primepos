@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Download, Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,7 +34,9 @@ export default function Sitemap() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, priority: Number(form.priority) };
+      const path = String(form.path || "").trim();
+      if (!path.startsWith("/")) throw new Error("Path must start with /, for example /about");
+      const payload = { ...form, path, priority: Number(form.priority) };
       if (editId) {
         const { error } = await supabase.from("sitemap_entries").update(payload).eq("id", editId);
         if (error) throw error;
@@ -54,6 +56,11 @@ export default function Sitemap() {
 
   const openNew = () => { setForm({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" }); setEditId(null); setOpen(true); };
   const openEdit = (row: any) => { setForm(row); setEditId(row.id); setOpen(true); };
+
+  const submitEntry = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!save.isPending) save.mutate();
+  };
 
   const downloadXml = async () => {
     try {
@@ -113,8 +120,11 @@ export default function Sitemap() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editId ? "Edit Entry" : "New Entry"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <DialogHeader>
+            <DialogTitle>{editId ? "Edit Entry" : "New Entry"}</DialogTitle>
+            <DialogDescription>Add a public URL path to include in sitemap.xml.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submitEntry} className="space-y-3">
             <div><Label>Path</Label><Input value={form.path} onChange={(ev) => setForm({ ...form, path: ev.target.value })} placeholder="/about" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Priority (0–1)</Label><Input type="number" step="0.1" min="0" max="1" value={form.priority} onChange={(ev) => setForm({ ...form, priority: ev.target.value })} /></div>
@@ -127,11 +137,11 @@ export default function Sitemap() {
               </div>
             </div>
             <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label>Active</Label></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>Save</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
