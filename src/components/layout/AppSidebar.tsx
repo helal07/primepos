@@ -55,6 +55,8 @@ import {
   Wallet,
   Calculator,
   Plus,
+  Lock,
+  Receipt as ReceiptIcon,
   Warehouse as WarehouseIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -91,7 +93,24 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
     ],
   },
   {
-    label: "Products",
+    label: "Warehouses",
+    module: "warehouses",
+    items: [
+      { title: "Warehouses", url: "/warehouses", icon: WarehouseIcon },
+      { title: "Stock by Warehouse", url: "/warehouses/stock", icon: Package },
+    ],
+  },
+  {
+    label: "Contact",
+    module: "contacts",
+    items: [
+      { title: "Customers", url: "/customers", icon: UserCircle },
+      { title: "Customer Groups", url: "/contacts/customer-groups", icon: Users },
+      { title: "Suppliers", url: "/suppliers", icon: Building2 },
+    ],
+  },
+  {
+    label: "Product",
     module: "products",
     items: [
       { title: "Products", url: "/products", icon: Package },
@@ -102,10 +121,19 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
       { title: "Variations", url: "/variations", icon: Shuffle },
       { title: "Stock Adjustments", url: "/stock-adjustments", icon: ClipboardList },
       { title: "Stock Transfers", url: "/stock-transfers", icon: Truck },
-      { title: "Warranties", url: "/warranties", icon: BadgeCheck },
       { title: "Bulk Import", url: "/products/import", icon: FileUp },
       { title: "Export", url: "/products/export", icon: FileDown },
       { title: "Print Labels", url: "/products/labels", icon: Printer },
+    ],
+  },
+  {
+    label: "Purchase",
+    module: "purchases",
+    items: [
+      { title: "Add Purchase", url: "/purchases/add", icon: PackagePlus },
+      { title: "Purchase List", url: "/purchases", icon: ClipboardList },
+      { title: "Purchase Orders", url: "/purchase-orders", icon: Truck },
+      { title: "Purchase Returns", url: "/purchases/returns", icon: RotateCcw },
     ],
   },
   {
@@ -123,46 +151,16 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
     ],
   },
   {
-    label: "Warehouses",
-    module: "warehouses",
+    label: "Expenses",
+    module: "expenses",
     items: [
-      { title: "Warehouses", url: "/warehouses", icon: WarehouseIcon },
-      { title: "Stock by Warehouse", url: "/warehouses/stock", icon: Package },
+      { title: "List Expenses", url: "/expenses", icon: ListOrdered },
+      { title: "Add Expense", url: "/expenses/add", icon: Plus },
+      { title: "Expense Categories", url: "/expenses/categories", icon: Tags },
     ],
   },
   {
-    label: "Installment",
-    module: "installments",
-    items: [
-      { title: "Add Customer", url: "/installment/customers/add", icon: UserPlus },
-      { title: "Customers", url: "/installment/customers", icon: UserCircle },
-      { title: "New Sale", url: "/installment/sales/add", icon: CreditCard },
-      { title: "Sales List", url: "/installment/sales", icon: ListOrdered },
-      { title: "Collection", url: "/installment/collections", icon: Banknote },
-      { title: "Schedule", url: "/installment/schedule", icon: CalendarCheck },
-    ],
-  },
-  {
-    label: "Purchase",
-    module: "purchases",
-    items: [
-      { title: "Add Purchase", url: "/purchases/add", icon: PackagePlus },
-      { title: "Purchase List", url: "/purchases", icon: ClipboardList },
-      { title: "Purchase Orders", url: "/purchase-orders", icon: Truck },
-      { title: "Purchase Returns", url: "/purchases/returns", icon: RotateCcw },
-    ],
-  },
-  {
-    label: "People",
-    module: "contacts",
-    items: [
-      { title: "Customers", url: "/customers", icon: UserCircle },
-      { title: "Customer Groups", url: "/contacts/customer-groups", icon: Users },
-      { title: "Suppliers", url: "/suppliers", icon: Building2 },
-    ],
-  },
-  {
-    label: "Finance",
+    label: "Accounts",
     module: "accounting",
     items: [
       { title: "Chart of Accounts", url: "/accounts", icon: BookOpen },
@@ -171,33 +169,6 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
       { title: "Trial Balance", url: "/trial-balance", icon: Scale },
       { title: "Cash Flow", url: "/cash-flow", icon: TrendingUp },
       { title: "Account List", url: "/account-list", icon: List },
-    ],
-  },
-  {
-    label: "HRM",
-    module: "hrm",
-    items: [
-      { title: "Employees", url: "/employees", icon: Users },
-      { title: "Attendance", url: "/attendance", icon: CalendarDays },
-      { title: "Leave", url: "/leave", icon: Clock },
-      { title: "Payroll", url: "/payroll", icon: Banknote },
-    ],
-  },
-  {
-    label: "Warranty",
-    module: "warranty",
-    items: [
-      { title: "Warranty Claims", url: "/warranty-claims", icon: Wrench },
-    ],
-  },
-  {
-    label: "Exchange",
-    module: "exchange",
-    items: [
-      { title: "Dashboard", url: "/exchange", icon: ArrowLeftRight },
-      { title: "Buys", url: "/exchange/purchases", icon: ListOrdered },
-      { title: "New Buy", url: "/exchange/purchases/add", icon: Plus },
-      { title: "Sell", url: "/exchange/sell", icon: ShoppingBag },
     ],
   },
   {
@@ -218,6 +189,46 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
       { title: "Installment Report", url: "/reports/installment", icon: Wallet },
       { title: "Expense Report", url: "/reports/expense", icon: Banknote },
       { title: "Register Report", url: "/reports/register", icon: Calculator },
+    ],
+  },
+  {
+    label: "Warranty Manager",
+    module: "warranty",
+    items: [
+      { title: "Warranties", url: "/warranties", icon: BadgeCheck },
+      { title: "Warranty Claims", url: "/warranty-claims", icon: Wrench },
+    ],
+  },
+  {
+    label: "Installment Sale",
+    module: "installments",
+    items: [
+      { title: "Add Customer", url: "/installment/customers/add", icon: UserPlus },
+      { title: "Customers", url: "/installment/customers", icon: UserCircle },
+      { title: "New Sale", url: "/installment/sales/add", icon: CreditCard },
+      { title: "Sales List", url: "/installment/sales", icon: ListOrdered },
+      { title: "Collection", url: "/installment/collections", icon: Banknote },
+      { title: "Schedule", url: "/installment/schedule", icon: CalendarCheck },
+    ],
+  },
+  {
+    label: "HRM",
+    module: "hrm",
+    items: [
+      { title: "Employees", url: "/employees", icon: Users },
+      { title: "Attendance", url: "/attendance", icon: CalendarDays },
+      { title: "Leave", url: "/leave", icon: Clock },
+      { title: "Payroll", url: "/payroll", icon: Banknote },
+    ],
+  },
+  {
+    label: "Buy & Sale",
+    module: "exchange",
+    items: [
+      { title: "Dashboard", url: "/exchange", icon: ArrowLeftRight },
+      { title: "Buys", url: "/exchange/purchases", icon: ListOrdered },
+      { title: "New Buy", url: "/exchange/purchases/add", icon: Plus },
+      { title: "Sell", url: "/exchange/sell", icon: ShoppingBag },
     ],
   },
   {
@@ -264,7 +275,10 @@ export function AppSidebar() {
   }, [user]);
 
   const { data: enabledModules } = useEnabledModules();
-  const allGroups = menuGroups.filter((g) => !g.module || (enabledModules ?? []).includes(g.module));
+  // Show every group; locked groups route to the upgrade page.
+  const allGroups = menuGroups;
+  const isLocked = (g: typeof menuGroups[number]) =>
+    !!g.module && !!enabledModules && !enabledModules.includes(g.module);
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -282,6 +296,8 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="px-2">
         {allGroups.map((group) => {
+          const locked = isLocked(group);
+          const lockedHref = group.module ? `/locked/${group.module}` : "#";
           const isGroupActive = group.items.some(
             (item) =>
               location.pathname === item.url ||
@@ -295,15 +311,16 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {group.items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild size="sm">
+                      <SidebarMenuButton asChild size="sm" tooltip={locked ? "Upgrade your plan to access" : undefined}>
                         <NavLink
-                          to={item.url}
+                          to={locked ? lockedHref : item.url}
                           end={item.url === "/"}
-                          className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                          className={`text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors ${locked ? "opacity-60" : ""}`}
                           activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                         >
                           <item.icon className="h-4 w-4 shrink-0" />
-                          {!collapsed && <span>{item.title}</span>}
+                          {!collapsed && <span className="flex-1">{item.title}</span>}
+                          {!collapsed && locked && <Lock className="h-3 w-3 ml-auto opacity-70" />}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -323,10 +340,13 @@ export function AppSidebar() {
               <SidebarGroup>
                 <SidebarGroupLabel
                   asChild
-                  className="text-sidebar-foreground/50 text-xs uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground/80 transition-colors"
+                  className={`text-sidebar-foreground/50 text-xs uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground/80 transition-colors ${locked ? "opacity-60" : ""}`}
                 >
                   <CollapsibleTrigger className="flex w-full items-center justify-between">
-                    <span>{group.label}</span>
+                    <span className="flex items-center gap-1.5">
+                      {group.label}
+                      {locked && <Lock className="h-3 w-3" />}
+                    </span>
                     {!collapsed && (
                       <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                     )}
@@ -337,15 +357,16 @@ export function AppSidebar() {
                     <SidebarMenu>
                       {group.items.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild size="sm">
+                          <SidebarMenuButton asChild size="sm" tooltip={locked ? "Upgrade your plan to access" : undefined}>
                             <NavLink
-                              to={item.url}
+                              to={locked ? lockedHref : item.url}
                               end={item.url === "/"}
-                              className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                              className={`text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors ${locked ? "opacity-60" : ""}`}
                               activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                             >
                               <item.icon className="h-4 w-4 shrink-0" />
-                              {!collapsed && <span>{item.title}</span>}
+                              {!collapsed && <span className="flex-1">{item.title}</span>}
+                              {!collapsed && locked && <Lock className="h-3 w-3 ml-auto opacity-70" />}
                             </NavLink>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
