@@ -115,8 +115,7 @@ const queryClient = new QueryClient();
 const RouteFallback = () => <div className="flex items-center justify-center p-8 text-muted-foreground">Loading…</div>;
 
 const SuperadminRoutes = () => (
-  <ProtectedRoute>
-    <SuperadminRoute>
+  <SuperadminRoute>
       <AdminLayout>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
@@ -138,8 +137,7 @@ const SuperadminRoutes = () => (
           </Routes>
         </Suspense>
       </AdminLayout>
-    </SuperadminRoute>
-  </ProtectedRoute>
+  </SuperadminRoute>
 );
 
 const App = () => (
