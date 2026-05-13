@@ -12,5 +12,12 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /superadmin/
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /pos
+Disallow: /settings
+Disallow: /profile
+Disallow: /subscription
 
 Sitemap: https://primepos.lovable.app/sitemap.xml
