@@ -107,6 +107,10 @@ const SuperPayments = lazy(() => import("./pages/admin/SuperPayments"));
 const PaymentGateways = lazy(() => import("./pages/admin/PaymentGateways"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Shipments = lazy(() => import("./pages/Shipments"));
+const Expenses = lazy(() => import("./pages/expenses/Expenses"));
+const ExpenseAdd = lazy(() => import("./pages/expenses/ExpenseAdd"));
+const ExpenseCategories = lazy(() => import("./pages/expenses/ExpenseCategories"));
+const LockedModule = lazy(() => import("./pages/LockedModule"));
 
 const SaleEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/sales/add?edit=${id}`} replace />; };
 const PurchaseEditRedirect = () => { const { id } = useParams(); return <Navigate to={`/purchases/add?edit=${id}`} replace />; };
@@ -212,6 +216,11 @@ const App = () => (
                           <Sales defaultStatus="returned" title="Sale Returns" description="Returned sales" hideStatusFilter />
                         } />
                         <Route path="/shipments" element={<Shipments />} />
+                        <Route path="/expenses" element={<ModuleGate module="expenses"><Expenses /></ModuleGate>} />
+                        <Route path="/expenses/add" element={<ModuleGate module="expenses"><ExpenseAdd /></ModuleGate>} />
+                        <Route path="/expenses/:id/edit" element={<ModuleGate module="expenses"><ExpenseAdd /></ModuleGate>} />
+                        <Route path="/expenses/categories" element={<ModuleGate module="expenses"><ExpenseCategories /></ModuleGate>} />
+                        <Route path="/locked/:module" element={<LockedModule />} />
                         <Route path="/purchases/add" element={<PurchaseAdd />} />
                         <Route path="/purchases" element={<Purchases />} />
                         <Route path="/purchases/:id" element={<PurchaseView />} />
