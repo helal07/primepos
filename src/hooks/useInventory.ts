@@ -185,9 +185,30 @@ export function useProductMutations() {
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("products").delete().eq("id", id);
-      if (error) throw error;
+      if (error) {
+        // Foreign key violation — product is referenced by sales/purchases/etc.
+        // Fall back to soft-delete so transactional history is preserved.
+        if ((error as any).code === "23503") {
+          const { error: updErr } = await supabase
+            .from("products")
+            .update({ is_active: false, show_on_website: false })
+            .eq("id", id);
+          if (updErr) throw updErr;
+          return { soft: true };
+        }
+        throw error;
+      }
+      return { soft: false };
     },
-    onSuccess: () => { invalidate(); toast({ title: "Product deleted" }); },
+    onSuccess: (res) => {
+      invalidate();
+      toast({
+        title: res?.soft ? "Product deactivated" : "Product deleted",
+        description: res?.soft
+          ? "This product is used in past transactions, so it was deactivated instead of deleted."
+          : undefined,
+      });
+    },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
