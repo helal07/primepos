@@ -89,9 +89,6 @@
   RewriteEngine On
   RewriteBase /
 
-  # Serve dynamic sitemap.xml from the Cloud edge function (302 so crawlers follow).
-  RewriteRule ^sitemap\.xml$ https://pekekgjysecbwznrvojp.supabase.co/functions/v1/sitemap [R=302,L]
-
   # Don't rewrite the index file itself.
   RewriteRule ^index\.html$ - [L]
 
