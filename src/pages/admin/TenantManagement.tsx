@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,22 @@ export default function TenantManagement() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<TenantForm>(emptyForm);
+
+  // Auto-calculate subscription end date from start date + selected package duration
+  useEffect(() => {
+    if (!form.subscription_start || !form.package_id) return;
+    const pkg = packages?.find((p) => p.id === form.package_id);
+    const days = pkg?.duration_days ?? 30;
+    const start = new Date(form.subscription_start);
+    if (isNaN(start.getTime())) return;
+    const end = new Date(start.getTime() + days * 86_400_000)
+      .toISOString()
+      .split("T")[0];
+    if (end !== form.subscription_end) {
+      setForm((f) => ({ ...f, subscription_end: end }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.subscription_start, form.package_id, packages]);
   const [extendOpen, setExtendOpen] = useState(false);
   const [extendId, setExtendId] = useState("");
   const [extendDays, setExtendDays] = useState(30);
