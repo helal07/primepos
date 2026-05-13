@@ -19,9 +19,15 @@ interface PkgForm {
   enabled_modules: ModuleKey[];
 }
 
+const labelsFor = (keys: ModuleKey[]) =>
+  keys
+    .map((k) => MODULE_CATALOG.find((m) => m.key === k)?.label ?? k)
+    .join(", ");
+
 const emptyForm: PkgForm = {
   name: "", price: 0, duration_days: 30, max_users: 1,
-  max_business_location: 1, max_invoice: 0, features: "",
+  max_business_location: 1, max_invoice: 0,
+  features: labelsFor([...DEFAULT_MODULES]),
   is_popular: false, is_active: true, sort_order: 0,
   enabled_modules: [...DEFAULT_MODULES],
 };
