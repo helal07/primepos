@@ -2300,7 +2300,9 @@ export type Database = {
         Row: {
           created_at: string
           discount: number
+          discount_type: string | null
           id: string
+          imei_text: string | null
           product_id: string
           quantity: number
           sale_id: string
@@ -2308,13 +2310,18 @@ export type Database = {
           tax_percent: number
           tenant_id: string | null
           total: number
+          unit: string | null
           unit_price: number
           variation_id: string | null
+          warranty_id: string | null
+          warranty_name: string | null
         }
         Insert: {
           created_at?: string
           discount?: number
+          discount_type?: string | null
           id?: string
+          imei_text?: string | null
           product_id: string
           quantity?: number
           sale_id: string
@@ -2322,13 +2329,18 @@ export type Database = {
           tax_percent?: number
           tenant_id?: string | null
           total?: number
+          unit?: string | null
           unit_price?: number
           variation_id?: string | null
+          warranty_id?: string | null
+          warranty_name?: string | null
         }
         Update: {
           created_at?: string
           discount?: number
+          discount_type?: string | null
           id?: string
+          imei_text?: string | null
           product_id?: string
           quantity?: number
           sale_id?: string
@@ -2336,8 +2348,11 @@ export type Database = {
           tax_percent?: number
           tenant_id?: string | null
           total?: number
+          unit?: string | null
           unit_price?: number
           variation_id?: string | null
+          warranty_id?: string | null
+          warranty_name?: string | null
         }
         Relationships: [
           {
@@ -2366,6 +2381,13 @@ export type Database = {
             columns: ["variation_id"]
             isOneToOne: false
             referencedRelation: "product_variations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_warranty_id_fkey"
+            columns: ["warranty_id"]
+            isOneToOne: false
+            referencedRelation: "warranties"
             referencedColumns: ["id"]
           },
         ]
@@ -2417,9 +2439,13 @@ export type Database = {
       }
       sales: {
         Row: {
+          additional_expenses: Json | null
+          attach_document_url: string | null
           created_at: string
           created_by: string | null
           customer_id: string | null
+          delivered_to: string | null
+          delivery_person_id: string | null
           discount_amount: number
           discount_type: string | null
           discount_value: number
@@ -2427,10 +2453,17 @@ export type Database = {
           id: string
           invoice_number: string
           notes: string | null
+          order_no: string | null
+          pay_term_number: number | null
+          pay_term_unit: string | null
           payment_method: string | null
           payment_status: string
           sale_date: string
+          shipping_address: string | null
           shipping_cost: number
+          shipping_details: string | null
+          shipping_documents_url: string | null
+          shipping_status: string | null
           source: string
           status: string
           subtotal: number
@@ -2441,9 +2474,13 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          additional_expenses?: Json | null
+          attach_document_url?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
+          delivered_to?: string | null
+          delivery_person_id?: string | null
           discount_amount?: number
           discount_type?: string | null
           discount_value?: number
@@ -2451,10 +2488,17 @@ export type Database = {
           id?: string
           invoice_number?: string
           notes?: string | null
+          order_no?: string | null
+          pay_term_number?: number | null
+          pay_term_unit?: string | null
           payment_method?: string | null
           payment_status?: string
           sale_date?: string
+          shipping_address?: string | null
           shipping_cost?: number
+          shipping_details?: string | null
+          shipping_documents_url?: string | null
+          shipping_status?: string | null
           source?: string
           status?: string
           subtotal?: number
@@ -2465,9 +2509,13 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          additional_expenses?: Json | null
+          attach_document_url?: string | null
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
+          delivered_to?: string | null
+          delivery_person_id?: string | null
           discount_amount?: number
           discount_type?: string | null
           discount_value?: number
@@ -2475,10 +2523,17 @@ export type Database = {
           id?: string
           invoice_number?: string
           notes?: string | null
+          order_no?: string | null
+          pay_term_number?: number | null
+          pay_term_unit?: string | null
           payment_method?: string | null
           payment_status?: string
           sale_date?: string
+          shipping_address?: string | null
           shipping_cost?: number
+          shipping_details?: string | null
+          shipping_documents_url?: string | null
+          shipping_status?: string | null
           source?: string
           status?: string
           subtotal?: number
@@ -2495,6 +2550,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_delivery_person_id_fkey"
+            columns: ["delivery_person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "sales_tenant_id_fkey"
