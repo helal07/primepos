@@ -21,3 +21,6 @@ Disallow: /profile
 Disallow: /subscription
 
 Sitemap: https://primepos.lovable.app/sitemap.xml
+Sitemap: https://primepos.lovable.app/sitemaps/marketing.xml
+Sitemap: https://primepos.lovable.app/sitemaps/cms-entries.xml
+Sitemap: https://primepos.lovable.app/sitemaps/cms-pages.xml
