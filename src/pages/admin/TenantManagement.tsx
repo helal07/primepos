@@ -239,7 +239,13 @@ export default function TenantManagement() {
       toast({ title: "WhatsApp number is required", variant: "destructive" });
       return;
     }
-    const href = `https://wa.me/${digits}?text=${encodeURIComponent(credForm.message)}`;
+    const text = encodeURIComponent(credForm.message);
+    const isDesktop = typeof navigator !== "undefined" && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    // web.whatsapp.com/send reliably prefills the message body on desktop;
+    // api.whatsapp.com/send works as a universal fallback (mobile opens the app).
+    const href = isDesktop
+      ? `https://web.whatsapp.com/send?phone=${digits}&text=${text}&type=phone_number&app_absent=0`
+      : `https://api.whatsapp.com/send?phone=${digits}&text=${text}`;
     window.open(href, "_blank", "noopener");
   };
 
