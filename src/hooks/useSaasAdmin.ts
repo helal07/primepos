@@ -185,11 +185,31 @@ export function useTenantMutations() {
 
   const activate = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tenants").update({ status: "active" }).eq("id", id);
+      const { data: tenant, error: tenantError } = await supabase
+        .from("tenants")
+        .select("subscription_end, saas_packages(duration_days)")
+        .eq("id", id)
+        .single();
+      if (tenantError) throw tenantError;
+
+      const currentEnd = tenant?.subscription_end ? new Date(`${tenant.subscription_end}T23:59:59`) : null;
+      const tenantPackage = tenant?.saas_packages as { duration_days?: number | null } | null;
+      const patch: { status: string; subscription_start?: string; subscription_end?: string } = { status: "active" };
+
+      if (!currentEnd || currentEnd < new Date()) {
+        const durationDays = Number(tenantPackage?.duration_days ?? 30);
+        const newEnd = new Date();
+        newEnd.setDate(newEnd.getDate() + durationDays);
+        patch.subscription_start = new Date().toISOString().split("T")[0];
+        patch.subscription_end = newEnd.toISOString().split("T")[0];
+      }
+
+      const { error } = await supabase.from("tenants").update(patch).eq("id", id);
       if (error) throw error;
       await supabase.from("tenant_actions_log").insert({
         tenant_id: id,
         action: "activated",
+        details: patch,
         performed_by: user!.id,
       });
     },
@@ -203,7 +223,9 @@ export function useTenantMutations() {
     mutationFn: async ({ id, days }: { id: string; days: number }) => {
       // Get current end date
       const { data: tenant } = await supabase.from("tenants").select("subscription_end").eq("id", id).single();
-      const currentEnd = tenant?.subscription_end ? new Date(tenant.subscription_end) : new Date();
+      const now = new Date();
+      const currentEnd = tenant?.subscription_end ? new Date(`${tenant.subscription_end}T23:59:59`) : now;
+      if (currentEnd < now) currentEnd.setTime(now.getTime());
       currentEnd.setDate(currentEnd.getDate() + days);
       const { error } = await supabase.from("tenants").update({
         subscription_end: currentEnd.toISOString().split("T")[0],
