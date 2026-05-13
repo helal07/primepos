@@ -160,3 +160,22 @@ export function useUpdateUserRole() {
     onError: (e: any) => { toast({ title: "Error", description: e.message, variant: "destructive" }); },
   });
 }
+
+export function useDeleteUser() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-tenant-user", {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users_with_roles"] });
+      toast({ title: "User deleted" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
