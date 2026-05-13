@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useTenants, useTenantMutations, usePackages } from "@/hooks/useSaasAdmin";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, MoreVertical, Search, CalendarPlus, Ban, CheckCircle, Trash2, Pencil,
@@ -65,6 +66,7 @@ export default function TenantManagement() {
   const { data: packages } = usePackages();
   const { update, remove, suspend, activate, extend } = useTenantMutations();
   const { toast } = useToast();
+  const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [filterPackage, setFilterPackage] = useState("all");
@@ -183,6 +185,7 @@ export default function TenantManagement() {
           return;
         }
         toast({ title: "Tenant created successfully" });
+        qc.invalidateQueries({ queryKey: ["tenants"] });
         setOpen(false);
       }
     } catch (e: any) {
