@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
-  ArrowLeftRight, FileText,
+  ArrowLeftRight, FileText, UserCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +36,7 @@ const smsItems = [
 ];
 
 const systemItems = [
+  { to: "/superadmin/profile", label: "My Profile", icon: UserCircle2 },
   { to: "/superadmin/settings", label: "Settings", icon: Settings },
 ];
 
