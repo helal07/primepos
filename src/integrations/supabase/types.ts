@@ -4160,6 +4160,10 @@ export type Database = {
         }
         Returns: Json
       }
+      superadmin_delete_tenant: {
+        Args: { _tenant_id: string }
+        Returns: undefined
+      }
       tenant_has_module: {
         Args: { _module: string; _user_id: string }
         Returns: boolean
