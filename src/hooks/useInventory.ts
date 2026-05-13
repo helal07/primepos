@@ -187,6 +187,13 @@ export function useProductMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      // First, clear non-transactional references that should not block deletion.
+      // These are safe to remove because they don't represent historical records.
+      await supabase.from("product_variations").delete().eq("product_id", id);
+      await supabase.from("warehouse_stock").delete().eq("product_id", id);
+      await supabase.from("product_group_prices").delete().eq("product_id", id);
+      await supabase.from("store_collection_products").delete().eq("product_id", id);
+
       const { data: deleted, error } = await supabase.from("products").delete().eq("id", id).select("id");
       if (error) {
         // Foreign key violation — product is referenced by sales/purchases/etc.
