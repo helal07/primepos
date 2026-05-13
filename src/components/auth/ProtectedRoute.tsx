@@ -22,11 +22,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       return;
     }
     (async () => {
-      // Superadmins bypass tenant gating
+      // Superadmins live in their own console — never enter tenant area
       const { data: isSuper } = await supabase.rpc("is_superadmin", { _user_id: user.id });
       if (cancelled) return;
       if (isSuper) {
-        setAccess({ kind: "ok" });
+        setAccess({ kind: "redirect_super" } as any);
         return;
       }
 
@@ -81,6 +81,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if ((access as any).kind === "redirect_super") {
+    return <Navigate to="/superadmin" replace />;
   }
 
   if (access.kind === "suspended" || access.kind === "no_tenant") {

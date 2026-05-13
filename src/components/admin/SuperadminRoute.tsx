@@ -14,6 +14,10 @@ export function SuperadminRoute({ children }: { children: React.ReactNode }) {
     });
   }, [user]);
 
+  if (!authLoading && !user) {
+    return <Navigate to="/superadmin/login" replace />;
+  }
+
   if (authLoading || isSuperadmin === null) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -22,7 +26,7 @@ export function SuperadminRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isSuperadmin) return <Navigate to="/dashboard" replace />;
+  if (!isSuperadmin) return <Navigate to="/superadmin/login" replace />;
 
   return <>{children}</>;
 }

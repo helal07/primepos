@@ -16,6 +16,7 @@ import { DynamicManifest } from "@/components/DynamicManifest";
 import LandingPage from "./pages/LandingPage";
 
 const Login = lazy(() => import("./pages/Login"));
+const SuperadminLogin = lazy(() => import("./pages/superadmin/SuperadminLogin"));
 const Register = lazy(() => import("./pages/Register"));
 const SubscriptionPage = lazy(() => import("./pages/Subscription"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -114,8 +115,7 @@ const queryClient = new QueryClient();
 const RouteFallback = () => <div className="flex items-center justify-center p-8 text-muted-foreground">Loading…</div>;
 
 const SuperadminRoutes = () => (
-  <ProtectedRoute>
-    <SuperadminRoute>
+  <SuperadminRoute>
       <AdminLayout>
         <Suspense fallback={<RouteFallback />}>
           <Routes>
@@ -137,8 +137,7 @@ const SuperadminRoutes = () => (
           </Routes>
         </Suspense>
       </AdminLayout>
-    </SuperadminRoute>
-  </ProtectedRoute>
+  </SuperadminRoute>
 );
 
 const App = () => (
@@ -153,6 +152,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
+            <Route path="/superadmin/login" element={<Suspense fallback={<RouteFallback />}><SuperadminLogin /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
             <Route path="/subscription" element={
               <ProtectedRoute>

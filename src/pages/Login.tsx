@@ -35,7 +35,13 @@ export default function Login() {
         variant: "destructive",
       });
     } else {
-      navigate("/dashboard");
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (u) {
+        const { data: isSuper } = await supabase.rpc("is_superadmin", { _user_id: u.id });
+        navigate(isSuper ? "/superadmin" : "/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     }
   };
 
