@@ -1,10 +1,11 @@
 import { AdminSidebar } from "./AdminSidebar";
 import { Bell, Menu, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -13,7 +14,18 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   void signOut;
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setAvatarUrl((data?.avatar_url as string) ?? null));
+  }, [user]);
 
   const initials = user?.user_metadata?.display_name
     ? user.user_metadata.display_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -58,9 +70,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <div className="text-xs font-medium leading-tight">{user?.email}</div>
               <div className="text-[11px] text-muted-foreground leading-tight">Owner</div>
             </div>
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">{initials}</AvatarFallback>
-            </Avatar>
+            <Link to="/superadmin/profile" aria-label="My profile">
+              <Avatar className="h-9 w-9 ring-2 ring-transparent transition hover:ring-primary/40">
+                {avatarUrl && <AvatarImage src={avatarUrl} />}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">{initials}</AvatarFallback>
+              </Avatar>
+            </Link>
           </div>
         </header>
 
