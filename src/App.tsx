@@ -37,6 +37,7 @@ const Warehouses = lazy(() => import("./pages/Warehouses"));
 const WarehouseStock = lazy(() => import("./pages/WarehouseStock"));
 const Sales = lazy(() => import("./pages/Sales"));
 const SaleAdd = lazy(() => import("./pages/SaleAdd"));
+const SalesOrderAdd = lazy(() => import("./pages/SalesOrderAdd"));
 const SaleView = lazy(() => import("./pages/SaleView"));
 const POS = lazy(() => import("./pages/POS"));
 const Customers = lazy(() => import("./pages/Customers"));
@@ -193,8 +194,10 @@ const App = () => (
                         <Route path="/sales/:id" element={<SaleView />} />
                         <Route path="/sales/:id/edit" element={<SaleEditRedirect />} />
                         <Route path="/sales/orders" element={
-                          <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Order" addPath="/sales/add?status=order" />
+                          <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Sales Order" addPath="/sales/orders/add" />
                         } />
+                        <Route path="/sales/orders/add" element={<SalesOrderAdd />} />
+                        <Route path="/sales/orders/:id/edit" element={<SalesOrderAdd />} />
                         <Route path="/invoices" element={
                           <Sales defaultStatus="completed" title="Invoices" description="All completed sale invoices" hideStatusFilter />
                         } />
