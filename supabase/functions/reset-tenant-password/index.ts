@@ -67,7 +67,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    const { data: userData } = await adminClient.auth.admin.getUserById(user_id);
+    return new Response(JSON.stringify({ success: true, email: userData?.user?.email ?? null }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
