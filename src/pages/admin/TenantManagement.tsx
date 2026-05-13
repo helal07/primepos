@@ -86,6 +86,10 @@ export default function TenantManagement() {
   const [newPassword, setNewPassword] = useState("");
   const [resetting, setResetting] = useState(false);
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
   const filtered = tenants?.filter((t) => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
       (t.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
@@ -411,7 +415,7 @@ export default function TenantManagement() {
                           <KeyRound className="h-4 w-4 mr-2" />Reset Password
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-muted" />
-                        <DropdownMenuItem className="text-red-400 focus:bg-accent" onClick={() => remove.mutate(t.id)}>
+                        <DropdownMenuItem className="text-red-400 focus:bg-accent" onClick={() => { setDeleteTarget(t); setDeleteConfirmText(""); }}>
                           <Trash2 className="h-4 w-4 mr-2" />Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
