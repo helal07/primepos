@@ -56,7 +56,6 @@ import {
   Calculator,
   Plus,
   Lock,
-  Receipt as ReceiptIcon,
   Warehouse as WarehouseIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
