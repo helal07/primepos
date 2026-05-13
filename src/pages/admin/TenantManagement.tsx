@@ -559,6 +559,54 @@ export default function TenantManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <DialogContent className="max-w-md bg-card border-border text-foreground">
+          <DialogHeader><DialogTitle className="text-red-400">Delete tenant</DialogTitle></DialogHeader>
+          {deleteTarget && (() => {
+            const isPaid = deleteTarget.status === "active" ||
+              (deleteTarget.subscription_end && new Date(deleteTarget.subscription_end) > new Date());
+            const required = isPaid ? `DELETE ${deleteTarget.name}` : deleteTarget.name;
+            return (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  This permanently removes <span className="text-foreground font-semibold">{deleteTarget.name}</span> and all its data. This cannot be undone.
+                </p>
+                {isPaid && (
+                  <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+                    ⚠ This tenant has an <strong>active / paid subscription</strong>
+                    {deleteTarget.subscription_end ? <> until <strong>{new Date(deleteTarget.subscription_end).toLocaleDateString()}</strong></> : null}.
+                    Suspending is usually safer than deleting.
+                  </div>
+                )}
+                <div>
+                  <Label className="text-foreground/90">
+                    Type <code className="bg-muted px-1 rounded">{required}</code> to confirm
+                  </Label>
+                  <Input
+                    className="bg-muted border-border text-foreground mt-1"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder={required}
+                    autoFocus
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" className="border-border text-foreground/90" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+                  <Button
+                    variant="destructive"
+                    disabled={deleteConfirmText !== required || remove.isPending}
+                    onClick={() => remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })}
+                  >
+                    {remove.isPending ? "Deleting..." : "Delete permanently"}
+                  </Button>
+                </DialogFooter>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
