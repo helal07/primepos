@@ -197,7 +197,6 @@ const App = () => (
                           <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Sales Order" addPath="/sales/orders/add" />
                         } />
                         <Route path="/sales/orders/add" element={<SalesOrderAdd />} />
-                        <Route path="/sales/orders/:id/edit" element={<SalesOrderAdd />} />
                         <Route path="/invoices" element={
                           <Sales defaultStatus="completed" title="Invoices" description="All completed sale invoices" hideStatusFilter />
                         } />
