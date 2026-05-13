@@ -20,9 +20,10 @@ export default function ProfitLossReport() {
   const [locationId, setLocationId] = useState("");
   const { hasModule: hasInstallments } = useHasModule("installments");
   const { hasModule: hasExchange } = useHasModule("exchange");
+  const { hasModule: hasExpenses } = useHasModule("expenses");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["report_profit_loss", from, to, hasInstallments, hasExchange, locationId],
+    queryKey: ["report_profit_loss", from, to, hasInstallments, hasExchange, hasExpenses, locationId],
     queryFn: async () => {
       let salesQ = supabase.from("sales").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("sale_date", from).lte("sale_date", to);
       let purchasesQ = supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to);
@@ -30,7 +31,7 @@ export default function ProfitLossReport() {
       const productsQ = locationId
         ? supabase.from("warehouse_stock").select("quantity, products!inner(purchase_price, selling_price)").eq("warehouse_id", locationId)
         : supabase.from("products").select("stock_quantity, purchase_price, selling_price");
-      const [salesRes, purchasesRes, productsRes, instSalesRes, instCollRes, exchPurchRes, exchSellRes] = await Promise.all([
+      const [salesRes, purchasesRes, productsRes, instSalesRes, instCollRes, exchPurchRes, exchSellRes, expensesRes] = await Promise.all([
         salesQ,
         purchasesQ,
         productsQ,
@@ -45,6 +46,9 @@ export default function ProfitLossReport() {
           : Promise.resolve({ data: [] as any[] }),
         hasExchange
           ? supabase.from("exchange_purchases").select("purchase_price, status, linked_sale_id").eq("status", "sold").gte("updated_at", from + "T00:00:00").lte("updated_at", to + "T23:59:59")
+          : Promise.resolve({ data: [] as any[] }),
+        hasExpenses
+          ? supabase.from("expenses" as any).select("total_amount").gte("expense_date", from).lte("expense_date", to + "T23:59:59")
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
@@ -63,6 +67,7 @@ export default function ProfitLossReport() {
         instColl: (instCollRes as any).data ?? [],
         exchPurch: (exchPurchRes as any).data ?? [],
         exchSold: (exchSellRes as any).data ?? [],
+        expenses: (expensesRes as any).data ?? [],
         hasInstallments,
         hasExchange,
       });

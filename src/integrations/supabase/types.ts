@@ -808,6 +808,208 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_payments: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          created_by: string | null
+          expense_id: string
+          id: string
+          method: string | null
+          note: string | null
+          paid_on: string
+          tenant_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          expense_id: string
+          id?: string
+          method?: string | null
+          note?: string | null
+          paid_on?: string
+          tenant_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          expense_id?: string
+          id?: string
+          method?: string | null
+          note?: string | null
+          paid_on?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_payments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          account_id: string | null
+          attachment_url: string | null
+          category_id: string | null
+          contact_id: string | null
+          contact_name: string | null
+          created_at: string
+          created_by: string | null
+          expense_date: string
+          expense_for_user_id: string | null
+          expense_note: string | null
+          id: string
+          location_id: string | null
+          payment_due: number
+          payment_method: string | null
+          payment_status: string
+          recurring: boolean
+          recurring_interval: string | null
+          recurring_repetitions: number | null
+          reference_no: string
+          sub_category_id: string | null
+          tax_amount: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expense_date?: string
+          expense_for_user_id?: string | null
+          expense_note?: string | null
+          id?: string
+          location_id?: string | null
+          payment_due?: number
+          payment_method?: string | null
+          payment_status?: string
+          recurring?: boolean
+          recurring_interval?: string | null
+          recurring_repetitions?: number | null
+          reference_no?: string
+          sub_category_id?: string | null
+          tax_amount?: number
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          contact_id?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          expense_date?: string
+          expense_for_user_id?: string | null
+          expense_note?: string | null
+          id?: string
+          location_id?: string | null
+          payment_due?: number
+          payment_method?: string | null
+          payment_status?: string
+          recurring?: boolean
+          recurring_interval?: string | null
+          recurring_repetitions?: number | null
+          reference_no?: string
+          sub_category_id?: string | null
+          tax_amount?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_sub_category_id_fkey"
+            columns: ["sub_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faq_entries: {
         Row: {
           answer: string
@@ -4124,6 +4326,7 @@ export type Database = {
         Args: { _tenant_id: string }
         Returns: string
       }
+      generate_expense_reference: { Args: never; Returns: string }
       generate_installment_invoice: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_store_order_number: { Args: never; Returns: string }

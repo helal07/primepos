@@ -9,6 +9,7 @@ export interface PLInputs {
   instColl?: Array<{ amount?: number | string }>;
   exchPurch?: Array<{ purchase_price?: number | string }>;
   exchSold?: Array<{ purchase_price?: number | string }>;
+  expenses?: Array<{ total_amount?: number | string }>;
   hasInstallments?: boolean;
   hasExchange?: boolean;
 }
@@ -19,7 +20,7 @@ const sum = <T,>(arr: T[], pick: (r: T) => number) => arr.reduce((s, r) => s + p
 export function computeProfitLoss(input: PLInputs) {
   const {
     sales, purchases, products,
-    instSales = [], instColl = [], exchPurch = [], exchSold = [],
+    instSales = [], instColl = [], exchPurch = [], exchSold = [], expenses = [],
     hasInstallments = false, hasExchange = false,
   } = input;
 
@@ -48,16 +49,18 @@ export function computeProfitLoss(input: PLInputs) {
   const exchangePurchaseCost = hasExchange ? sum(exchPurch, r => num(r.purchase_price)) : 0;
   const exchangeSoldCost = hasExchange ? sum(exchSold, r => num(r.purchase_price)) : 0;
 
+  const moduleExpenses = sum(expenses, r => num(r.total_amount));
+
   const cogs = (totalPurchase - closingStockPurchase) + installmentCogs + exchangeSoldCost;
   const grossProfit = (totalSales + installmentCollected) - cogs;
-  const totalExpenses = sellShipping + purchaseShipping;
+  const totalExpenses = sellShipping + purchaseShipping + moduleExpenses;
   const netProfit = grossProfit - totalExpenses;
 
   return {
     totalSales, totalSalesDiscount, sellShipping, sellTax,
     totalPurchase, purchaseDiscount, purchaseShipping, purchaseTax,
     closingStockPurchase, closingStockSale,
-    cogs, grossProfit, netProfit, totalExpenses,
+    cogs, grossProfit, netProfit, totalExpenses, moduleExpenses,
     installmentRevenue, installmentCollected, installmentInterest, installmentCogs,
     exchangePurchaseCost, exchangeSoldCost,
   };
