@@ -669,7 +669,7 @@ export default function POS() {
                         </div>
                       ) : (
                         <div className="w-full aspect-square rounded-md bg-muted mb-1.5 flex items-center justify-center">
-                          <span className="text-2xl text-muted-foreground/30">📦</span>
+                          <span aria-hidden="true" className="text-2xl text-muted-foreground">📦</span>
                         </div>
                       )}
                       <div className="text-xs font-medium line-clamp-2 leading-tight min-h-[2rem]">{product.name}</div>
