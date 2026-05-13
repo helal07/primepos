@@ -56,12 +56,26 @@ export default function PackageManagement() {
   };
 
   const toggleModule = (k: ModuleKey) =>
-    setForm((f) => ({
-      ...f,
-      enabled_modules: f.enabled_modules.includes(k)
+    setForm((f) => {
+      const has = f.enabled_modules.includes(k);
+      const nextModules = has
         ? f.enabled_modules.filter((m) => m !== k)
-        : [...f.enabled_modules, k],
-    }));
+        : [...f.enabled_modules, k];
+      const label = MODULE_CATALOG.find((m) => m.key === k)?.label ?? k;
+      const current = f.features
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      let nextFeatures: string[];
+      if (has) {
+        nextFeatures = current.filter((s) => s.toLowerCase() !== label.toLowerCase());
+      } else {
+        nextFeatures = current.some((s) => s.toLowerCase() === label.toLowerCase())
+          ? current
+          : [...current, label];
+      }
+      return { ...f, enabled_modules: nextModules, features: nextFeatures.join(", ") };
+    });
 
   return (
     <div className="space-y-6">
