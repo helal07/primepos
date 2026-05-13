@@ -189,24 +189,48 @@ export function useProductMutations() {
         // Foreign key violation — product is referenced by sales/purchases/etc.
         // Fall back to soft-delete so transactional history is preserved.
         if ((error as any).code === "23503") {
+          // Discover which transactional tables still reference this product
+          const checks: Array<{ table: "sale_items" | "purchase_items" | "installment_sales" | "warranty_claims" | "store_order_items"; label: string }> = [
+            { table: "sale_items", label: "Sales" },
+            { table: "purchase_items", label: "Purchases" },
+            { table: "installment_sales", label: "Installments" },
+            { table: "warranty_claims", label: "Warranty claims" },
+            { table: "store_order_items", label: "Website orders" },
+          ];
+          const counts = await Promise.all(
+            checks.map(async (c) => {
+              const { count } = await supabase
+                .from(c.table)
+                .select("id", { count: "exact", head: true })
+                .eq("product_id", id);
+              return { label: c.label, count: count ?? 0 };
+            })
+          );
+          const refs = counts.filter((c) => c.count > 0);
           const { error: updErr } = await supabase
             .from("products")
             .update({ is_active: false, show_on_website: false })
             .eq("id", id);
           if (updErr) throw updErr;
-          return { soft: true };
+          return { soft: true, refs };
         }
         throw error;
       }
-      return { soft: false };
+      return { soft: false, refs: [] as { label: string; count: number }[] };
     },
     onSuccess: (res) => {
       invalidate();
+      if (!res?.soft) {
+        toast({ title: "Product deleted" });
+        return;
+      }
+      const refSummary = res.refs.length
+        ? res.refs.map((r) => `${r.label} (${r.count})`).join(", ")
+        : "existing transactional records";
       toast({
-        title: res?.soft ? "Product deactivated" : "Product deleted",
-        description: res?.soft
-          ? "This product is used in past transactions, so it was deactivated instead of deleted."
-          : undefined,
+        title: "Product deactivated, not deleted",
+        description: `This product is referenced by: ${refSummary}. To preserve history it was hidden and marked inactive instead of permanently deleted.`,
+        duration: 8000,
       });
     },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
