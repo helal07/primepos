@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -57,7 +57,7 @@ export default function Sitemap() {
   const openNew = () => { setForm({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" }); setEditId(null); setOpen(true); };
   const openEdit = (row: any) => { setForm(row); setEditId(row.id); setOpen(true); };
 
-  const submitEntry = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitEntry = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!save.isPending) save.mutate();
   };
