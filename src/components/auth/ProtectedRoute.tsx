@@ -45,7 +45,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
       const { data: tenant } = await supabase
         .from("tenants")
-        .select("id,name,status")
+        .select("id,name,status,subscription_end")
         .eq("id", tenantId)
         .maybeSingle();
       if (cancelled) return;
@@ -54,7 +54,15 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         setAccess({ kind: "no_tenant" });
         return;
       }
-      if ((tenant as any).status === "suspended") {
+      const t: any = tenant;
+      const expired =
+        t.subscription_end &&
+        new Date(t.subscription_end + "T23:59:59") < new Date();
+      if (t.status === "suspended" || expired) {
+        if (expired && t.status !== "suspended") {
+          // Auto-suspend immediately on access
+          await supabase.from("tenants").update({ status: "suspended" }).eq("id", t.id);
+        }
         setAccess({ kind: "suspended", tenantName: (tenant as any).name });
         return;
       }

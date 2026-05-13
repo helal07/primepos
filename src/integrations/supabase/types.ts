@@ -4114,6 +4114,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      auto_suspend_expired_tenants: { Args: never; Returns: number }
       cancel_store_order: {
         Args: { p_order_id: string; p_reason: string }
         Returns: undefined
