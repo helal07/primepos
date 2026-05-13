@@ -8,6 +8,8 @@
 
 \set ON_ERROR_STOP on
 BEGIN;
+-- Bypass RLS for the duration of this test transaction (requires superuser/owner).
+SET LOCAL row_security = off;
 
 DO $$
 DECLARE
