@@ -67,6 +67,32 @@ async function fetchCmsEntries(): Promise<Entry[]> {
   }
 }
 
+async function fetchCmsPages(): Promise<Entry[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/cms_pages?select=slug,updated_at&status=eq.published&order=slug.asc`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
+    );
+    if (!res.ok) {
+      console.warn(`[sitemap] cms_pages fetch failed: ${res.status} ${res.statusText}`);
+      return [];
+    }
+    const rows = (await res.json()) as Array<{ slug: string; updated_at: string | null }>;
+    return rows
+      .filter((r) => r.slug && r.slug.length > 0)
+      .map((r) => ({
+        path: `/p/${r.slug.replace(/^\/+/, "")}`,
+        changefreq: "monthly" as Freq,
+        priority: "0.6",
+        lastmod: r.updated_at ? new Date(r.updated_at).toISOString().slice(0, 10) : undefined,
+      }));
+  } catch (err) {
+    console.warn(`[sitemap] cms_pages fetch error: ${(err as Error).message}`);
+    return [];
+  }
+}
+
 function dedupe(entries: Entry[]): Entry[] {
   const map = new Map<string, Entry>();
   for (const e of entries) map.set(e.path, { ...map.get(e.path), ...e });
@@ -97,9 +123,9 @@ function buildXml(entries: Entry[]): string {
 }
 
 (async () => {
-  const cms = await fetchCmsEntries();
-  const entries = dedupe([...staticEntries, ...cms]);
+  const [cms, pages] = await Promise.all([fetchCmsEntries(), fetchCmsPages()]);
+  const entries = dedupe([...staticEntries, ...cms, ...pages]);
   const xml = buildXml(entries);
   writeFileSync(resolve("public/sitemap.xml"), xml);
-  console.log(`[sitemap] wrote public/sitemap.xml (${entries.length} URLs, host ${SITE_URL})`);
+  console.log(`[sitemap] wrote public/sitemap.xml (${entries.length} URLs, host ${SITE_URL}; ${pages.length} CMS pages, ${cms.length} CMS entries)`);
 })();
