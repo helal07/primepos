@@ -193,10 +193,11 @@ export function useTenantMutations() {
       if (tenantError) throw tenantError;
 
       const currentEnd = tenant?.subscription_end ? new Date(`${tenant.subscription_end}T23:59:59`) : null;
+      const tenantPackage = tenant?.saas_packages as { duration_days?: number | null } | null;
       const patch: { status: string; subscription_start?: string; subscription_end?: string } = { status: "active" };
 
       if (!currentEnd || currentEnd < new Date()) {
-        const durationDays = Number((tenant?.saas_packages as any)?.duration_days ?? 30);
+        const durationDays = Number(tenantPackage?.duration_days ?? 30);
         const newEnd = new Date();
         newEnd.setDate(newEnd.getDate() + durationDays);
         patch.subscription_start = new Date().toISOString().split("T")[0];
@@ -208,7 +209,7 @@ export function useTenantMutations() {
       await supabase.from("tenant_actions_log").insert({
         tenant_id: id,
         action: "activated",
-        details: patch as any,
+        details: patch,
         performed_by: user!.id,
       });
     },
