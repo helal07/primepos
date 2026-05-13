@@ -95,6 +95,7 @@ export default function TenantManagement() {
 
   // Send credentials
   const [credOpen, setCredOpen] = useState(false);
+  const [credLoading, setCredLoading] = useState(false);
   const [credForm, setCredForm] = useState({
     tenantName: "",
     email: "",
@@ -103,6 +104,7 @@ export default function TenantManagement() {
     password: "",
     loginUrl: "",
     message: "",
+    ownerUserId: "" as string,
   });
 
   const buildCredMessage = (f: typeof credForm) =>
@@ -114,22 +116,92 @@ export default function TenantManagement() {
     `For security, please change your password after the first login.\n\n` +
     `Thank you.`;
 
-  const openSendCreds = (t: any) => {
+  const generatePassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    let pw = "";
+    const arr = new Uint32Array(12);
+    crypto.getRandomValues(arr);
+    for (let i = 0; i < 12; i++) pw += chars[arr[i] % chars.length];
+    return pw + "!2";
+  };
+
+  const openSendCreds = async (t: any) => {
     const loginUrl = t.domain
       ? `https://${t.domain}`
       : `${window.location.origin}/login`;
+
+    // Pull owner email/profile from DB so the dialog reflects live data
+    let ownerEmail = t.email ?? "";
+    let ownerUserId = t.owner_user_id ?? "";
+    if (ownerUserId) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("user_id, display_name")
+        .eq("user_id", ownerUserId)
+        .maybeSingle();
+      if (prof?.user_id) ownerUserId = prof.user_id;
+    }
+
     const next = {
       tenantName: t.name ?? "",
-      email: t.email ?? "",
+      email: ownerEmail,
       whatsapp: (t.phone ?? "").replace(/[^\d+]/g, ""),
-      username: t.email ?? "",
-      password: "",
+      username: ownerEmail,
+      password: "Generating…",
       loginUrl,
       message: "",
+      ownerUserId,
     };
     next.message = buildCredMessage(next);
     setCredForm(next);
     setCredOpen(true);
+
+    // Auto-generate & reset password via edge function
+    if (!ownerUserId) {
+      toast({ title: "No owner account linked to this tenant", variant: "destructive" });
+      setCredForm((p) => ({ ...p, password: "" }));
+      return;
+    }
+    setCredLoading(true);
+    try {
+      const newPassword = generatePassword();
+      const { error } = await supabase.functions.invoke("reset-tenant-password", {
+        body: { user_id: ownerUserId, new_password: newPassword },
+      });
+      if (error) throw error;
+      setCredForm((p) => {
+        const merged = { ...p, password: newPassword };
+        merged.message = buildCredMessage(merged);
+        return merged;
+      });
+    } catch (e: any) {
+      toast({ title: "Could not generate password", description: e.message, variant: "destructive" });
+      setCredForm((p) => ({ ...p, password: "" }));
+    } finally {
+      setCredLoading(false);
+    }
+  };
+
+  const regeneratePassword = async () => {
+    if (!credForm.ownerUserId) return;
+    setCredLoading(true);
+    try {
+      const newPassword = generatePassword();
+      const { error } = await supabase.functions.invoke("reset-tenant-password", {
+        body: { user_id: credForm.ownerUserId, new_password: newPassword },
+      });
+      if (error) throw error;
+      setCredForm((p) => {
+        const merged = { ...p, password: newPassword };
+        merged.message = buildCredMessage(merged);
+        return merged;
+      });
+      toast({ title: "New password generated" });
+    } catch (e: any) {
+      toast({ title: "Failed to regenerate", description: e.message, variant: "destructive" });
+    } finally {
+      setCredLoading(false);
+    }
   };
 
   const updateCred = (patch: Partial<typeof credForm>) => {
