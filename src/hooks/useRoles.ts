@@ -142,11 +142,19 @@ export function useUpdateUserRole() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
-      // Upsert: delete existing then insert
-      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
-      if (delErr) throw delErr;
-      const { error: insErr } = await supabase.from("user_roles").insert({ user_id: userId, role_id: roleId });
+      // Insert the new role FIRST (so the caller never temporarily loses
+      // their Tenant Manager role mid-operation, which would trip RLS),
+      // then remove any other roles for this user.
+      const { error: insErr } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: userId, role_id: roleId }, { onConflict: "user_id,role_id" });
       if (insErr) throw insErr;
+      const { error: delErr } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .neq("role_id", roleId);
+      if (delErr) throw delErr;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users_with_roles"] }); toast({ title: "Role updated" }); },
     onError: (e: any) => { toast({ title: "Error", description: e.message, variant: "destructive" }); },
