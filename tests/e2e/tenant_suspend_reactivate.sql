@@ -78,17 +78,13 @@ BEGIN
   END IF;
   RAISE NOTICE 'PASS: auto_suspended audit log entry exists';
 
-  -- 4) Reactivate using the same logic the UI runs (useSaasAdmin.activate):
-  --    if subscription_end is in the past -> renew subscription_start=today,
-  --    subscription_end=today + package.duration_days, status=active
-  v_new_end := CURRENT_DATE + (v_duration || ' days')::interval;
-
-  UPDATE public.tenants
-     SET status = 'active',
-         subscription_start = CURRENT_DATE,
-         subscription_end   = v_new_end,
-         updated_at = now()
-   WHERE id = v_tenant_id;
+  -- 4) Reactivate. The UI (useSaasAdmin.activate) renews the subscription
+  --    when subscription_end is in the past. We exercise the same end-state
+  --    via the SECURITY DEFINER RPC activate_tenant_after_payment(), which
+  --    is also what the payment webhook calls.
+  PERFORM public.activate_tenant_after_payment(
+    v_tenant_id, 0::numeric, 'e2e-test', 'e2e-' || v_tenant_id::text
+  );
 
   -- 5) Assert reactivated state
   SELECT status, subscription_end INTO v_status, v_end
