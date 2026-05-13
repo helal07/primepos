@@ -120,8 +120,11 @@ export default function Sitemap() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editId ? "Edit Entry" : "New Entry"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+          <DialogHeader>
+            <DialogTitle>{editId ? "Edit Entry" : "New Entry"}</DialogTitle>
+            <DialogDescription>Add a public URL path to include in sitemap.xml.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submitEntry} className="space-y-3">
             <div><Label>Path</Label><Input value={form.path} onChange={(ev) => setForm({ ...form, path: ev.target.value })} placeholder="/about" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Priority (0–1)</Label><Input type="number" step="0.1" min="0" max="1" value={form.priority} onChange={(ev) => setForm({ ...form, priority: ev.target.value })} /></div>
@@ -134,11 +137,11 @@ export default function Sitemap() {
               </div>
             </div>
             <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label>Active</Label></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>Save</Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={save.isPending}>{save.isPending ? "Saving…" : "Save"}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
