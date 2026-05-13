@@ -6,14 +6,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useUsersWithRoles, useRoles, useUpdateUserRole } from "@/hooks/useRoles";
-import { Shield, Users as UsersIcon } from "lucide-react";
+import { useUsersWithRoles, useRoles, useUpdateUserRole, useDeleteUser } from "@/hooks/useRoles";
+import { useAuth } from "@/contexts/AuthContext";
+import { Shield, Users as UsersIcon, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function UsersPage() {
   const { data: users, isLoading } = useUsersWithRoles();
   const { data: roles } = useRoles();
   const updateRole = useUpdateUserRole();
+  const deleteUser = useDeleteUser();
+  const { user: currentUser } = useAuth();
   const [editingUser, setEditingUser] = useState<string | null>(null);
 
   const getInitials = (name: string | null) =>
@@ -88,13 +92,41 @@ export default function UsersPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingUser(editingUser === user.user_id ? null : user.user_id)}
-                      >
-                        {editingUser === user.user_id ? "Cancel" : "Change Role"}
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingUser(editingUser === user.user_id ? null : user.user_id)}
+                        >
+                          {editingUser === user.user_id ? "Cancel" : "Change Role"}
+                        </Button>
+                        {currentUser?.id !== user.user_id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" title="Delete user">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This permanently removes <strong>{user.display_name || "this user"}</strong>, their profile and role assignment. This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteUser.mutate(user.user_id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
