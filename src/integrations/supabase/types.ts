@@ -3507,7 +3507,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          performed_by: string
+          performed_by: string | null
           tenant_id: string
         }
         Insert: {
@@ -3515,7 +3515,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          performed_by: string
+          performed_by?: string | null
           tenant_id: string
         }
         Update: {
@@ -3523,7 +3523,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          performed_by?: string
+          performed_by?: string | null
           tenant_id?: string
         }
         Relationships: [

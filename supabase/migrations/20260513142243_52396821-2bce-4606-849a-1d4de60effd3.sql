@@ -1,0 +1,1 @@
+ALTER TABLE public.tenant_actions_log ALTER COLUMN performed_by DROP NOT NULL;
