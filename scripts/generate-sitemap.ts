@@ -85,6 +85,23 @@ async function fetchCmsPages(): Promise<Entry[]> {
   }
 }
 
+async function fetchFaqLastmod(): Promise<Entry[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/faq_entries?select=updated_at&is_active=eq.true&order=updated_at.desc&limit=1`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } },
+    );
+    if (!res.ok) return [];
+    const rows = (await res.json()) as Array<{ updated_at: string | null }>;
+    if (!rows.length) return [];
+    const lastmod = rows[0].updated_at ? new Date(rows[0].updated_at).toISOString().slice(0, 10) : undefined;
+    return [{ path: "/#faq", changefreq: "weekly", priority: "0.7", lastmod }];
+  } catch {
+    return [];
+  }
+}
+
 function dedupe(entries: Entry[]): Entry[] {
   const map = new Map<string, Entry>();
   for (const e of entries) map.set(e.path, { ...map.get(e.path), ...e });
@@ -153,10 +170,10 @@ function writeSection(name: string, entries: Entry[], today: string): { name: st
   if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
 
-  const [cmsEntries, cmsPages] = await Promise.all([fetchCmsEntries(), fetchCmsPages()]);
+  const [cmsEntries, cmsPages, faqStamp] = await Promise.all([fetchCmsEntries(), fetchCmsPages(), fetchFaqLastmod()]);
 
   const files = [
-    ...writeSection("marketing", marketingEntries, today),
+    ...writeSection("marketing", [...marketingEntries, ...faqStamp], today),
     ...writeSection("cms-entries", cmsEntries, today),
     ...writeSection("cms-pages", cmsPages, today),
   ];
