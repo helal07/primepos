@@ -4,4 +4,8 @@
     <loc>https://primepos.lovable.app/sitemaps/marketing.xml</loc>
     <lastmod>2026-05-13</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>https://primepos.lovable.app/sitemaps/cms-entries.xml</loc>
+    <lastmod>2026-05-13</lastmod>
+  </sitemap>
 </sitemapindex>
