@@ -1,32 +1,58 @@
-## Problem found
+## Why these names appear
 
-The delete is failing because Sumon Telecom has product records that are still referenced by sales history. The active database constraint is:
+The "Delivered To" dropdown on the Sales Order form (`src/pages/SalesOrderAdd.tsx`, `useDeliveryPeople` hook) queries the `profiles` table with **no tenant filter**:
 
-- `sale_items.product_id → products.id`
-- Current behavior: `NO ACTION`
-- Result: when deleting a tenant, `products` are cascaded, but `sale_items` still points to those products during the same delete, so the database blocks the deletion.
+```ts
+supabase.from("profiles").select("user_id,display_name");
+```
 
-I also found two related product references with the same risk:
+RLS lets each user read their own profile + tenant-mates, but the bigger problem is the data itself — the `profiles` table currently contains **7 orphan rows with `tenant_id = NULL`** plus rows from other tenants. That is why names like `makesecurepro@gmail.com`, `Test Admin`, `Test User`, `Rafi`, `Ullas Ahmed` (×2) show up everywhere.
 
-- `purchase_items.product_id → products.id`
-- `store_order_items.product_id → products.id`
+### Database audit
+
+| display_name | tenant_id | Status |
+|---|---|---|
+| makesecurepro@gmail.com | NULL | orphan |
+| rafi | NULL | orphan |
+| Rafi | NULL | orphan |
+| Test Admin | NULL | orphan |
+| Test User | NULL | orphan |
+| Ullas Ahmed (×2) | NULL | orphan |
+| Sumon Ahmed | 29a9a663… (Sumon Telecom) | belongs to a tenant you wanted deleted but still exists |
+| Al Helal, Arif, Ratul Ahmed, Ullash | valid tenants | OK |
+
+So there are two distinct problems: (a) the dropdown query is not tenant-scoped, and (b) the table has garbage rows.
 
 ## Plan
 
-1. Update the product-history foreign keys so tenant deletion can cascade cleanly:
-  - `sale_items.product_id → products.id ON DELETE CASCADE`
-  - `purchase_items.product_id → products.id ON DELETE CASCADE`
-  - `store_order_items.product_id → products.id ON DELETE CASCADE`
-2. Keep the existing tenant-level cascades intact:
-  - tenant deletion already cascades tenant data through `tenant_id` on `sales`, `sale_items`, `products`, purchases, stock, etc.
-3. Add a safer superadmin delete function for tenants:
-  - delete the tenant by id only when the caller is superadmin
-  - rely on database cascades to remove tenant-owned data
-  - prevent normal tenant users from deleting tenant records
-4. Update the frontend tenant delete action:
-  - call the safe delete function instead of directly deleting from `tenants`
-  - keep the current confirmation modal and success/error toast behavior
-5. Verify after implementation:
-  - check Sumon Telecom can be deleted without the `sale_items_product_id_fkey` error
-  - confirm suspended/deleted tenants remain blocked from app access
-  - Delete every data from tenent password email and others
+### 1. Fix the cross-tenant leak (frontend)
+
+In `src/pages/SalesOrderAdd.tsx`, change `useDeliveryPeople` to scope by the current user's `tenant_id`:
+
+- Read the current user's tenant via the existing `useTenant()` / `useCurrentTenantId()` helper already used elsewhere.
+- Add `.eq("tenant_id", tenantId)` and `.not("tenant_id", "is", null)` to the profiles query.
+- Disable the query until `tenantId` is known.
+
+This guarantees only members of the logged-in tenant appear in the "Delivered To" picker (and any other place that uses this hook).
+
+### 2. Clean up garbage / orphan data (database migration)
+
+A new migration will:
+
+- **Delete orphan profiles** where `tenant_id IS NULL` *and* the matching `auth.users` row no longer exists, or where the user has no `user_roles` entry. (Safer than blanket-deleting all NULLs in case any belong to the SaaS super-admin.)
+- **Delete orphan `user_roles`** rows whose `tenant_id` no longer exists in `tenants` and whose `user_id` no longer exists in `auth.users`.
+- **Delete orphan auth users** that have no profile and no `user_roles` (optional — only if you confirm).
+- **Add a NOT NULL constraint** on `profiles.tenant_id` going forward (after cleanup) so this cannot happen again. Existing profile-creation triggers already set `tenant_id`, so this is safe.
+- **Add an FK** `profiles.tenant_id → tenants(id) ON DELETE CASCADE` so deleting a tenant automatically removes its profiles in the future.
+
+### 3. Verify
+
+- Re-query `profiles` to confirm only tenant-scoped rows remain.
+- Reload `/sales/orders/add` and confirm the "Delivered To" dropdown now shows **only** users from the current tenant.
+
+## Confirmation needed
+
+Before I run the cleanup migration, please confirm:
+
+1. Is `makesecurepro@gmail.com` your **SaaS super-admin** account? If yes, I will keep it (it legitimately has no tenant) and only delete the test/junk rows (`Test Admin`, `Test User`, `rafi`, `Rafi`, the two `Ullas Ahmed` duplicates).
+2. Should I also delete the corresponding `auth.users` entries for the removed profiles, or just the profile rows?

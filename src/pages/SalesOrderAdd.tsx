@@ -33,10 +33,18 @@ function useWarranties() {
 
 function useDeliveryPeople() {
   return useQuery({
-    queryKey: ["delivery_people"],
+    queryKey: ["delivery_people", "current_tenant"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data: me } = await (supabase as any)
+        .from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle();
+      const tenantId = me?.tenant_id;
+      if (!tenantId) return [];
       const { data, error } = await (supabase as any)
-        .from("profiles").select("user_id,display_name");
+        .from("profiles")
+        .select("user_id,display_name")
+        .eq("tenant_id", tenantId);
       if (error) throw error;
       return data as { user_id: string; display_name: string | null }[];
     },
