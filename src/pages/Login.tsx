@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Helmet } from "react-helmet-async";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -57,6 +58,15 @@ export default function Login() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Sign in to Prime POS — Business Management Platform</title>
+        <meta name="description" content="Sign in to your Prime POS account to manage point-of-sale, inventory, accounting, HRM, warranty and BI for your business." />
+        <link rel="canonical" href="https://primepos.lovable.app/login" />
+        <meta property="og:title" content="Sign in to Prime POS" />
+        <meta property="og:description" content="Sign in to your Prime POS account to manage point-of-sale, inventory, accounting, HRM, warranty and BI for your business." />
+        <meta property="og:url" content="https://primepos.lovable.app/login" />
+      </Helmet>
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
