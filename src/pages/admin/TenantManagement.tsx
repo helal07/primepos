@@ -18,7 +18,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, MoreVertical, Search, CalendarPlus, Ban, CheckCircle, Trash2, Pencil,
-  FileSpreadsheet, FileText, Printer, Download, KeyRound, Eye, ShieldCheck
+  FileSpreadsheet, FileText, Printer, Download, KeyRound, Eye, ShieldCheck,
+  Send, Mail, MessageCircle
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -91,6 +92,86 @@ export default function TenantManagement() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  // Send credentials
+  const [credOpen, setCredOpen] = useState(false);
+  const [credForm, setCredForm] = useState({
+    tenantName: "",
+    email: "",
+    whatsapp: "",
+    username: "",
+    password: "",
+    loginUrl: "",
+    message: "",
+  });
+
+  const buildCredMessage = (f: typeof credForm) =>
+    `Hello ${f.tenantName || "Admin"},\n\n` +
+    `Your account is ready. Please use the credentials below to sign in:\n\n` +
+    `Login URL: ${f.loginUrl}\n` +
+    `Username: ${f.username}\n` +
+    `Password: ${f.password}\n\n` +
+    `For security, please change your password after the first login.\n\n` +
+    `Thank you.`;
+
+  const openSendCreds = (t: any) => {
+    const loginUrl = t.domain
+      ? `https://${t.domain}`
+      : `${window.location.origin}/login`;
+    const next = {
+      tenantName: t.name ?? "",
+      email: t.email ?? "",
+      whatsapp: (t.phone ?? "").replace(/[^\d+]/g, ""),
+      username: t.email ?? "",
+      password: "",
+      loginUrl,
+      message: "",
+    };
+    next.message = buildCredMessage(next);
+    setCredForm(next);
+    setCredOpen(true);
+  };
+
+  const updateCred = (patch: Partial<typeof credForm>) => {
+    setCredForm((prev) => {
+      const merged = { ...prev, ...patch };
+      // Auto-regenerate message when key fields change, unless user edited it manually
+      const wasAuto = prev.message === buildCredMessage(prev);
+      if (wasAuto && ("tenantName" in patch || "username" in patch || "password" in patch || "loginUrl" in patch)) {
+        merged.message = buildCredMessage(merged);
+      }
+      return merged;
+    });
+  };
+
+  const sendViaEmail = () => {
+    if (!credForm.email) {
+      toast({ title: "Email is required", variant: "destructive" });
+      return;
+    }
+    const subject = `Your login credentials — ${credForm.tenantName || "Account"}`;
+    const href = `mailto:${encodeURIComponent(credForm.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(credForm.message)}`;
+    window.location.href = href;
+  };
+
+  const sendViaWhatsapp = () => {
+    const digits = credForm.whatsapp.replace(/[^\d]/g, "");
+    if (!digits) {
+      toast({ title: "WhatsApp number is required", variant: "destructive" });
+      return;
+    }
+    const href = `https://wa.me/${digits}?text=${encodeURIComponent(credForm.message)}`;
+    window.open(href, "_blank", "noopener");
+  };
+
+  const copyCreds = async () => {
+    try {
+      await navigator.clipboard.writeText(credForm.message);
+      toast({ title: "Copied to clipboard" });
+    } catch {
+      toast({ title: "Copy failed", variant: "destructive" });
+    }
+  };
 
   const filtered = tenants?.filter((t) => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -442,6 +523,9 @@ export default function TenantManagement() {
                         <DropdownMenuItem onClick={() => { setResetUserId(t.owner_user_id); setResetTenantName(t.name); setNewPassword(""); setResetOpen(true); }} className="text-foreground focus:bg-accent">
                           <KeyRound className="h-4 w-4 mr-2" />Reset Password
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openSendCreds(t)} className="text-foreground focus:bg-accent">
+                          <Send className="h-4 w-4 mr-2" />Send Credentials
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-muted" />
                         <DropdownMenuItem className="text-red-400 focus:bg-accent" onClick={() => { setDeleteTarget(t); setDeleteConfirmText(""); }}>
                           <Trash2 className="h-4 w-4 mr-2" />Delete
@@ -633,6 +717,76 @@ export default function TenantManagement() {
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Credentials Dialog */}
+      <Dialog open={credOpen} onOpenChange={setCredOpen}>
+        <DialogContent className="max-w-lg bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <Send className="h-4 w-4" /> Send Login Credentials
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-foreground/90">Email</Label>
+                <Input className="bg-muted border-border text-foreground" type="email"
+                  value={credForm.email} onChange={(e) => updateCred({ email: e.target.value })}
+                  placeholder="admin@example.com" />
+              </div>
+              <div>
+                <Label className="text-foreground/90">WhatsApp Number</Label>
+                <Input className="bg-muted border-border text-foreground"
+                  value={credForm.whatsapp} onChange={(e) => updateCred({ whatsapp: e.target.value })}
+                  placeholder="8801XXXXXXXXX (with country code)" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-foreground/90">Username</Label>
+                <Input className="bg-muted border-border text-foreground"
+                  value={credForm.username} onChange={(e) => updateCred({ username: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-foreground/90">Password</Label>
+                <Input className="bg-muted border-border text-foreground"
+                  value={credForm.password} onChange={(e) => updateCred({ password: e.target.value })}
+                  placeholder="Enter or paste password" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-foreground/90">Login URL</Label>
+              <Input className="bg-muted border-border text-foreground"
+                value={credForm.loginUrl} onChange={(e) => updateCred({ loginUrl: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-foreground/90">Message</Label>
+              <Textarea className="bg-muted border-border text-foreground font-mono text-xs"
+                rows={8} value={credForm.message}
+                onChange={(e) => setCredForm({ ...credForm, message: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Edit freely. Auto-updates from fields above until you change it manually.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+            <Button variant="outline" className="border-border text-foreground/90" onClick={copyCreds}>
+              Copy
+            </Button>
+            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setCredOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="outline" className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+              onClick={sendViaWhatsapp} disabled={!credForm.whatsapp}>
+              <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+            </Button>
+            <Button className="bg-primary hover:bg-primary/90 text-foreground"
+              onClick={sendViaEmail} disabled={!credForm.email}>
+              <Mail className="h-4 w-4 mr-1" /> Email
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
