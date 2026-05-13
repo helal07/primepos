@@ -40,9 +40,13 @@ export function useCategoryMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      // Unlink products from this category so deletion is not blocked by FK
+      await supabase.from("products").update({ category_id: null }).eq("category_id", id);
+      // Unlink any subcategories
+      await supabase.from("categories").update({ parent_id: null }).eq("parent_id", id);
       const { data, error } = await supabase.from("categories").delete().eq("id", id).select("id");
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
+      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission to delete this category.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -187,6 +191,13 @@ export function useProductMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      // First, clear non-transactional references that should not block deletion.
+      // These are safe to remove because they don't represent historical records.
+      await supabase.from("product_variations").delete().eq("product_id", id);
+      await supabase.from("warehouse_stock").delete().eq("product_id", id);
+      await supabase.from("product_group_prices").delete().eq("product_id", id);
+      await supabase.from("store_collection_products").delete().eq("product_id", id);
+
       const { data: deleted, error } = await supabase.from("products").delete().eq("id", id).select("id");
       if (error) {
         // Foreign key violation — product is referenced by sales/purchases/etc.
