@@ -719,6 +719,76 @@ export default function TenantManagement() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Send Credentials Dialog */}
+      <Dialog open={credOpen} onOpenChange={setCredOpen}>
+        <DialogContent className="max-w-lg bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <Send className="h-4 w-4" /> Send Login Credentials
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-foreground/90">Email</Label>
+                <Input className="bg-muted border-border text-foreground" type="email"
+                  value={credForm.email} onChange={(e) => updateCred({ email: e.target.value })}
+                  placeholder="admin@example.com" />
+              </div>
+              <div>
+                <Label className="text-foreground/90">WhatsApp Number</Label>
+                <Input className="bg-muted border-border text-foreground"
+                  value={credForm.whatsapp} onChange={(e) => updateCred({ whatsapp: e.target.value })}
+                  placeholder="8801XXXXXXXXX (with country code)" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-foreground/90">Username</Label>
+                <Input className="bg-muted border-border text-foreground"
+                  value={credForm.username} onChange={(e) => updateCred({ username: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-foreground/90">Password</Label>
+                <Input className="bg-muted border-border text-foreground"
+                  value={credForm.password} onChange={(e) => updateCred({ password: e.target.value })}
+                  placeholder="Enter or paste password" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-foreground/90">Login URL</Label>
+              <Input className="bg-muted border-border text-foreground"
+                value={credForm.loginUrl} onChange={(e) => updateCred({ loginUrl: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-foreground/90">Message</Label>
+              <Textarea className="bg-muted border-border text-foreground font-mono text-xs"
+                rows={8} value={credForm.message}
+                onChange={(e) => setCredForm({ ...credForm, message: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Edit freely. Auto-updates from fields above until you change it manually.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+            <Button variant="outline" className="border-border text-foreground/90" onClick={copyCreds}>
+              Copy
+            </Button>
+            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setCredOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="outline" className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+              onClick={sendViaWhatsapp} disabled={!credForm.whatsapp}>
+              <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+            </Button>
+            <Button className="bg-primary hover:bg-primary/90 text-foreground"
+              onClick={sendViaEmail} disabled={!credForm.email}>
+              <Mail className="h-4 w-4 mr-1" /> Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
