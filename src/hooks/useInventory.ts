@@ -40,8 +40,9 @@ export function useCategoryMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("categories").delete().eq("id", id);
+      const { data, error } = await supabase.from("categories").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -87,8 +88,9 @@ export function useBrandMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("brands").delete().eq("id", id);
+      const { data, error } = await supabase.from("brands").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Brand deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -134,8 +136,9 @@ export function useUnitMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("units").delete().eq("id", id);
+      const { data, error } = await supabase.from("units").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Unit deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -184,7 +187,7 @@ export function useProductMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+      const { data: deleted, error } = await supabase.from("products").delete().eq("id", id).select("id");
       if (error) {
         // Foreign key violation — product is referenced by sales/purchases/etc.
         // Fall back to soft-delete so transactional history is preserved.
@@ -216,6 +219,7 @@ export function useProductMutations() {
         }
         throw error;
       }
+      if (!deleted || deleted.length === 0) throw new Error("Delete blocked. You may not have permission to delete this product.");
       return { soft: false, refs: [] as { label: string; count: number }[] };
     },
     onSuccess: (res) => {
