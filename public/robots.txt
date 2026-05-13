@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://pekekgjysecbwznrvojp.supabase.co/functions/v1/sitemap
+Sitemap: https://primepos.lovable.app/sitemap.xml
