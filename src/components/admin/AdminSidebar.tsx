@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
-  ArrowLeftRight,
+  ArrowLeftRight, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,8 +21,12 @@ const platformItems = [
 ];
 
 const websiteItems = [
-  { to: "/superadmin/cms", label: "Landing CMS", icon: Globe },
   { to: "/superadmin/sitemap", label: "Sitemap", icon: FileCode },
+];
+
+const cmsItems = [
+  { to: "/superadmin/cms", label: "Sections", icon: Globe, end: true },
+  { to: "/superadmin/cms/pages", label: "Pages", icon: FileText },
 ];
 
 const smsItems = [
@@ -45,6 +49,8 @@ export function AdminSidebar({ onNavigate }: Props) {
   const location = useLocation();
   const smsActive = location.pathname.startsWith("/superadmin/sms");
   const [smsOpen, setSmsOpen] = useState(smsActive);
+  const cmsActive = location.pathname.startsWith("/superadmin/cms");
+  const [cmsOpen, setCmsOpen] = useState(cmsActive);
 
   const linkClass = (isActive: boolean) =>
     cn(
@@ -89,7 +95,60 @@ export function AdminSidebar({ onNavigate }: Props) {
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4 pt-2">
         {renderGroup("Overview", overviewItems)}
         {renderGroup("Platform", platformItems)}
-        {renderGroup("Website", websiteItems)}
+
+        <div className="pt-2">
+          <div className="px-2 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+            Website
+          </div>
+          <button
+            type="button"
+            onClick={() => setCmsOpen((v) => !v)}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              cmsActive
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Globe className="h-[18px] w-[18px]" />
+            <span className="flex-1 text-left">Landing CMS</span>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", cmsOpen && "rotate-180")} />
+          </button>
+          {cmsOpen && (
+            <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border/60 pl-3">
+              {cmsItems.map((s) => (
+                <NavLink
+                  key={s.to}
+                  to={s.to}
+                  end={s.end}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground"
+                    )
+                  }
+                >
+                  <s.icon className="h-[15px] w-[15px]" />
+                  {s.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+          {websiteItems.map((it) => (
+            <NavLink
+              key={it.to}
+              to={it.to}
+              onClick={onNavigate}
+              className={({ isActive }) => linkClass(isActive)}
+            >
+              <it.icon className="h-[18px] w-[18px]" />
+              {it.label}
+            </NavLink>
+          ))}
+        </div>
 
         <div className="pt-2">
           <div className="px-2 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
