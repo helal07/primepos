@@ -137,28 +137,53 @@ export default function TenantManagement() {
           setSaving(false);
           return;
         }
-        const { data: fnData, error: fnError } = await supabase.functions.invoke("create-tenant-user", {
-          body: { email: form.admin_email, password: form.admin_password, display_name: form.admin_display_name || form.name },
-        });
-        if (fnError || fnData?.error) {
-          toast({ title: "Error creating admin user", description: fnData?.error || fnError?.message, variant: "destructive" });
+        // Decide flow: trial / paid (pending) / active (with optional payment record)
+        const choice =
+          form.status === "trial"
+            ? "trial"
+            : form.status === "active"
+            ? "active"
+            : "paid";
+        const { data: fnData, error: fnError } = await supabase.functions.invoke(
+          "admin-create-tenant",
+          {
+            body: {
+              admin_email: form.admin_email,
+              admin_password: form.admin_password,
+              admin_display_name: form.admin_display_name || form.name,
+              choice,
+              tenant: {
+                name: form.name,
+                company_name: form.company_name,
+                phone: form.phone,
+                email: form.email,
+                address: form.address,
+                domain: form.domain,
+                package_id: form.package_id || null,
+                subscription_type: form.subscription_type,
+                subscription_start: form.subscription_start,
+                subscription_end: form.subscription_end || null,
+                status: form.status,
+                notes: form.notes,
+              },
+              payment:
+                choice === "active" && form.payment_amount
+                  ? { method: form.payment_method, amount: Number(form.payment_amount) }
+                  : undefined,
+            },
+          },
+        );
+        if (fnError || (fnData as any)?.error) {
+          toast({
+            title: "Error creating tenant",
+            description: (fnData as any)?.error || fnError?.message,
+            variant: "destructive",
+          });
           setSaving(false);
           return;
         }
-        const owner_user_id = fnData.user_id;
-        const { error: insertError } = await supabase.from("tenants").insert({
-          name: form.name, company_name: form.company_name, phone: form.phone,
-          email: form.email, address: form.address, domain: form.domain,
-          owner_user_id, package_id: form.package_id || null,
-          subscription_type: form.subscription_type, subscription_start: form.subscription_start,
-          subscription_end: form.subscription_end || null, status: form.status, notes: form.notes,
-        } as any);
-        if (insertError) {
-          toast({ title: "Error creating tenant", description: insertError.message, variant: "destructive" });
-        } else {
-          toast({ title: "Tenant created successfully" });
-          setOpen(false);
-        }
+        toast({ title: "Tenant created successfully" });
+        setOpen(false);
       }
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
