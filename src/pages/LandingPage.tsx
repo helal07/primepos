@@ -7,7 +7,22 @@ import {
   ShoppingCart, Calculator, Star, ArrowRight, CheckCircle2, Menu, X,
   Zap, HeadphonesIcon, Lock
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
+  if (!content) return;
+  let tag = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
+  if (!tag) { tag = document.createElement("meta"); tag.setAttribute(attr, name); document.head.appendChild(tag); }
+  tag.setAttribute("content", content);
+}
+function setLink(rel: string, href: string) {
+  if (!href) return;
+  let tag = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+  if (!tag) { tag = document.createElement("link"); tag.setAttribute("rel", rel); document.head.appendChild(tag); }
+  tag.setAttribute("href", href);
+}
 
 const features = [
   { icon: ShoppingCart, title: "Point of Sale", desc: "Lightning-fast POS with barcode scanning, receipt printing, and offline mode." },
@@ -36,6 +51,56 @@ const pricingPlans = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { data: seo } = useQuery({
+    queryKey: ["business_settings", "cms_seo"],
+    queryFn: async () => {
+      const { data } = await supabase.from("business_settings").select("value").eq("key", "cms_seo").maybeSingle();
+      return (data?.value as Record<string, string>) ?? {};
+    },
+  });
+  const { data: promo } = useQuery({
+    queryKey: ["business_settings", "cms_promo"],
+    queryFn: async () => {
+      const { data } = await supabase.from("business_settings").select("value").eq("key", "cms_promo").maybeSingle();
+      return (data?.value as Record<string, string>) ?? {};
+    },
+  });
+  const { data: faqs = [] } = useQuery({
+    queryKey: ["faq_entries_public"],
+    queryFn: async () => {
+      const { data } = await supabase.from("faq_entries").select("*").eq("is_active", true).order("sort_order");
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (!seo) return;
+    if (seo.title) document.title = seo.title;
+    setMeta("description", seo.description || "");
+    setMeta("keywords", seo.keywords || "");
+    setMeta("og:title", seo.og_title || seo.title || "", "property");
+    setMeta("og:description", seo.og_description || seo.description || "", "property");
+    setMeta("og:image", seo.og_image || "", "property");
+    setMeta("twitter:card", "summary_large_image");
+    setMeta("twitter:site", seo.twitter_handle || "");
+    setLink("canonical", seo.canonical_url || "");
+
+    if (faqs.length) {
+      const ld = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f: any) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+      };
+      let s = document.head.querySelector<HTMLScriptElement>('script[data-faq-jsonld="1"]');
+      if (!s) { s = document.createElement("script"); s.type = "application/ld+json"; s.dataset.faqJsonld = "1"; document.head.appendChild(s); }
+      s.textContent = JSON.stringify(ld);
+    }
+  }, [seo, faqs]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -264,18 +329,41 @@ export default function LandingPage() {
       <section className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-primary p-8 md:p-16 text-center text-primary-foreground">
-            <h2 className="text-3xl md:text-4xl font-bold">Ready to Transform Your Business?</h2>
+            {promo?.badge && <Badge variant="secondary" className="mb-4">{promo.badge}</Badge>}
+            <h2 className="text-3xl md:text-4xl font-bold">{promo?.heading || "Ready to Transform Your Business?"}</h2>
             <p className="mt-4 text-lg opacity-90 max-w-2xl mx-auto">
-              Join thousands of businesses already using Prime POS. Start your free trial today.
+              {promo?.subheading || "Join thousands of businesses already using Prime POS. Start your free trial today."}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" className="text-base px-8" onClick={() => navigate("/register")}>
-                Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+              <Button size="lg" variant="secondary" className="text-base px-8" onClick={() => navigate(promo?.cta_link || "/register")}>
+                {promo?.cta_text || "Start Free Trial"} <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* FAQ */}
+      {faqs.length > 0 && (
+        <section id="faq" className="py-20 md:py-28 border-t border-border/50">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold">Frequently Asked Questions</h2>
+              <p className="mt-4 text-muted-foreground">Everything you need to know about Prime POS.</p>
+            </div>
+            <div className="space-y-4">
+              {faqs.map((f: any) => (
+                <Card key={f.id} className="border-border/50">
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold mb-2">{f.question}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{f.answer}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-border/50 bg-muted/30">
