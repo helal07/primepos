@@ -18,7 +18,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Plus, MoreVertical, Search, CalendarPlus, Ban, CheckCircle, Trash2, Pencil,
-  FileSpreadsheet, FileText, Printer, Download, KeyRound, Eye, ShieldCheck
+  FileSpreadsheet, FileText, Printer, Download, KeyRound, Eye, ShieldCheck,
+  Send, Mail, MessageCircle
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -91,6 +92,86 @@ export default function TenantManagement() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  // Send credentials
+  const [credOpen, setCredOpen] = useState(false);
+  const [credForm, setCredForm] = useState({
+    tenantName: "",
+    email: "",
+    whatsapp: "",
+    username: "",
+    password: "",
+    loginUrl: "",
+    message: "",
+  });
+
+  const buildCredMessage = (f: typeof credForm) =>
+    `Hello ${f.tenantName || "Admin"},\n\n` +
+    `Your account is ready. Please use the credentials below to sign in:\n\n` +
+    `Login URL: ${f.loginUrl}\n` +
+    `Username: ${f.username}\n` +
+    `Password: ${f.password}\n\n` +
+    `For security, please change your password after the first login.\n\n` +
+    `Thank you.`;
+
+  const openSendCreds = (t: any) => {
+    const loginUrl = t.domain
+      ? `https://${t.domain}`
+      : `${window.location.origin}/login`;
+    const next = {
+      tenantName: t.name ?? "",
+      email: t.email ?? "",
+      whatsapp: (t.phone ?? "").replace(/[^\d+]/g, ""),
+      username: t.email ?? "",
+      password: "",
+      loginUrl,
+      message: "",
+    };
+    next.message = buildCredMessage(next);
+    setCredForm(next);
+    setCredOpen(true);
+  };
+
+  const updateCred = (patch: Partial<typeof credForm>) => {
+    setCredForm((prev) => {
+      const merged = { ...prev, ...patch };
+      // Auto-regenerate message when key fields change, unless user edited it manually
+      const wasAuto = prev.message === buildCredMessage(prev);
+      if (wasAuto && ("tenantName" in patch || "username" in patch || "password" in patch || "loginUrl" in patch)) {
+        merged.message = buildCredMessage(merged);
+      }
+      return merged;
+    });
+  };
+
+  const sendViaEmail = () => {
+    if (!credForm.email) {
+      toast({ title: "Email is required", variant: "destructive" });
+      return;
+    }
+    const subject = `Your login credentials — ${credForm.tenantName || "Account"}`;
+    const href = `mailto:${encodeURIComponent(credForm.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(credForm.message)}`;
+    window.location.href = href;
+  };
+
+  const sendViaWhatsapp = () => {
+    const digits = credForm.whatsapp.replace(/[^\d]/g, "");
+    if (!digits) {
+      toast({ title: "WhatsApp number is required", variant: "destructive" });
+      return;
+    }
+    const href = `https://wa.me/${digits}?text=${encodeURIComponent(credForm.message)}`;
+    window.open(href, "_blank", "noopener");
+  };
+
+  const copyCreds = async () => {
+    try {
+      await navigator.clipboard.writeText(credForm.message);
+      toast({ title: "Copied to clipboard" });
+    } catch {
+      toast({ title: "Copy failed", variant: "destructive" });
+    }
+  };
 
   const filtered = tenants?.filter((t) => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -441,6 +522,9 @@ export default function TenantManagement() {
                         )}
                         <DropdownMenuItem onClick={() => { setResetUserId(t.owner_user_id); setResetTenantName(t.name); setNewPassword(""); setResetOpen(true); }} className="text-foreground focus:bg-accent">
                           <KeyRound className="h-4 w-4 mr-2" />Reset Password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openSendCreds(t)} className="text-foreground focus:bg-accent">
+                          <Send className="h-4 w-4 mr-2" />Send Credentials
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-muted" />
                         <DropdownMenuItem className="text-red-400 focus:bg-accent" onClick={() => { setDeleteTarget(t); setDeleteConfirmText(""); }}>
