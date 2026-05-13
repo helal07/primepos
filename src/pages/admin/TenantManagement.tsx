@@ -165,12 +165,19 @@ export default function TenantManagement() {
     setCredLoading(true);
     try {
       const newPassword = generatePassword();
-      const { error } = await supabase.functions.invoke("reset-tenant-password", {
+      const { data, error } = await supabase.functions.invoke("reset-tenant-password", {
         body: { user_id: ownerUserId, new_password: newPassword },
       });
       if (error) throw error;
+      const authEmail = (data as any)?.email ?? "";
       setCredForm((p) => {
-        const merged = { ...p, password: newPassword };
+        const resolvedEmail = p.email || authEmail;
+        const merged = {
+          ...p,
+          password: newPassword,
+          email: resolvedEmail,
+          username: authEmail || resolvedEmail || p.username,
+        };
         merged.message = buildCredMessage(merged);
         return merged;
       });
