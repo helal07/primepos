@@ -17,6 +17,7 @@ DECLARE
   v_end date;
   v_duration int;
   v_new_end date;
+  v_owner uuid;
 BEGIN
   -- 1) Pick any active package (or fall back to 30 days)
   SELECT id, COALESCE(duration_days, 30)
@@ -27,10 +28,20 @@ BEGIN
   LIMIT 1;
   IF v_duration IS NULL THEN v_duration := 30; END IF;
 
+  -- Need a real owner_user_id (NOT NULL). Reuse any existing superadmin.
+  SELECT ur.user_id INTO v_owner
+  FROM public.user_roles ur
+  JOIN public.roles r ON r.id = ur.role_id
+  WHERE r.name = 'Superadmin'
+  LIMIT 1;
+  IF v_owner IS NULL THEN
+    RAISE EXCEPTION 'FAIL: no superadmin user available to own the test tenant';
+  END IF;
+
   -- 2) Create a tenant whose subscription expired YESTERDAY
   INSERT INTO public.tenants (
     name, slug, email, status, subscription_type,
-    subscription_start, subscription_end, package_id
+    subscription_start, subscription_end, package_id, owner_user_id
   ) VALUES (
     'E2E Test Tenant ' || gen_random_uuid()::text,
     'e2e-' || substr(md5(random()::text), 1, 10),
@@ -39,7 +50,8 @@ BEGIN
     'monthly',
     CURRENT_DATE - INTERVAL '40 days',
     CURRENT_DATE - INTERVAL '1 day',
-    v_pkg_id
+    v_pkg_id,
+    v_owner
   ) RETURNING id INTO v_tenant_id;
 
   RAISE NOTICE 'Created tenant % with expired subscription_end', v_tenant_id;
