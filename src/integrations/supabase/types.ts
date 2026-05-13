@@ -318,7 +318,7 @@ export type Database = {
           is_active: boolean
           name: string
           parent_id: string | null
-          tenant_id: string | null
+          tenant_id: string
           updated_at: string
         }
         Insert: {
@@ -330,7 +330,7 @@ export type Database = {
           is_active?: boolean
           name: string
           parent_id?: string | null
-          tenant_id?: string | null
+          tenant_id: string
           updated_at?: string
         }
         Update: {
@@ -342,7 +342,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           parent_id?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -1672,7 +1672,7 @@ export type Database = {
           sku: string | null
           stock_quantity: number
           tax_percent: number
-          tenant_id: string | null
+          tenant_id: string
           unit_id: string | null
           updated_at: string
           warranty_duration: number | null
@@ -1702,7 +1702,7 @@ export type Database = {
           sku?: string | null
           stock_quantity?: number
           tax_percent?: number
-          tenant_id?: string | null
+          tenant_id: string
           unit_id?: string | null
           updated_at?: string
           warranty_duration?: number | null
@@ -1732,7 +1732,7 @@ export type Database = {
           sku?: string | null
           stock_quantity?: number
           tax_percent?: number
-          tenant_id?: string | null
+          tenant_id?: string
           unit_id?: string | null
           updated_at?: string
           warranty_duration?: number | null

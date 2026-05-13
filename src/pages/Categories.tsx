@@ -27,7 +27,7 @@ export default function Categories() {
     if (editId) {
       update.mutate({ id: editId, ...payload }, { onSuccess: () => { setOpen(false); resetForm(); } });
     } else {
-      create.mutate(payload, { onSuccess: () => { setOpen(false); resetForm(); } });
+      create.mutate(payload as any, { onSuccess: () => { setOpen(false); resetForm(); } });
     }
   };
 
