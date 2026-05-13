@@ -40,9 +40,13 @@ export function useCategoryMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      // Unlink products from this category so deletion is not blocked by FK
+      await supabase.from("products").update({ category_id: null }).eq("category_id", id);
+      // Unlink any subcategories
+      await supabase.from("categories").update({ parent_id: null }).eq("parent_id", id);
       const { data, error } = await supabase.from("categories").delete().eq("id", id).select("id");
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
+      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission to delete this category.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
