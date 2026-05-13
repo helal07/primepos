@@ -823,9 +823,18 @@ export default function TenantManagement() {
               </div>
               <div>
                 <Label className="text-foreground/90">Password</Label>
-                <Input className="bg-muted border-border text-foreground"
-                  value={credForm.password} onChange={(e) => updateCred({ password: e.target.value })}
-                  placeholder="Enter or paste password" />
+                <div className="flex gap-2">
+                  <Input className="bg-muted border-border text-foreground"
+                    value={credForm.password} onChange={(e) => updateCred({ password: e.target.value })}
+                    placeholder="Auto-generated" readOnly={credLoading} />
+                  <Button type="button" variant="outline" className="border-border text-foreground/90 shrink-0"
+                    onClick={regeneratePassword} disabled={credLoading || !credForm.ownerUserId}>
+                    {credLoading ? "…" : "Regenerate"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Auto-generated and applied to the owner account. Sharing it replaces the old password.
+                </p>
               </div>
             </div>
             <div>
