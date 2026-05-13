@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Download, Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -34,7 +34,9 @@ export default function Sitemap() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, priority: Number(form.priority) };
+      const path = String(form.path || "").trim();
+      if (!path.startsWith("/")) throw new Error("Path must start with /, for example /about");
+      const payload = { ...form, path, priority: Number(form.priority) };
       if (editId) {
         const { error } = await supabase.from("sitemap_entries").update(payload).eq("id", editId);
         if (error) throw error;
@@ -54,6 +56,11 @@ export default function Sitemap() {
 
   const openNew = () => { setForm({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" }); setEditId(null); setOpen(true); };
   const openEdit = (row: any) => { setForm(row); setEditId(row.id); setOpen(true); };
+
+  const submitEntry = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!save.isPending) save.mutate();
+  };
 
   const downloadXml = async () => {
     try {
