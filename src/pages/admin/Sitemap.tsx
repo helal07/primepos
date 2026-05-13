@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const FREQS = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
+const SITEMAP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sitemap`;
 
 export default function Sitemap() {
   const qc = useQueryClient();
@@ -54,11 +55,40 @@ export default function Sitemap() {
   const openNew = () => { setForm({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" }); setEditId(null); setOpen(true); };
   const openEdit = (row: any) => { setForm(row); setEditId(row.id); setOpen(true); };
 
+  const downloadXml = async () => {
+    try {
+      const res = await fetch(SITEMAP_URL);
+      const xml = await res.text();
+      const blob = new Blob([xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "sitemap.xml"; a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Downloaded", description: "Drop sitemap.xml in /public to host it at your site root." });
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Sitemap CMS" description="Manage public sitemap entries">
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" />Add Entry</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={downloadXml}><Download className="h-4 w-4 mr-1" />Download XML</Button>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" />Add Entry</Button>
+        </div>
       </PageHeader>
+
+      <Card>
+        <CardContent className="p-3 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground mb-1">Live sitemap URL — entries you save here are served instantly. /sitemap.xml redirects here on Apache hosting; robots.txt also references it.</p>
+            <p className="font-mono text-xs truncate">{SITEMAP_URL}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(SITEMAP_URL); toast({ title: "Copied" }); }}><Copy className="h-3 w-3 mr-1" />Copy</Button>
+          <Button size="sm" variant="outline" asChild><a href={SITEMAP_URL} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3 mr-1" />Open</a></Button>
+        </CardContent>
+      </Card>
 
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
         <div className="space-y-2">
