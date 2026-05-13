@@ -191,13 +191,6 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
     ],
   },
   {
-    label: "CMS",
-    module: "cms",
-    items: [
-      { title: "Pages", url: "/cms/pages", icon: Globe },
-    ],
-  },
-  {
     label: "Exchange",
     module: "exchange",
     items: [

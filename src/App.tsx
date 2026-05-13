@@ -123,6 +123,7 @@ const SuperadminRoutes = () => (
             <Route path="tenants/:id" element={<TenantDetail />} />
             <Route path="packages" element={<PackageManagement />} />
             <Route path="cms" element={<LandingCms />} />
+            <Route path="cms/pages" element={<CmsPages />} />
             <Route path="sitemap" element={<Sitemap />} />
             <Route path="sms/providers" element={<SmsProviders />} />
             <Route path="sms/plans" element={<SmsPlans />} />
@@ -228,7 +229,6 @@ const App = () => (
                         <Route path="/leave" element={<LeaveManagement />} />
                         <Route path="/payroll" element={<PayrollPage />} />
                         <Route path="/warranty-claims" element={<WarrantyClaims />} />
-                        <Route path="/cms/pages" element={<CmsPages />} />
                         <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
                         <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
                         <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />

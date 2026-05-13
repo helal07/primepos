@@ -8,6 +8,7 @@ const adminMenu = [
   { title: "Tenants", url: "/superadmin/tenants", icon: Building2 },
   { title: "Packages", url: "/superadmin/packages", icon: Package },
   { title: "CMS", url: "/superadmin/cms", icon: Globe },
+  { title: "CMS Pages", url: "/superadmin/cms/pages", icon: Globe },
   { title: "Transactions", url: "/superadmin/transactions", icon: CreditCard },
   { title: "Settings", url: "/superadmin/settings", icon: Settings },
 ];
