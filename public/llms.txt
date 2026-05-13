@@ -1,0 +1,13 @@
+# Prime POS
+
+> Prime POS is an all-in-one business management platform — point-of-sale, inventory, accounting, HRM, warranty, CMS and business intelligence — built for retailers and SaaS teams. Mobile-first, multi-tenant, and runs on Lovable Cloud.
+
+## Pages
+
+- [Home](/): Product overview, features, pricing, FAQs and customer reviews.
+- [Sign in](/login): Sign in to manage your business workspace.
+- [Register](/register): Create a new business account and start a free trial.
+
+## Optional
+
+- [Subscription](/subscription): Manage your Prime POS subscription and billing.
