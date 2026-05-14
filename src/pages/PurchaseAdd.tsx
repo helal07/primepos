@@ -18,6 +18,11 @@ import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
 import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, usePurchase, usePurchaseItems, type PurchaseItem } from "@/hooks/usePurchases";
 import { type PaymentRow } from "@/components/payments/PaymentDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 interface PurchaseItemWithSerials extends PurchaseItem {
   serials: string[];
@@ -54,6 +59,36 @@ export default function PurchaseAdd() {
     { amount: 0, payment_method: "cash", payment_note: "" },
   ]);
   const [editInitialized, setEditInitialized] = useState(false);
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({ name: "", phone: "", email: "", company: "", address: "", tax_number: "", notes: "", is_active: true });
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
+
+  const handleCreateSupplier = async () => {
+    if (!newSupplier.name) return;
+    setCreatingSupplier(true);
+    const { data, error } = await supabase.from("suppliers").insert({
+      name: newSupplier.name,
+      phone: newSupplier.phone || null,
+      email: newSupplier.email || null,
+      company: newSupplier.company || null,
+      address: newSupplier.address || null,
+      tax_number: newSupplier.tax_number || null,
+      notes: newSupplier.notes || null,
+      is_active: newSupplier.is_active,
+    }).select().single();
+    setCreatingSupplier(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await qc.invalidateQueries({ queryKey: ["suppliers"] });
+    if (data?.id) setSupplierId(data.id);
+    toast({ title: "Supplier created" });
+    setSupplierDialogOpen(false);
+    setNewSupplier({ name: "", phone: "", email: "", company: "", address: "", tax_number: "", notes: "", is_active: true });
+  };
 
   // Pre-populate in edit mode
   useEffect(() => {
@@ -339,7 +374,7 @@ export default function PurchaseAdd() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="icon" onClick={() => navigate("/suppliers")}>
+                <Button variant="outline" size="icon" onClick={() => setSupplierDialogOpen(true)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -698,6 +733,51 @@ export default function PurchaseAdd() {
               />
             )}
           </Suspense>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Add Supplier Dialog */}
+      <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add Supplier</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Name *</Label>
+                <Input value={newSupplier.name} onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })} placeholder="Supplier name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} placeholder="+880..." />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={newSupplier.email} onChange={e => setNewSupplier({ ...newSupplier, email: e.target.value })} placeholder="email@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Company</Label>
+                <Input value={newSupplier.company} onChange={e => setNewSupplier({ ...newSupplier, company: e.target.value })} placeholder="Company name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Tax Number</Label>
+                <Input value={newSupplier.tax_number} onChange={e => setNewSupplier({ ...newSupplier, tax_number: e.target.value })} placeholder="TIN / VAT" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Textarea value={newSupplier.address} onChange={e => setNewSupplier({ ...newSupplier, address: e.target.value })} rows={2} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={newSupplier.is_active} onCheckedChange={v => setNewSupplier({ ...newSupplier, is_active: v })} />
+              <Label>Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSupplierDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateSupplier} disabled={!newSupplier.name || creatingSupplier}>
+              {creatingSupplier ? "Creating..." : "Create Supplier"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
