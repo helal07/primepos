@@ -15,7 +15,7 @@ import { MODULE_CATALOG, DEFAULT_MODULES, type ModuleKey } from "@/lib/modules";
 interface PkgForm {
   name: string; price: number; duration_days: number; max_users: number;
   max_business_location: number; max_invoice: number; features: string;
-  is_popular: boolean; is_active: boolean; sort_order: number;
+  is_popular: boolean; is_active: boolean; show_on_landing: boolean; sort_order: number;
   enabled_modules: ModuleKey[];
 }
 
@@ -28,7 +28,7 @@ const emptyForm: PkgForm = {
   name: "", price: 0, duration_days: 30, max_users: 1,
   max_business_location: 1, max_invoice: 0,
   features: labelsFor([...DEFAULT_MODULES]),
-  is_popular: false, is_active: true, sort_order: 0,
+  is_popular: false, is_active: true, show_on_landing: true, sort_order: 0,
   enabled_modules: [...DEFAULT_MODULES],
 };
 
@@ -46,7 +46,7 @@ export default function PackageManagement() {
       max_users: p.max_users, max_business_location: p.max_business_location,
       max_invoice: p.max_invoice,
       features: (p.features as string[])?.join(", ") ?? "",
-      is_popular: p.is_popular, is_active: p.is_active, sort_order: p.sort_order,
+      is_popular: p.is_popular, is_active: p.is_active, show_on_landing: p.show_on_landing ?? true, sort_order: p.sort_order,
       enabled_modules: ((p.enabled_modules as ModuleKey[]) ?? [...DEFAULT_MODULES]),
     });
     setEditId(p.id); setOpen(true);
@@ -192,6 +192,7 @@ export default function PackageManagement() {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-foreground/90">Popular</Label></div>
               <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-foreground/90">Active</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.show_on_landing} onCheckedChange={(v) => setForm({ ...form, show_on_landing: v })} /><Label className="text-foreground/90">Show on Landing</Label></div>
             </div>
           </div>
           <DialogFooter className="border-t border-border pt-4">
