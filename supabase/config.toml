@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.fb-pixel-proxy]
 verify_jwt = false
+
+[functions.trial-reminders]
+verify_jwt = false
