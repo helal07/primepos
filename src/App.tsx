@@ -14,6 +14,7 @@ import { PlaceholderPage } from "@/components/PlaceholderPage";
 import { ModuleGate } from "@/components/ModuleGate";
 import { DynamicManifest } from "@/components/DynamicManifest";
 import { BrandingInjector } from "@/components/BrandingInjector";
+import { TrackingInjector } from "@/components/TrackingInjector";
 import LandingPage from "./pages/LandingPage";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -158,6 +159,7 @@ const App = () => (
           <AuthProvider>
           <DynamicManifest />
           <BrandingInjector />
+          <TrackingInjector />
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/p/:slug" element={<Suspense fallback={<RouteFallback />}><PublicCmsPage /></Suspense>} />
