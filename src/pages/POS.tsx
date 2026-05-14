@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
-  ScanBarcode, FileText, Clock, Pencil, UserPlus,
+  ScanBarcode, FileText, Clock, UserPlus,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -457,10 +457,10 @@ export default function POS() {
                 <UserPlus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("h-7 gap-1 text-xs", "bg-primary/10 text-primary border-primary/20")}>
+                  <Button variant="outline" size="sm" className={cn("h-8 gap-1 text-xs whitespace-nowrap", "bg-primary/10 text-primary border-primary/20")}>
                     <CalendarIcon className="h-3 w-3" />
                     {dateStr} {timeStr}
                   </Button>
@@ -480,7 +480,7 @@ export default function POS() {
                   value={activePriceGroupId ?? "default"}
                   onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
                 >
-                  <SelectTrigger className="h-7 w-[160px] text-xs">
+                  <SelectTrigger className="h-8 w-full sm:w-[160px] text-xs">
                     <SelectValue placeholder="Default Pricing" />
                   </SelectTrigger>
                   <SelectContent>
@@ -495,17 +495,18 @@ export default function POS() {
           </div>
 
           {/* Cart Table */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 pb-24 md:pb-0">
             {cart.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground text-sm">Search and add products to the cart</div>
             ) : (
-              <Table>
+              <div className="overflow-x-auto">
+              <Table className="min-w-[420px]">
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">Product</TableHead>
-                    <TableHead className="w-[140px] text-center font-semibold">Quantity</TableHead>
-                    <TableHead className="w-[100px] text-right font-semibold">Subtotal</TableHead>
-                    <TableHead className="w-[40px]"></TableHead>
+                    <TableHead className="w-[120px] sm:w-[140px] text-center font-semibold">Qty</TableHead>
+                    <TableHead className="w-[90px] sm:w-[100px] text-right font-semibold">Subtotal</TableHead>
+                    <TableHead className="w-[36px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -560,32 +561,33 @@ export default function POS() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </ScrollArea>
 
           {/* Cart Footer Summary */}
-          <div className="border-t p-3 bg-muted/30 space-y-1">
+          <div className="border-t p-3 bg-muted/30 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Items: {cart.reduce((s, i) => s + i.quantity, 0)}</span>
               <span className="text-sm font-bold">Total: {subtotal.toFixed(0)}</span>
             </div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                Discount (-): <Pencil className="h-3 w-3 cursor-pointer text-primary" />
+            <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+              <label className="flex items-center gap-1 min-w-0">
+                <span className="truncate">Discount (-)</span>
                 <Input
                   type="number" min={0} value={discountValue}
                   onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                  className="h-6 w-16 text-xs inline-block"
+                  className="h-8 flex-1 min-w-0 text-xs"
                 />
-              </span>
-              <span className="flex items-center gap-1">
-                Shipping(+): <Pencil className="h-3 w-3 cursor-pointer text-primary" />
+              </label>
+              <label className="flex items-center gap-1 min-w-0">
+                <span className="truncate">Shipping (+)</span>
                 <Input
                   type="number" min={0} value={shippingCost}
                   onChange={(e) => setShippingCost(parseFloat(e.target.value) || 0)}
-                  className="h-6 w-16 text-xs inline-block"
+                  className="h-8 flex-1 min-w-0 text-xs"
                 />
-              </span>
+              </label>
             </div>
           </div>
         </div>
