@@ -263,32 +263,32 @@ export default function Shipments() {
               No shipments found
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto scroll-x -mx-4 sm:mx-0 px-4 sm:px-0">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Tracking</TableHead>
-                    <TableHead>Courier</TableHead>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead>Recipient</TableHead>
+                    <TableHead className="whitespace-nowrap">Tracking</TableHead>
+                    <TableHead className="hidden md:table-cell">Courier</TableHead>
+                    <TableHead className="hidden sm:table-cell">Invoice</TableHead>
+                    <TableHead className="whitespace-nowrap">Recipient</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Expected</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="hidden md:table-cell">Expected</TableHead>
+                    <TableHead className="text-right sticky right-0 bg-background z-10">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.map((s: any) => (
                     <TableRow key={s.id}>
-                      <TableCell className="font-mono text-xs">{s.tracking_no || "-"}</TableCell>
-                      <TableCell>{s.courier || "-"}</TableCell>
-                      <TableCell>{s.sales?.invoice_no || "-"}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-mono text-xs whitespace-nowrap">{s.tracking_no || "-"}</TableCell>
+                      <TableCell className="hidden md:table-cell">{s.courier || "-"}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{s.sales?.invoice_no || "-"}</TableCell>
+                      <TableCell className="max-w-[140px]">
                         <div className="text-sm">{s.recipient_name || "-"}</div>
                         <div className="text-xs text-muted-foreground">{s.recipient_phone || ""}</div>
                       </TableCell>
                       <TableCell>
                         <Select value={s.status} onValueChange={(v) => updateStatus.mutate({ id: s.id, status: v as Status })}>
-                          <SelectTrigger className="h-8 w-36">
+                          <SelectTrigger className="h-8 w-28 sm:w-36">
                             <Badge variant={STATUS_VARIANT[s.status as Status] || "secondary"}>{STATUS_LABEL[s.status as Status] || s.status}</Badge>
                           </SelectTrigger>
                           <SelectContent>
@@ -296,14 +296,16 @@ export default function Shipments() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="text-sm">{s.expected_delivery || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => printLabel(s)} title="Print label"><Printer className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => setHistoryId(s.id)} title="History"><History className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("Delete this shipment?")) remove.mutate(s.id); }}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                      <TableCell className="text-sm hidden md:table-cell whitespace-nowrap">{s.expected_delivery || "-"}</TableCell>
+                      <TableCell className="text-right sticky right-0 bg-background z-10">
+                        <div className="flex justify-end gap-0.5">
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => printLabel(s)} title="Print label"><Printer className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setHistoryId(s.id)} title="History"><History className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { if (confirm("Delete this shipment?")) remove.mutate(s.id); }}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
