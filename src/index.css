@@ -45,6 +45,10 @@
 
     --radius: 0.5rem;
 
+    --gradient-primary: linear-gradient(135deg, hsl(201 96% 38%), hsl(195 96% 50%));
+    --shadow-elevated: 0 12px 32px -12px hsl(201 96% 32% / 0.18);
+    --shadow-card: 0 1px 2px hsl(222 47% 11% / 0.04), 0 4px 14px -6px hsl(222 47% 11% / 0.06);
+
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 80%;
     --sidebar-primary: 201 96% 32%;
@@ -103,6 +107,61 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  @media (max-width: 767px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Better mobile scrolling */
+  html, body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+@layer utilities {
+  /* Smooth horizontal momentum scroll for table containers, tab strips, chips */
+  .scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .scroll-x::-webkit-scrollbar { height: 4px; }
+  .scroll-x::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 999px; }
+
+  /* Hide native scrollbar but keep scrollability */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Safe-area aware padding for bottom nav etc. */
+  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0px); }
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+
+  /* Modern gradient primary background */
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+
+  /* Subtle glassy card backdrop */
+  .glass-card {
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: saturate(180%) blur(10px);
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+  }
+
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+  /* 44px min touch target helper */
+  .tap-target { min-height: 44px; min-width: 44px; }
+
+  /* Edge-fade for horizontal scroll containers (optional via .fade-x) */
+  .fade-x {
+    mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
   }
 }
 
