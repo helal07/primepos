@@ -16,6 +16,7 @@ interface PkgForm {
   name: string; price: number; duration_days: number; max_users: number;
   max_business_location: number; max_invoice: number; features: string;
   is_popular: boolean; is_active: boolean; show_on_landing: boolean; sort_order: number;
+  is_trial: boolean;
   enabled_modules: ModuleKey[];
 }
 
@@ -29,6 +30,7 @@ const emptyForm: PkgForm = {
   max_business_location: 1, max_invoice: 0,
   features: labelsFor([...DEFAULT_MODULES]),
   is_popular: false, is_active: true, show_on_landing: true, sort_order: 0,
+  is_trial: false,
   enabled_modules: [...DEFAULT_MODULES],
 };
 
@@ -47,6 +49,7 @@ export default function PackageManagement() {
       max_invoice: p.max_invoice,
       features: (p.features as string[])?.join(", ") ?? "",
       is_popular: p.is_popular, is_active: p.is_active, show_on_landing: p.show_on_landing ?? true, sort_order: p.sort_order,
+      is_trial: p.is_trial ?? false,
       enabled_modules: ((p.enabled_modules as ModuleKey[]) ?? [...DEFAULT_MODULES]),
     });
     setEditId(p.id); setOpen(true);
