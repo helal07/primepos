@@ -99,25 +99,25 @@ export default function Dashboard() {
       />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         {summaryCards.map((card) => (
           <Card key={card.title} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-muted-foreground">{card.title}</p>
-                <div className={`h-8 w-8 rounded-lg ${card.bg} flex items-center justify-center`}>
-                  <card.icon className={`h-4 w-4 ${card.color}`} />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-[11px] sm:text-xs font-medium text-muted-foreground line-clamp-1">{card.title}</p>
+                <div className={`h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg ${card.bg} flex items-center justify-center`}>
+                  <card.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${card.color}`} />
                 </div>
               </div>
               {isLoading ? (
-                <Skeleton className="h-7 w-24" />
+                <Skeleton className="h-7 w-20 sm:w-24" />
               ) : (
-                <div className="flex items-end gap-2">
-                  <p className="text-xl font-bold">{card.value}</p>
+                <div className="flex items-end gap-1.5 flex-wrap">
+                  <p className="text-base sm:text-xl font-bold leading-tight truncate max-w-full">{card.value}</p>
                   {card.change !== undefined && card.change !== 0 && (
                     <Badge
                       variant="secondary"
-                      className={`text-[10px] h-5 ${card.change > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
+                      className={`text-[10px] h-5 shrink-0 px-1.5 ${card.change > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
                     >
                       {card.change > 0 ? (
                         <ArrowUpRight className="h-3 w-3 mr-0.5" />
@@ -137,7 +137,7 @@ export default function Dashboard() {
       {/* Revenue Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base font-medium">Sales Revenue</CardTitle>
             <Tabs value={chartView} onValueChange={(v) => setChartView(v as "monthly" | "weekly")}>
               <TabsList className="h-8">
@@ -147,14 +147,14 @@ export default function Dashboard() {
             </Tabs>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {isLoading ? (
-            <Skeleton className="h-[280px] w-full" />
+            <Skeleton className="h-[220px] sm:h-[280px] w-full" />
           ) : (
-            <div className="h-[280px]">
+            <div className="h-[220px] sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 {chartView === "monthly" ? (
-                  <AreaChart data={chartData}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -16, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -162,8 +162,8 @@ export default function Dashboard() {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-                    <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                    <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} interval="preserveStartEnd" minTickGap={16} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={44} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                     <Tooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                       formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]}
@@ -171,10 +171,10 @@ export default function Dashboard() {
                     <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
                   </AreaChart>
                 ) : (
-                  <BarChart data={chartData}>
+                  <BarChart data={chartData} margin={{ top: 5, right: 8, left: -16, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-                    <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                    <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} interval="preserveStartEnd" minTickGap={16} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} width={44} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                     <Tooltip
                       contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                       formatter={(value: number) => [`৳${value.toLocaleString()}`, "Revenue"]}
@@ -189,7 +189,7 @@ export default function Dashboard() {
       </Card>
 
       {/* Middle Row: Stock Alerts + Due Payments */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {/* Stock Alerts */}
         <Card>
           <CardHeader className="pb-2">
@@ -301,7 +301,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Top Products */}
         <Card>
           <CardHeader className="pb-2">
