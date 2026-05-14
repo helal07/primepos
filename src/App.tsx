@@ -55,6 +55,7 @@ const Purchases = lazy(() => import("./pages/Purchases"));
 const PurchaseAdd = lazy(() => import("./pages/PurchaseAdd"));
 const PurchaseView = lazy(() => import("./pages/PurchaseView"));
 const PurchaseOrders = lazy(() => import("./pages/PurchaseOrders"));
+const PurchaseOrderAdd = lazy(() => import("./pages/PurchaseOrderAdd"));
 const ChartOfAccounts = lazy(() => import("./pages/ChartOfAccounts"));
 const Transactions = lazy(() => import("./pages/Transactions"));
 const JournalEntries = lazy(() => import("./pages/JournalEntries"));
