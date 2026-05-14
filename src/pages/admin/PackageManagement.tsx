@@ -16,6 +16,7 @@ interface PkgForm {
   name: string; price: number; duration_days: number; max_users: number;
   max_business_location: number; max_invoice: number; features: string;
   is_popular: boolean; is_active: boolean; show_on_landing: boolean; sort_order: number;
+  is_trial: boolean;
   enabled_modules: ModuleKey[];
 }
 
@@ -29,6 +30,7 @@ const emptyForm: PkgForm = {
   max_business_location: 1, max_invoice: 0,
   features: labelsFor([...DEFAULT_MODULES]),
   is_popular: false, is_active: true, show_on_landing: true, sort_order: 0,
+  is_trial: false,
   enabled_modules: [...DEFAULT_MODULES],
 };
 
@@ -47,6 +49,7 @@ export default function PackageManagement() {
       max_invoice: p.max_invoice,
       features: (p.features as string[])?.join(", ") ?? "",
       is_popular: p.is_popular, is_active: p.is_active, show_on_landing: p.show_on_landing ?? true, sort_order: p.sort_order,
+      is_trial: p.is_trial ?? false,
       enabled_modules: ((p.enabled_modules as ModuleKey[]) ?? [...DEFAULT_MODULES]),
     });
     setEditId(p.id); setOpen(true);
@@ -189,10 +192,11 @@ export default function PackageManagement() {
               </div>
             </div>
             <div><Label className="text-foreground/90">Sort Order</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-foreground/90">Popular</Label></div>
               <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-foreground/90">Active</Label></div>
               <div className="flex items-center gap-2"><Switch checked={form.show_on_landing} onCheckedChange={(v) => setForm({ ...form, show_on_landing: v })} /><Label className="text-foreground/90">Show on Landing</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_trial} onCheckedChange={(v) => setForm({ ...form, is_trial: v })} /><Label className="text-foreground/90">Free trial plan</Label></div>
             </div>
           </div>
           <DialogFooter className="border-t border-border pt-4">

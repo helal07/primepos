@@ -2540,6 +2540,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_popular: boolean
+          is_trial: boolean
           max_business_location: number
           max_invoice: number
           max_users: number
@@ -2557,6 +2558,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_popular?: boolean
+          is_trial?: boolean
           max_business_location?: number
           max_invoice?: number
           max_users?: number
@@ -2574,6 +2576,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_popular?: boolean
+          is_trial?: boolean
           max_business_location?: number
           max_invoice?: number
           max_users?: number

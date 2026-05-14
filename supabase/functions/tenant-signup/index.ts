@@ -42,34 +42,48 @@ Deno.serve(async (req) => {
       return json({ error: "Name fields too long" }, 400);
     }
 
-    const choice: "trial" | "paid" = registrationChoice === "paid" ? "paid" : "trial";
+    let choice: "trial" | "paid" = registrationChoice === "paid" ? "paid" : "trial";
 
     const url = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
 
     // Validate package for paid choice
-    let pkg: { id: string; price: number; duration_days: number } | null = null;
+    let pkg: { id: string; price: number; duration_days: number; is_trial: boolean } | null = null;
     if (choice === "paid") {
       if (!packageId) return json({ error: "packageId required for paid registration" }, 400);
       const { data: p } = await admin
         .from("saas_packages")
-        .select("id, price, duration_days")
+        .select("id, price, duration_days, is_trial")
         .eq("id", packageId)
         .eq("is_active", true)
         .maybeSingle();
       if (!p) return json({ error: "Selected plan not found" }, 400);
       pkg = p as any;
+      // If the chosen plan is a trial plan, treat signup as trial (instant access, no payment)
+      if ((pkg as any).is_trial) choice = "trial";
     } else {
-      // For trial, default to first active package (cheapest) so modules apply
-      const { data: p } = await admin
+      // For trial without packageId, prefer a plan flagged as trial; otherwise fall back to the cheapest active plan
+      const { data: trialPkg } = await admin
         .from("saas_packages")
-        .select("id, price, duration_days")
+        .select("id, price, duration_days, is_trial")
         .eq("is_active", true)
+        .eq("is_trial", true)
         .order("sort_order")
         .limit(1)
         .maybeSingle();
-      pkg = (p as any) ?? null;
+      if (trialPkg) {
+        pkg = trialPkg as any;
+      } else {
+        const { data: p } = await admin
+          .from("saas_packages")
+          .select("id, price, duration_days, is_trial")
+          .eq("is_active", true)
+          .order("sort_order")
+          .limit(1)
+          .maybeSingle();
+        pkg = (p as any) ?? null;
+      }
     }
 
     const emailLc = String(contactEmail).toLowerCase();
@@ -116,7 +130,8 @@ Deno.serve(async (req) => {
 
     const now = new Date();
     const durationDays = pkg?.duration_days ?? 14;
-    const trialDays = 14;
+    // Trial duration: prefer the trial plan's duration_days; fall back to 14
+    const trialDays = choice === "trial" ? (pkg?.is_trial ? pkg.duration_days : (pkg?.duration_days ?? 14)) : 14;
     const subEnd = new Date(now.getTime() + (choice === "trial" ? trialDays : durationDays) * 86_400_000);
 
     const tenantPatch: Record<string, unknown> = {

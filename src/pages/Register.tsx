@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles, CreditCard, CheckCircle2, Store, Eye, EyeOff } from "lucide-react";
@@ -18,9 +17,8 @@ interface Pkg {
   name: string;
   price: number;
   duration_days: number;
+  is_trial?: boolean;
 }
-
-const TRIAL_DAYS = 14;
 
 export default function Register() {
   const navigate = useNavigate();
@@ -37,7 +35,6 @@ export default function Register() {
     address: "",
     password: "",
   });
-  const [choice, setChoice] = useState<"trial" | "paid">("trial");
   const [packageId, setPackageId] = useState<string>("");
 
   const set = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
@@ -46,14 +43,21 @@ export default function Register() {
     (async () => {
       const { data } = await supabase
         .from("saas_packages")
-        .select("id,name,price,duration_days")
+        .select("id,name,price,duration_days,is_trial")
         .eq("is_active", true)
         .order("sort_order");
       const list = (data ?? []) as Pkg[];
       setPackages(list);
-      if (list.length > 0) setPackageId(list[0].id);
+      if (list.length > 0) {
+        // Default to trial plan if one exists, otherwise the first plan
+        const trial = list.find((p) => p.is_trial);
+        setPackageId(trial?.id ?? list[0].id);
+      }
     })();
   }, []);
+
+  const selectedPkg = packages.find((p) => p.id === packageId) ?? null;
+  const choice: "trial" | "paid" = selectedPkg?.is_trial ? "trial" : "paid";
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +70,7 @@ export default function Register() {
       });
       return;
     }
-    if (choice === "paid" && !packageId) {
+    if (!packageId) {
       toast({ title: "Choose a plan", variant: "destructive" });
       return;
     }
@@ -81,7 +85,7 @@ export default function Register() {
           address: form.address.trim(),
           password: form.password,
           registrationChoice: choice,
-          packageId: choice === "paid" ? packageId : null,
+          packageId: packageId,
         },
       });
       if (error) throw error;
@@ -98,7 +102,8 @@ export default function Register() {
         return;
       }
       if (choice === "trial") {
-        toast({ title: `Trial activated`, description: `${TRIAL_DAYS} days of full access.` });
+        const days = selectedPkg?.duration_days ?? 14;
+        toast({ title: `Trial activated`, description: `${days} days of full access.` });
         const eid = `lead-${Date.now()}`;
         if ((window as any).fbq) (window as any).fbq("track", "Lead", { content_name: "Trial signup" }, { eventID: eid });
         trackEvent("Lead", {
@@ -175,7 +180,7 @@ export default function Register() {
           </Link>
           <h1 className="text-2xl font-semibold">Register your business</h1>
           <p className="text-sm text-muted-foreground">
-            Start with a {TRIAL_DAYS}-day free trial or pay upfront
+          Pick a plan to get started — try the free trial or pay upfront
           </p>
         </div>
 
@@ -222,64 +227,61 @@ export default function Register() {
               </div>
 
               <div className="space-y-2 rounded-lg border p-3">
-                <Label className="text-sm font-semibold">How would you like to start?</Label>
-                <RadioGroup value={choice} onValueChange={(v) => setChoice(v as any)} className="gap-2">
-                  <label className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
-                    <RadioGroupItem value="trial" className="mt-1" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 font-medium text-sm">
-                        <Sparkles className="h-4 w-4 text-primary" /> Free trial
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Activates immediately. Full access for {TRIAL_DAYS} days.
-                      </div>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
-                    <RadioGroupItem value="paid" className="mt-1" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 font-medium text-sm">
-                        <CreditCard className="h-4 w-4 text-primary" /> Pay now
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Choose a plan. Activated after super admin confirms payment.
-                      </div>
-                    </div>
-                  </label>
-                </RadioGroup>
-
-                {choice === "paid" && (
-                  <div className="mt-2 space-y-1.5">
-                    <Label className="text-xs">Choose plan</Label>
-                    {packages.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No plans available.</p>
-                    ) : (
-                      <div className="grid gap-2">
-                        {packages.map((p) => (
-                          <label
-                            key={p.id}
-                            className={`flex items-center justify-between rounded-md border p-2.5 cursor-pointer text-sm ${
-                              packageId === p.id ? "border-primary bg-primary/5" : "hover:bg-muted/40"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <input type="radio" checked={packageId === p.id} onChange={() => setPackageId(p.id)} />
-                              <span className="font-medium">{p.name}</span>
+                <Label className="text-sm font-semibold">Choose your plan</Label>
+                {packages.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No plans available.</p>
+                ) : (
+                  <div className="grid gap-2">
+                    {packages.map((p) => {
+                      const selected = packageId === p.id;
+                      return (
+                        <label
+                          key={p.id}
+                          className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer text-sm ${
+                            selected ? "border-primary bg-primary/5" : "hover:bg-muted/40"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            className="mt-1"
+                            checked={selected}
+                            onChange={() => setPackageId(p.id)}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 font-medium">
+                              {p.is_trial ? (
+                                <Sparkles className="h-4 w-4 text-primary" />
+                              ) : (
+                                <CreditCard className="h-4 w-4 text-primary" />
+                              )}
+                              <span>{p.name}</span>
+                              {p.is_trial && (
+                                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                  Free trial
+                                </span>
+                              )}
                             </div>
-                            <span className="text-xs">
-                              ৳{Number(p.price).toLocaleString()} / {p.duration_days}d
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
+                            <div className="text-xs text-muted-foreground">
+                              {p.is_trial
+                                ? `Activates instantly. Full access for ${p.duration_days} days.`
+                                : `Activated after super admin confirms payment.`}
+                            </div>
+                          </div>
+                          <span className="text-xs whitespace-nowrap">
+                            {p.is_trial ? "Free" : `৳${Number(p.price).toLocaleString()}`} / {p.duration_days}d
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {choice === "trial" ? `Start ${TRIAL_DAYS}-day free trial` : "Submit & continue"}
+                {choice === "trial"
+                  ? `Start ${selectedPkg?.duration_days ?? 14}-day free trial`
+                  : "Submit & continue"}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
                 Already have an account? <Link to="/login" className="text-primary hover:underline">Sign in</Link>
