@@ -16,6 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Check, Clock, CreditCard, Loader2 } from "lucide-react";
+import { trackEvent } from "@/lib/tracking";
 
 interface Pkg {
   id: string;
@@ -99,6 +100,15 @@ export default function Subscription() {
     window.history.replaceState({}, "", window.location.pathname + (fromRegister ? "?from=register" : ""));
     if (status === "success") {
       toast({ title: "Payment received", description: "Subscription activated." });
+      // Fire Purchase event (client + server CAPI). Best-effort: amount unknown here,
+      // server can be enriched later from tenant_payments lookup.
+      const eid = `purchase-${Date.now()}`;
+      const ref = params.get("ref") || undefined;
+      if ((window as any).fbq) (window as any).fbq("track", "Purchase", { currency: "BDT", value: 0 }, { eventID: eid });
+      trackEvent("Purchase", {
+        event_id: eid,
+        custom_data: { currency: "BDT", value: 0, payment_reference: ref },
+      });
       setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     } else if (status === "cancelled") toast({ title: "Payment cancelled", variant: "destructive" });
     else if (status === "unconfigured") toast({ title: "Gateway not configured", description: "Please contact support.", variant: "destructive" });

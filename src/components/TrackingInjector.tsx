@@ -1,12 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/tracking";
+
+const PIXEL_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fb-pixel-proxy`;
 
 /**
  * Reads global cms_tracking (tenant_id IS NULL) and injects
- * Google Tag Manager + Meta (Facebook) Pixel sitewide.
+ * GTM + GA4 + Meta Pixel sitewide. Fires page_view / PageView on every
+ * SPA route change. Pixel script is loaded via a first-party proxy so
+ * ad blockers that block connect.facebook.net are bypassed.
  */
 export function TrackingInjector() {
+  const location = useLocation();
+  const initialized = useRef(false);
+
   const { data: tracking } = useQuery({
     queryKey: ["business_settings", "cms_tracking"],
     queryFn: async () => {
@@ -51,19 +60,38 @@ export function TrackingInjector() {
       document.head.appendChild(s2);
     }
 
-    // Meta (Facebook) Pixel
+    // Meta (Facebook) Pixel — loaded via first-party proxy
     const pixelId = tracking.fb_pixel_id?.trim();
     if (pixelId && !(window as any).fbq) {
       const s = document.createElement("script");
       s.id = "fb-pixel-script";
-      s.innerHTML = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pixelId}');fbq('track','PageView');`;
+      s.innerHTML = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','${PIXEL_PROXY_URL}');fbq('init','${pixelId}');`;
       document.head.appendChild(s);
 
       const noscript = document.createElement("noscript");
       noscript.innerHTML = `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1"/>`;
       document.body.appendChild(noscript);
     }
+
+    initialized.current = true;
   }, [tracking]);
+
+  // Fire PageView on every SPA route change (client pixel + server CAPI dedupe)
+  useEffect(() => {
+    if (!tracking) return;
+    const url = window.location.href;
+    const path = location.pathname + location.search;
+
+    if ((window as any).fbq) (window as any).fbq("track", "PageView", {}, { eventID: `pv-${Date.now()}` });
+    if ((window as any).gtag && tracking.ga4_id) {
+      (window as any).gtag("event", "page_view", { page_location: url, page_path: path });
+    }
+    if ((window as any).dataLayer) {
+      (window as any).dataLayer.push({ event: "page_view", page_location: url, page_path: path });
+    }
+    // Server-side mirror
+    trackEvent("PageView", { event_source_url: url });
+  }, [location.pathname, location.search, tracking]);
 
   return null;
 }
