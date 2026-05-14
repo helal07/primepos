@@ -89,6 +89,10 @@
   RewriteEngine On
   RewriteBase /
 
+  # Dynamic SEO files served by Lovable Cloud edge functions
+  RewriteRule ^sitemap\.xml$ https://pekekgjysecbwznrvojp.supabase.co/functions/v1/sitemap [R=302,L]
+  RewriteRule ^robots\.txt$  https://pekekgjysecbwznrvojp.supabase.co/functions/v1/robots  [R=302,L]
+
   # Don't rewrite the index file itself.
   RewriteRule ^index\.html$ - [L]
 
