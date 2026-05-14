@@ -137,6 +137,15 @@ Deno.serve(async (req) => {
       "https://primepos.lovable.app";
     const upgradeUrl = `${baseUrl.replace(/\/$/, "")}/subscription`;
 
+    // Load admin-customized templates (merge over defaults per marker)
+    const { data: tmplRow } = await supabase
+      .from("business_settings").select("value").eq("key", "trial_email_templates").maybeSingle();
+    const saved = (tmplRow?.value ?? {}) as Record<string, Partial<Tmpl>>;
+    const templates: Record<string, Tmpl> = {};
+    for (const k of Object.keys(DEFAULT_TEMPLATES)) {
+      templates[k] = { ...DEFAULT_TEMPLATES[k], ...(saved[k] ?? {}) };
+    }
+
     // Fetch active trial tenants
     const { data: tenants, error } = await supabase
       .from("tenants")
@@ -179,6 +188,7 @@ Deno.serve(async (req) => {
         daysLeft,
         expiryAt: end,
         upgradeUrl,
+        template: templates[String(marker)],
       });
       try {
         await client.send({
