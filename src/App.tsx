@@ -177,98 +177,98 @@ const App = () => (
                     <Suspense fallback={<RouteFallback />}>
                       <Routes>
                         <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/products" element={<Products />} />
-                        <Route path="/products/add" element={<ProductAdd />} />
-                        <Route path="/products/edit/:id" element={<ProductAdd />} />
-                        <Route path="/categories" element={<Categories />} />
-                        <Route path="/brands" element={<Brands />} />
-                        <Route path="/products/price-groups" element={<SellingPriceGroups />} />
-                        <Route path="/contacts/customer-groups" element={<CustomerGroups />} />
-                        <Route path="/units" element={<Units />} />
-                        <Route path="/variations" element={<Variations />} />
-                        <Route path="/stock-adjustments" element={<StockAdjustments />} />
-                        <Route path="/stock-transfers" element={<StockTransfers />} />
+                        <Route path="/products" element={<ModuleGate module="products"><Products /></ModuleGate>} />
+                        <Route path="/products/add" element={<ModuleGate module="products"><ProductAdd /></ModuleGate>} />
+                        <Route path="/products/edit/:id" element={<ModuleGate module="products"><ProductAdd /></ModuleGate>} />
+                        <Route path="/categories" element={<ModuleGate module="products"><Categories /></ModuleGate>} />
+                        <Route path="/brands" element={<ModuleGate module="products"><Brands /></ModuleGate>} />
+                        <Route path="/products/price-groups" element={<ModuleGate module="products"><SellingPriceGroups /></ModuleGate>} />
+                        <Route path="/contacts/customer-groups" element={<ModuleGate module="contacts"><CustomerGroups /></ModuleGate>} />
+                        <Route path="/units" element={<ModuleGate module="products"><Units /></ModuleGate>} />
+                        <Route path="/variations" element={<ModuleGate module="products"><Variations /></ModuleGate>} />
+                        <Route path="/stock-adjustments" element={<ModuleGate module="products"><StockAdjustments /></ModuleGate>} />
+                        <Route path="/stock-transfers" element={<ModuleGate module="warehouses"><StockTransfers /></ModuleGate>} />
                         <Route path="/warehouses" element={<ModuleGate module="warehouses"><Warehouses /></ModuleGate>} />
                         <Route path="/warehouses/stock" element={<ModuleGate module="warehouses"><WarehouseStock /></ModuleGate>} />
-                        <Route path="/warranties" element={<Warranties />} />
-                        <Route path="/products/import" element={<ProductBulkImport />} />
-                        <Route path="/products/export" element={<ProductExport />} />
-                        <Route path="/products/labels" element={<PrintLabels />} />
-                        <Route path="/pos" element={<POS />} />
-                        <Route path="/sales" element={<Sales />} />
-                        <Route path="/sales/add" element={<SaleAdd />} />
-                        <Route path="/sales/:id" element={<SaleView />} />
-                        <Route path="/sales/:id/edit" element={<SaleEditRedirect />} />
-                        <Route path="/sales/orders" element={
+                        <Route path="/warranties" element={<ModuleGate module="warranty"><Warranties /></ModuleGate>} />
+                        <Route path="/products/import" element={<ModuleGate module="products"><ProductBulkImport /></ModuleGate>} />
+                        <Route path="/products/export" element={<ModuleGate module="products"><ProductExport /></ModuleGate>} />
+                        <Route path="/products/labels" element={<ModuleGate module="products"><PrintLabels /></ModuleGate>} />
+                        <Route path="/pos" element={<ModuleGate module="pos"><POS /></ModuleGate>} />
+                        <Route path="/sales" element={<ModuleGate module="sales"><Sales /></ModuleGate>} />
+                        <Route path="/sales/add" element={<ModuleGate module="sales"><SaleAdd /></ModuleGate>} />
+                        <Route path="/sales/:id" element={<ModuleGate module="sales"><SaleView /></ModuleGate>} />
+                        <Route path="/sales/:id/edit" element={<ModuleGate module="sales"><SaleEditRedirect /></ModuleGate>} />
+                        <Route path="/sales/orders" element={<ModuleGate module="sales">
                           <Sales defaultStatus="order" title="Sales Orders" description="Pending orders waiting to be invoiced" hideStatusFilter addLabel="Add Sales Order" addPath="/sales/orders/add" />
-                        } />
-                        <Route path="/sales/orders/add" element={<SalesOrderAdd />} />
-                        <Route path="/invoices" element={
+                        </ModuleGate>} />
+                        <Route path="/sales/orders/add" element={<ModuleGate module="sales"><SalesOrderAdd /></ModuleGate>} />
+                        <Route path="/invoices" element={<ModuleGate module="sales">
                           <Sales defaultStatus="completed" title="Invoices" description="All completed sale invoices" hideStatusFilter />
-                        } />
-                        <Route path="/sales/drafts" element={
+                        </ModuleGate>} />
+                        <Route path="/sales/drafts" element={<ModuleGate module="sales">
                           <Sales defaultStatus="draft" title="Drafts" description="Draft sales" hideStatusFilter addLabel="Add Draft" />
-                        } />
-                        <Route path="/quotations" element={
+                        </ModuleGate>} />
+                        <Route path="/quotations" element={<ModuleGate module="sales">
                           <Sales defaultStatus="quotation" title="Quotations" description="Customer quotations" hideStatusFilter addLabel="Add Quotation" addPath="/sales/add?status=quotation" />
-                        } />
-                        <Route path="/sales/returns" element={
+                        </ModuleGate>} />
+                        <Route path="/sales/returns" element={<ModuleGate module="sales">
                           <Sales defaultStatus="returned" title="Sale Returns" description="Returned sales" hideStatusFilter />
-                        } />
-                        <Route path="/shipments" element={<Shipments />} />
+                        </ModuleGate>} />
+                        <Route path="/shipments" element={<ModuleGate module="sales"><Shipments /></ModuleGate>} />
                         <Route path="/expenses" element={<ModuleGate module="expenses"><Expenses /></ModuleGate>} />
                         <Route path="/expenses/add" element={<ModuleGate module="expenses"><ExpenseAdd /></ModuleGate>} />
                         <Route path="/expenses/:id/edit" element={<ModuleGate module="expenses"><ExpenseAdd /></ModuleGate>} />
                         <Route path="/expenses/categories" element={<ModuleGate module="expenses"><ExpenseCategories /></ModuleGate>} />
                         <Route path="/locked/:module" element={<LockedModule />} />
-                        <Route path="/purchases/add" element={<PurchaseAdd />} />
-                        <Route path="/purchases" element={<Purchases />} />
-                        <Route path="/purchases/:id" element={<PurchaseView />} />
-                        <Route path="/purchases/:id/edit" element={<PurchaseEditRedirect />} />
-                        <Route path="/purchase-orders" element={<PurchaseOrders />} />
-                        <Route path="/purchases/returns" element={<PlaceholderPage title="Purchase Returns" />} />
-                        <Route path="/customers" element={<Customers />} />
-                        <Route path="/customers/:id" element={<ContactProfile kind="customer" />} />
-                        <Route path="/suppliers" element={<Suppliers />} />
-                        <Route path="/suppliers/:id" element={<ContactProfile kind="supplier" />} />
-                        <Route path="/accounts" element={<ChartOfAccounts />} />
-                        <Route path="/transactions" element={<Transactions />} />
-                        <Route path="/journal" element={<JournalEntries />} />
-                        <Route path="/trial-balance" element={<TrialBalance />} />
-                        <Route path="/cash-flow" element={<CashFlow />} />
-                        <Route path="/account-list" element={<PlaceholderPage title="Account List" />} />
-                        <Route path="/employees" element={<Employees />} />
-                        <Route path="/attendance" element={<Attendance />} />
-                        <Route path="/leave" element={<LeaveManagement />} />
-                        <Route path="/payroll" element={<PayrollPage />} />
-                        <Route path="/warranty-claims" element={<WarrantyClaims />} />
+                        <Route path="/purchases/add" element={<ModuleGate module="purchases"><PurchaseAdd /></ModuleGate>} />
+                        <Route path="/purchases" element={<ModuleGate module="purchases"><Purchases /></ModuleGate>} />
+                        <Route path="/purchases/:id" element={<ModuleGate module="purchases"><PurchaseView /></ModuleGate>} />
+                        <Route path="/purchases/:id/edit" element={<ModuleGate module="purchases"><PurchaseEditRedirect /></ModuleGate>} />
+                        <Route path="/purchase-orders" element={<ModuleGate module="purchases"><PurchaseOrders /></ModuleGate>} />
+                        <Route path="/purchases/returns" element={<ModuleGate module="purchases"><PlaceholderPage title="Purchase Returns" /></ModuleGate>} />
+                        <Route path="/customers" element={<ModuleGate module="contacts"><Customers /></ModuleGate>} />
+                        <Route path="/customers/:id" element={<ModuleGate module="contacts"><ContactProfile kind="customer" /></ModuleGate>} />
+                        <Route path="/suppliers" element={<ModuleGate module="contacts"><Suppliers /></ModuleGate>} />
+                        <Route path="/suppliers/:id" element={<ModuleGate module="contacts"><ContactProfile kind="supplier" /></ModuleGate>} />
+                        <Route path="/accounts" element={<ModuleGate module="accounting"><ChartOfAccounts /></ModuleGate>} />
+                        <Route path="/transactions" element={<ModuleGate module="accounting"><Transactions /></ModuleGate>} />
+                        <Route path="/journal" element={<ModuleGate module="accounting"><JournalEntries /></ModuleGate>} />
+                        <Route path="/trial-balance" element={<ModuleGate module="accounting"><TrialBalance /></ModuleGate>} />
+                        <Route path="/cash-flow" element={<ModuleGate module="accounting"><CashFlow /></ModuleGate>} />
+                        <Route path="/account-list" element={<ModuleGate module="accounting"><PlaceholderPage title="Account List" /></ModuleGate>} />
+                        <Route path="/employees" element={<ModuleGate module="hrm"><Employees /></ModuleGate>} />
+                        <Route path="/attendance" element={<ModuleGate module="hrm"><Attendance /></ModuleGate>} />
+                        <Route path="/leave" element={<ModuleGate module="hrm"><LeaveManagement /></ModuleGate>} />
+                        <Route path="/payroll" element={<ModuleGate module="hrm"><PayrollPage /></ModuleGate>} />
+                        <Route path="/warranty-claims" element={<ModuleGate module="warranty"><WarrantyClaims /></ModuleGate>} />
                         <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
                         <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
                         <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />
                         <Route path="/exchange/purchases/:id" element={<ModuleGate module="exchange"><ExchangePurchaseView /></ModuleGate>} />
                         <Route path="/exchange/agreement/:id" element={<ModuleGate module="exchange"><ExchangeAgreement /></ModuleGate>} />
                         <Route path="/exchange/sell" element={<ModuleGate module="exchange"><ExchangeSell /></ModuleGate>} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/reports/profit-loss" element={<ProfitLossReport />} />
-                        <Route path="/reports/stock" element={<StockReport />} />
-                        <Route path="/reports/tax" element={<TaxReport />} />
-                        <Route path="/reports/daily-summary" element={<DailySummaryReport />} />
-                        <Route path="/reports/due-sales" element={<DueSaleReport />} />
-                        <Route path="/reports/product-profit" element={<ProductProfitReport />} />
-                        <Route path="/reports/purchase-sale" element={<PurchaseSaleReport />} />
-                        <Route path="/reports/contacts" element={<ContactsReport />} />
-                        <Route path="/reports/items" element={<ItemsReport />} />
-                        <Route path="/reports/trending" element={<TrendingProductsReport />} />
-                        <Route path="/reports/installment" element={<InstallmentReport />} />
-                        <Route path="/reports/expense" element={<ExpenseReport />} />
-                        <Route path="/reports/register" element={<RegisterReport />} />
-                        <Route path="/installment/customers/add" element={<InstallmentCustomerAdd />} />
-                        <Route path="/installment/customers" element={<InstallmentCustomers />} />
-                        <Route path="/installment/sales/add" element={<InstallmentSaleAdd />} />
-                        <Route path="/installment/sales" element={<InstallmentSales />} />
-                        <Route path="/installment/collections" element={<InstallmentCollections />} />
-                        <Route path="/installment/schedule" element={<InstallmentSchedule />} />
-                        <Route path="/installment/agreement/:id" element={<InstallmentAgreement />} />
+                        <Route path="/reports" element={<ModuleGate module="reports"><Reports /></ModuleGate>} />
+                        <Route path="/reports/profit-loss" element={<ModuleGate module="reports"><ProfitLossReport /></ModuleGate>} />
+                        <Route path="/reports/stock" element={<ModuleGate module="reports"><StockReport /></ModuleGate>} />
+                        <Route path="/reports/tax" element={<ModuleGate module="reports"><TaxReport /></ModuleGate>} />
+                        <Route path="/reports/daily-summary" element={<ModuleGate module="reports"><DailySummaryReport /></ModuleGate>} />
+                        <Route path="/reports/due-sales" element={<ModuleGate module="reports"><DueSaleReport /></ModuleGate>} />
+                        <Route path="/reports/product-profit" element={<ModuleGate module="reports"><ProductProfitReport /></ModuleGate>} />
+                        <Route path="/reports/purchase-sale" element={<ModuleGate module="reports"><PurchaseSaleReport /></ModuleGate>} />
+                        <Route path="/reports/contacts" element={<ModuleGate module="reports"><ContactsReport /></ModuleGate>} />
+                        <Route path="/reports/items" element={<ModuleGate module="reports"><ItemsReport /></ModuleGate>} />
+                        <Route path="/reports/trending" element={<ModuleGate module="reports"><TrendingProductsReport /></ModuleGate>} />
+                        <Route path="/reports/installment" element={<ModuleGate module="reports"><InstallmentReport /></ModuleGate>} />
+                        <Route path="/reports/expense" element={<ModuleGate module="reports"><ExpenseReport /></ModuleGate>} />
+                        <Route path="/reports/register" element={<ModuleGate module="reports"><RegisterReport /></ModuleGate>} />
+                        <Route path="/installment/customers/add" element={<ModuleGate module="installments"><InstallmentCustomerAdd /></ModuleGate>} />
+                        <Route path="/installment/customers" element={<ModuleGate module="installments"><InstallmentCustomers /></ModuleGate>} />
+                        <Route path="/installment/sales/add" element={<ModuleGate module="installments"><InstallmentSaleAdd /></ModuleGate>} />
+                        <Route path="/installment/sales" element={<ModuleGate module="installments"><InstallmentSales /></ModuleGate>} />
+                        <Route path="/installment/collections" element={<ModuleGate module="installments"><InstallmentCollections /></ModuleGate>} />
+                        <Route path="/installment/schedule" element={<ModuleGate module="installments"><InstallmentSchedule /></ModuleGate>} />
+                        <Route path="/installment/agreement/:id" element={<ModuleGate module="installments"><InstallmentAgreement /></ModuleGate>} />
                         <Route path="/users" element={<UsersPage />} />
                         <Route path="/roles" element={<RolesPage />} />
                         <Route path="/activity-log" element={<ActivityLogPage />} />
