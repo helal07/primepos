@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, Plus, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, ChevronDown, Pencil, Trash2, PackageCheck } from "lucide-react";
 import { usePurchaseOrders } from "@/hooks/usePurchases";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,6 +31,50 @@ export default function PurchaseOrders() {
     if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
     toast.success("Purchase order deleted");
+  };
+
+  const handleReceive = async (id: string, status: string) => {
+    if (status === "received") { toast.info("Already received"); return; }
+    if (!confirm("Mark this purchase order as Received and add items to inventory?")) return;
+    try {
+      const { data: items, error: itemsErr } = await supabase
+        .from("purchase_order_items")
+        .select("product_id, quantity")
+        .eq("purchase_order_id", id);
+      if (itemsErr) throw itemsErr;
+      if (!items || items.length === 0) {
+        toast.error("No items to receive");
+        return;
+      }
+      // Aggregate quantities per product
+      const byProduct = new Map<string, number>();
+      for (const it of items) {
+        byProduct.set(it.product_id, (byProduct.get(it.product_id) || 0) + Number(it.quantity || 0));
+      }
+      for (const [productId, qty] of byProduct) {
+        const { data: product, error: pErr } = await supabase
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", productId)
+          .single();
+        if (pErr) throw pErr;
+        const { error: uErr } = await supabase
+          .from("products")
+          .update({ stock_quantity: Number(product?.stock_quantity || 0) + qty })
+          .eq("id", productId);
+        if (uErr) throw uErr;
+      }
+      const { error: sErr } = await supabase
+        .from("purchase_orders")
+        .update({ status: "received" })
+        .eq("id", id);
+      if (sErr) throw sErr;
+      await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
+      await qc.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Purchase order received and inventory updated");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to receive purchase order");
+    }
   };
 
   return (
@@ -83,6 +127,12 @@ export default function PurchaseOrders() {
                         <DropdownMenuContent align="start">
                           <DropdownMenuItem onClick={() => navigate(`/purchase-orders/add?edit=${o.id}`)}>
                             <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={o.status === "received"}
+                            onClick={() => handleReceive(o.id, o.status)}
+                          >
+                            <PackageCheck className="h-4 w-4 mr-2" /> Receive
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(o.id)}>
