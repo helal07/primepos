@@ -1437,6 +1437,78 @@ export type Database = {
           },
         ]
       }
+      landing_features: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      landing_reviews: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          rating: number
+          role: string | null
+          sort_order: number
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rating?: number
+          role?: string | null
+          sort_order?: number
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rating?: number
+          role?: string | null
+          sort_order?: number
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leave_requests: {
         Row: {
           approved_by: string | null
@@ -2461,6 +2533,7 @@ export type Database = {
           max_users: number
           name: string
           price: number
+          show_on_landing: boolean
           sort_order: number
           updated_at: string
         }
@@ -2477,6 +2550,7 @@ export type Database = {
           max_users?: number
           name: string
           price?: number
+          show_on_landing?: boolean
           sort_order?: number
           updated_at?: string
         }
@@ -2493,6 +2567,7 @@ export type Database = {
           max_users?: number
           name?: string
           price?: number
+          show_on_landing?: boolean
           sort_order?: number
           updated_at?: string
         }

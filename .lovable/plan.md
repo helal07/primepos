@@ -1,104 +1,86 @@
 ## Goal
 
-1. Build a full **Expenses** module (list / add / edit / categories) that also feeds the Accounting Profit & Loss report — modeled on Ultimate POS.
-2. Reorder and rename the tenant sidebar groups in the exact sequence requested.
-3. Stop hiding modules the tenant hasn't purchased — instead show them in the sidebar with a 🔒 lock icon, and replace the page content with an "Upgrade your plan to access this module" screen (same pattern used in the doctorsearch reference project).
+Make the public landing page fully driven by the Superadmin CMS. Add a global **Branding & Favicon** controller. Confirm CMS is Superadmin-only (no tenant CMS yet) and tighten access. Integrate the existing **Sections** + **Pages** so they actually render on the public site.
 
----
+## Scope
 
-## 1. Expenses module
+### 1. New "Branding" tab under Superadmin → Landing CMS
 
-### Database (single migration)
+Stored in `business_settings` under a new global key `cms_branding` (tenant-null row, like other `cms_*` keys today):
 
-- `expense_categories` — `tenant_id`, `name`, `parent_id` (self FK, optional sub-category), `is_active`.
-- `expenses`:
-  - `tenant_id`, `reference_no` (auto `EP{YY}/{seq}`), `expense_date`, `category_id`, `sub_category_id`, `location_id` (nullable, links to `warehouses`), `payment_status` (`paid` / `due` / `partial`), `tax_id` (nullable), `tax_amount`, `total_amount`, `payment_due`, `contact_id` (nullable, FK to `customers` or `suppliers` via separate column), `expense_for_user_id` (employee), `expense_note`, `recurring` (bool), `recurring_interval`, `recurring_repetitions`, `attachment_url`, `created_by`.
-- `expense_payments` — installment-style payments against an expense (`expense_id`, `amount`, `paid_on`, `method`, `account_id`, `note`).
-- RLS: tenant-scoped via existing `get_user_tenant_id()` + `is_superadmin()` pattern; `set_tenant_id` BEFORE INSERT trigger like other tables.
-- Trigger: when an expense (or expense_payment) is created/updated/deleted, create matching rows in `transactions` against the linked `account_id` (debit Expense account, credit Cash/Bank) so the Chart of Accounts / Trial Balance / Cash Flow stay in sync.
-- Add `'expenses'` to `MODULE_CATALOG` in `src/lib/modules.ts` and to `DEFAULT_MODULES`.
+- Site name / brand short name
+- Logo upload (upload to `branding` bucket — already exists)
+- Favicon URL (32×32 / .ico / .png upload to `branding`)
+- Apple touch icon URL
+- Theme color
+- OG default image
 
-### Frontend pages
+On save, the public `LandingPage` and `index.html` runtime will:
 
-- `src/pages/expenses/Expenses.tsx` — filterable list (date range, category, status, location, contact) with the same toolbar treatment used on `Sales.tsx` (search, export CSV/Excel/PDF, column visibility, totals row).
-- `src/pages/expenses/ExpenseAdd.tsx` — form: date, reference, category + sub-category, location, contact, expense for (employee), tax, total amount, payment status + initial payment, recurring options, note, attachment upload to a new `expense-attachments` storage bucket (private).
-- `src/pages/expenses/ExpenseCategories.tsx` — list + add/edit categories (supports parent → sub-category).
-- `src/hooks/useExpenses.ts` — React Query hooks: `useExpenses`, `useExpense(id)`, `useExpenseMutations`, `useExpenseCategories`, `useExpensePayments`.
-- Routes added in `src/App.tsx` under `/expenses`, `/expenses/add`, `/expenses/:id/edit`, `/expenses/categories`, all wrapped in `<ModuleGate module="expenses">`.
+- Inject `<link rel="icon">`, `<link rel="apple-touch-icon">`, `<meta name="theme-color">`
+- Replace the hard-coded "Prime POS" wordmark + "P" logo block in the navbar with the branding values
+- Update `document.title` from branding when `cms_seo.title` is empty
 
-### Profit & Loss integration
+### 2. Make the entire LandingPage CMS-driven
 
-- Update `src/pages/reports/profitLossCalc.ts` to accept `expenses[]` (sum of `total_amount` grouped by paid vs due) and add **Total Expenses** + an **Expenses by Category** breakdown to Net Profit calculation.
-- Update `ProfitLossReport.tsx` and `ExpenseReport.tsx` to read from the new `expenses` table instead of the placeholder data they currently use.
-
----
-
-## 2. Sidebar reorder + renames
-
-Rewrite `menuGroups` in `src/components/layout/AppSidebar.tsx` in this exact order, with the renames applied to the group `label`:
+Today `LandingPage.tsx` reads only `cms_seo`, `cms_promo`, and `faq_entries`. The hero, stats, "why choose us", features list, pricing, reviews, and footer are hard-coded arrays. Move each to a CMS source so superadmin controls every word:
 
 
-| #   | Label               | Module key     | Notes                                                       | &nbsp;      |
-| --- | ------------------- | -------------- | ----------------------------------------------------------- | ----------- |
-| 1   | Warehouse           | `warehouses`   | (was group 4)                                               | &nbsp;      |
-| 2   | Contact             | `contacts`     | renamed from "People"                                       | &nbsp;      |
-| 3   | Products            | `products`     | &nbsp;                                                      | (unchanged) |
-| 4   | Purchase            | `purchases`    | (unchanged)                                                 | &nbsp;      |
-| 5   | Sales               | `sales`        | (unchanged)                                                 | &nbsp;      |
-| 6   | Expenses            | `expenses`     | NEW — items: List Expenses, Add Expense, Expense Categories | &nbsp;      |
-| 7   | Accounts            | `accounting`   | renamed from "Finance"                                      | &nbsp;      |
-| 8   | Reports             | `reports`      | (unchanged)                                                 | &nbsp;      |
-| 9   | Warranty Manager    | `warranty`     | renamed from "Warranty"                                     | &nbsp;      |
-| 10  | Installment Manager | `installments` | renamed from "Installment"                                  | &nbsp;      |
-| 11  | HRM                 | `hrm`          | (unchanged)                                                 | &nbsp;      |
-| 12  | Buy & Sale Manager  | `exchange`     | renamed from "Exchange"                                     | &nbsp;      |
-| 13  | Admin               | (no module)    | (unchanged)                                                 | &nbsp;      |
+| Landing block                                        | Source                                                                                                               | Editor location                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Navbar (logo, brand, nav links, CTA labels)          | `business_settings.cms_branding` + `cms_nav`                                                                         | Branding tab + new Navigation tab        |
+| Hero (badge, title, subtitle, primary/secondary CTA) | `cms_hero` (already a section pattern)                                                                               | Existing Sections tab — extend fields    |
+| Stats strip (4 stat tiles)                           | `cms_stats` JSON array                                                                                               | New "Stats" editor in Sections tab       |
+| Features grid (icon, title, desc × N)                | `landing_features` table (new)                                                                                       | New "Features" tab with add/edit/reorder |
+| Why-choose-us (3 cards)                              | `cms_why` JSON                                                                                                       | Sections tab                             |
+| Pricing                                              | Already lives in `saas_packages` — bind landing pricing to `is_active=true` packages instead of the hard-coded array | Existing Packages screen                 |
+| Reviews / testimonials                               | `landing_reviews` table (new)                                                                                        | New "Reviews" tab                        |
+| FAQ                                                  | `faq_entries` (already wired)                                                                                        | Existing FAQ tab                         |
+| Footer (about text, links, contact, social)          | `cms_footer` JSON                                                                                                    | Sections tab                             |
+| **Custom CMS Pages** (`cms_pages`)                   | Already exist but orphaned — render at `/p/:slug` and surface published pages as footer links automatically          | New public route + footer auto-list      |
 
 
-The "Main / Dashboard" entry stays at the very top above the numbered list (it isn't a feature module). Move POS to remain inside the Sales group.
+### 3. Integrate Sections ↔ Pages
 
----
+- Existing **Pages** editor (`/superadmin/cms/pages`) builds section arrays but no public route renders them. Add public route `/p/:slug` → `PublicCmsPage.tsx` that reads `cms_pages` by slug + `status='published'` and renders each section block.
+- Auto-include published pages in the landing footer "Company / Resources" column.
+- Add a "Page" picker on Sections tab so a section block can deep-link to a CMS page.
 
-## 3. Locked-module UX (replaces current "hide if not enabled")
+### 4. Lock CMS to superadmin only
 
-Currently `AppSidebar` filters out any group whose `module` is not in `enabledModules`. Change to:
+- Confirm tenant sidebar has no CMS entry (it doesn't today). Tenant `Settings → PWA / Branding` stays separate (per-tenant white-label).
+- Add a top banner inside the superadmin Landing CMS screens: "Global content — affects every visitor of the marketing site."
+- RLS audit: `business_settings` rows where `tenant_id IS NULL` should be readable by anon (so landing works while logged out) but writable only by superadmin. Same for `landing_features`, `landing_reviews`, `cms_pages`. Add migration to set/verify these policies.
 
-- **Show all groups always.** When `group.module` is set and not in `enabledModules`, render the group label with a `Lock` icon, dim the row (`opacity-60`), and route every child item to `/locked/:module` instead of its real path. Tooltip: "Upgrade your plan to access {module}".
-- Tighten `ModuleGate` (`src/components/ModuleGate.tsx`) to **redirect** to `/locked/:module` instead of rendering the inline lock card, so deep-linking a disabled route also lands on the upsell page.
-- Create `src/pages/LockedModule.tsx` showing:
-  - Big lock icon, module display name, current package name, and the line "You are not allowed to access this module — upgrade your plan to unlock it."
-  - Primary CTA "Upgrade plan" → `/subscription`
-  - Secondary CTA "Contact support".
-  Mirror the visual style used in the doctorsearch reference (centered card on muted background, primary gradient button).
-- Add route `/locked/:module` in `src/App.tsx` (inside `AppLayout` so the sidebar still shows).
+### 5. Favicon write-through
 
----
+Two layers:
+
+- **Static fallback** in `index.html` keeps `/favicon.ico` (current behavior).
+- **Runtime override** in `LandingPage` + global `App` mount: when `cms_branding.favicon_url` is set, swap the `<link rel="icon">` href client-side (mirrors existing `DynamicManifest.tsx` pattern, but global instead of tenant-scoped).
 
 ## Technical notes
 
-- All new tables: `ENABLE ROW LEVEL SECURITY` + per-action policies (`is_superadmin(auth.uid()) OR tenant_id = get_user_tenant_id(auth.uid())`).
-- Use existing `update_updated_at_column` trigger pattern for `updated_at`.
-- Auto-numbering: `expense_reference_seq` sequence + `generate_expense_reference()` function returning `EP{YY}/{nnnn}`.
-- Storage: new public-read-restricted bucket `expense-attachments` with policies scoped by `tenant_id` folder prefix.
-- `useEnabledModules` stays the source of truth for entitlement; only the consumer (sidebar + ModuleGate) changes behavior.
-- No changes to the Superadmin panel.
+- Migration adds: `landing_features (id, icon, title, description, sort_order, is_active)`, `landing_reviews (id, name, role, rating, text, avatar_url, sort_order, is_active)`. Both are global (no `tenant_id`) with public SELECT and superadmin-only write via `is_superadmin(auth.uid())`.
+- Reuse upload flow into the existing `branding` bucket for logo / favicon / OG image.
+- Icon picker on Features uses a fixed allowlist of `lucide-react` names (string → component map) to keep payloads safe.
+- Pricing on landing fetches `saas_packages` where `is_active = true AND show_on_landing = true` (add column).
+- New superadmin tabs added to `LandingCms.tsx`: Branding, Navigation, Hero, Stats, Features, Why, Reviews, Footer, FAQ, SEO. Pages stays as its own route.
+- `AdminSidebar.tsx`: rename "Sections" → "Site Content" for clarity; keep "Pages" sub-item.
 
----
+## Out of scope
 
-## Files touched (summary)
+- Per-tenant CMS module (explicitly deferred per your message).
+- Multi-language content.
+- Drag-and-drop visual page builder (current section list stays).
 
-```text
-NEW   supabase/migrations/<timestamp>_expenses_module.sql
-NEW   src/pages/expenses/Expenses.tsx
-NEW   src/pages/expenses/ExpenseAdd.tsx
-NEW   src/pages/expenses/ExpenseCategories.tsx
-NEW   src/hooks/useExpenses.ts
-NEW   src/pages/LockedModule.tsx
-EDIT  src/lib/modules.ts                       (+ "expenses" key)
-EDIT  src/components/layout/AppSidebar.tsx     (reorder + locked groups)
-EDIT  src/components/ModuleGate.tsx            (redirect to /locked/:module)
-EDIT  src/App.tsx                              (new routes)
-EDIT  src/pages/reports/profitLossCalc.ts     (+ expenses input)
-EDIT  src/pages/reports/ProfitLossReport.tsx
-EDIT  src/pages/reports/ExpenseReport.tsx
-```
+## Deliverables
+
+1. Migration: 2 new tables + RLS + `saas_packages.show_on_landing` column.
+2. New `cms_branding` settings + Branding tab UI with file uploads.
+3. New Features / Reviews / Stats / Why / Footer / Navigation editors in Landing CMS.
+4. `LandingPage.tsx` rewritten to read every block from CMS with sensible fallbacks.
+5. New public route `/p/:slug` rendering `cms_pages` content.
+6. Footer auto-lists published CMS pages.
+7. Runtime favicon + theme-color injection from `cms_branding`.
+8. RLS audit migration ensuring superadmin-only writes on all CMS tables.

@@ -13,6 +13,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import { ModuleGate } from "@/components/ModuleGate";
 import { DynamicManifest } from "@/components/DynamicManifest";
+import { BrandingInjector } from "@/components/BrandingInjector";
 import LandingPage from "./pages/LandingPage";
 
 const Login = lazy(() => import("./pages/Login"));
@@ -64,6 +65,7 @@ const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const PayrollPage = lazy(() => import("./pages/Payroll"));
 const WarrantyClaims = lazy(() => import("./pages/WarrantyClaims"));
 const CmsPages = lazy(() => import("./pages/CmsPages"));
+const PublicCmsPage = lazy(() => import("./pages/PublicCmsPage"));
 const Exchange = lazy(() => import("./pages/Exchange"));
 const ExchangePurchases = lazy(() => import("./pages/ExchangePurchases"));
 const ExchangePurchaseAdd = lazy(() => import("./pages/ExchangePurchaseAdd"));
@@ -155,8 +157,10 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
           <DynamicManifest />
+          <BrandingInjector />
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/p/:slug" element={<Suspense fallback={<RouteFallback />}><PublicCmsPage /></Suspense>} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/superadmin/login" element={<Suspense fallback={<RouteFallback />}><SuperadminLogin /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />

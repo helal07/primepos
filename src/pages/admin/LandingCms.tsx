@@ -12,6 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { Save, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { BrandingEditor } from "@/components/admin/cms/BrandingEditor";
+import { LandingFeaturesEditor } from "@/components/admin/cms/LandingFeaturesEditor";
+import { LandingReviewsEditor } from "@/components/admin/cms/LandingReviewsEditor";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Globe } from "lucide-react";
 
 function CmsSection({ sectionKey, title, fields }: {
   sectionKey: string; title: string;
@@ -121,13 +126,24 @@ export default function LandingCms() {
   return (
     <div className="space-y-6">
       <PageHeader title="Landing Page CMS" subtitle="Edit your public landing page content" />
+      <Alert className="border-primary/30 bg-primary/5">
+        <Globe className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-sm">
+          <strong>Global content.</strong> These settings affect every visitor of the marketing site. Tenants do not have access to this CMS.
+        </AlertDescription>
+      </Alert>
 
-      <Tabs defaultValue="hero">
+      <Tabs defaultValue="branding">
         <TabsList className="flex-wrap bg-muted border-border">
+          <TabsTrigger value="branding" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Branding</TabsTrigger>
           <TabsTrigger value="hero" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Hero</TabsTrigger>
+          <TabsTrigger value="stats" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Stats</TabsTrigger>
+          <TabsTrigger value="features-list" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Features List</TabsTrigger>
+          <TabsTrigger value="why" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Why Us</TabsTrigger>
+          <TabsTrigger value="reviews" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Reviews</TabsTrigger>
           <TabsTrigger value="seo" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">SEO</TabsTrigger>
-          <TabsTrigger value="features" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Features</TabsTrigger>
-          <TabsTrigger value="testimonials" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Testimonials</TabsTrigger>
+          <TabsTrigger value="features" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Features Heading</TabsTrigger>
+          <TabsTrigger value="testimonials" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Testimonials Heading</TabsTrigger>
           <TabsTrigger value="faq" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">FAQ</TabsTrigger>
           <TabsTrigger value="promo" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Promotion</TabsTrigger>
           <TabsTrigger value="cta" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">CTA Banner</TabsTrigger>
@@ -135,11 +151,39 @@ export default function LandingCms() {
           <TabsTrigger value="footer" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Footer</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="branding" className="mt-4">
+          <BrandingEditor />
+        </TabsContent>
         <TabsContent value="hero" className="mt-4">
           <CmsSection sectionKey="cms_hero" title="Hero Section" fields={[
-            { name: "title", label: "Title" }, { name: "subtitle", label: "Subtitle", type: "textarea" },
-            { name: "cta_text", label: "CTA Button Text" }, { name: "cta_link", label: "CTA Link" },
+            { name: "badge", label: "Top Badge (e.g. 🚀 All-in-One)" },
+            { name: "title", label: "Title" }, { name: "title_highlight", label: "Highlight Word" },
+            { name: "subtitle", label: "Subtitle", type: "textarea" },
+            { name: "cta_text", label: "Primary CTA Button Text" }, { name: "cta_link", label: "Primary CTA Link" },
+            { name: "secondary_text", label: "Secondary Button Text" }, { name: "secondary_link", label: "Secondary Button Link" },
           ]} />
+        </TabsContent>
+        <TabsContent value="stats" className="mt-4">
+          <CmsSection sectionKey="cms_stats" title="Stats Strip (4 tiles)" fields={[
+            { name: "stat1_value", label: "Stat 1 Value" }, { name: "stat1_label", label: "Stat 1 Label" },
+            { name: "stat2_value", label: "Stat 2 Value" }, { name: "stat2_label", label: "Stat 2 Label" },
+            { name: "stat3_value", label: "Stat 3 Value" }, { name: "stat3_label", label: "Stat 3 Label" },
+            { name: "stat4_value", label: "Stat 4 Value" }, { name: "stat4_label", label: "Stat 4 Label" },
+          ]} />
+        </TabsContent>
+        <TabsContent value="features-list" className="mt-4">
+          <LandingFeaturesEditor />
+        </TabsContent>
+        <TabsContent value="why" className="mt-4">
+          <CmsSection sectionKey="cms_why" title="Why Choose Us (3 cards)" fields={[
+            { name: "heading", label: "Section Heading" },
+            { name: "card1_title", label: "Card 1 Title" }, { name: "card1_desc", label: "Card 1 Description", type: "textarea" }, { name: "card1_icon", label: "Card 1 Icon (lucide name)" },
+            { name: "card2_title", label: "Card 2 Title" }, { name: "card2_desc", label: "Card 2 Description", type: "textarea" }, { name: "card2_icon", label: "Card 2 Icon (lucide name)" },
+            { name: "card3_title", label: "Card 3 Title" }, { name: "card3_desc", label: "Card 3 Description", type: "textarea" }, { name: "card3_icon", label: "Card 3 Icon (lucide name)" },
+          ]} />
+        </TabsContent>
+        <TabsContent value="reviews" className="mt-4">
+          <LandingReviewsEditor />
         </TabsContent>
         <TabsContent value="seo" className="mt-4">
           <CmsSection sectionKey="cms_seo" title="SEO Meta Tags" fields={[
