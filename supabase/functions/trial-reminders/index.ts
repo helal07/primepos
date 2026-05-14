@@ -8,19 +8,45 @@ const corsHeaders = {
 
 const MARKERS = [7, 3, 1, 0];
 
-function buildEmail(tenantName: string, daysLeft: number, upgradeUrl: string) {
+function escapeHtml(s: string) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function formatExpiry(d: Date) {
+  // e.g. "May 21, 2026 at 11:59 PM"
+  const date = d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  return `${date} at ${time}`;
+}
+
+interface EmailVars {
+  tenantName: string;
+  planName: string;
+  daysLeft: number;
+  expiryAt: Date;
+  upgradeUrl: string;
+}
+
+function buildEmail(v: EmailVars) {
+  const { tenantName, planName, daysLeft, expiryAt, upgradeUrl } = v;
   const isExpired = daysLeft <= 0;
+  const tName = escapeHtml(tenantName);
+  const pName = escapeHtml(planName);
+  const expiryLabel = escapeHtml(formatExpiry(expiryAt));
+
   const subject = isExpired
-    ? `Your free trial has ended — upgrade to keep access`
-    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in your free trial`;
+    ? `Your ${planName} trial has ended — upgrade to keep access`
+    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left on your ${planName} trial`;
 
   const headline = isExpired
-    ? "Your free trial has ended"
-    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left in your trial`;
+    ? `Your ${pName} trial has ended`
+    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left on your ${pName} trial`;
 
   const body = isExpired
-    ? `Hi ${tenantName},<br/><br/>Your free trial has ended. To avoid losing access to your data, please choose a plan now.`
-    : `Hi ${tenantName},<br/><br/>Just a friendly reminder that your free trial ends in <b>${daysLeft} day${daysLeft === 1 ? "" : "s"}</b>. Upgrade now to keep your account and data without interruption.`;
+    ? `Hi ${tName},<br/><br/>Your <b>${pName}</b> trial ended on <b>${expiryLabel}</b>. To avoid losing access to your data, please choose a plan now.`
+    : `Hi ${tName},<br/><br/>Just a friendly reminder that your <b>${pName}</b> trial ends in <b>${daysLeft} day${daysLeft === 1 ? "" : "s"}</b> on <b>${expiryLabel}</b>. Upgrade now to keep your account and data without interruption.`;
 
   const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#f6f7fb;margin:0;padding:24px;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e8ef;">
@@ -29,6 +55,13 @@ function buildEmail(tenantName: string, daysLeft: number, upgradeUrl: string) {
     </td></tr>
     <tr><td style="padding:24px 28px;color:#1f2937;font-size:14px;line-height:1.6;">
       <p style="margin:0 0 18px;">${body}</p>
+      <table cellpadding="0" cellspacing="0" style="width:100%;background:#f3f4f6;border-radius:8px;margin:0 0 18px;">
+        <tr><td style="padding:12px 16px;color:#374151;font-size:13px;">
+          <div><b>Account:</b> ${tName}</div>
+          <div><b>Plan:</b> ${pName}</div>
+          <div><b>${isExpired ? "Ended" : "Expires"}:</b> ${expiryLabel}</div>
+        </td></tr>
+      </table>
       <p style="text-align:center;margin:24px 0;">
         <a href="${upgradeUrl}" style="background:#0369a1;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;display:inline-block;">
           ${isExpired ? "Choose a plan" : "Upgrade now"}
@@ -79,7 +112,7 @@ Deno.serve(async (req) => {
     // Fetch active trial tenants
     const { data: tenants, error } = await supabase
       .from("tenants")
-      .select("id, name, email, status, subscription_end")
+      .select("id, name, email, status, subscription_end, package_id, saas_packages(name)")
       .eq("status", "trial");
     if (error) throw error;
 
@@ -110,7 +143,15 @@ Deno.serve(async (req) => {
         .select("id").eq("tenant_id", t.id).eq("days_marker", marker).maybeSingle();
       if (existing) continue;
 
-      const { subject, html } = buildEmail(t.name ?? "there", daysLeft, upgradeUrl);
+      const planName =
+        ((t as any).saas_packages?.name as string | undefined) ?? "Free Trial";
+      const { subject, html } = buildEmail({
+        tenantName: t.name ?? "there",
+        planName,
+        daysLeft,
+        expiryAt: end,
+        upgradeUrl,
+      });
       try {
         await client.send({
           from: `${smtp.from_name ?? "PrimePOS"} <${smtp.from_email}>`,
