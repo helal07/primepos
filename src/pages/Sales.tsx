@@ -124,7 +124,7 @@ export default function Sales({
               <span className="text-sm text-muted-foreground">entries</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <Button variant="outline" size="sm" onClick={handleExportCSV}>
                 <FileText className="h-3.5 w-3.5 mr-1" /> Export CSV
               </Button>
@@ -133,7 +133,7 @@ export default function Sales({
               </Button>
               {!hideStatusFilter && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[130px] h-8"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectTrigger className="w-[120px] sm:w-[130px] h-8"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
@@ -145,7 +145,7 @@ export default function Sales({
               </Select>
               )}
               <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                <SelectTrigger className="w-[130px] h-8"><SelectValue placeholder="Payment" /></SelectTrigger>
+                <SelectTrigger className="w-[120px] sm:w-[130px] h-8"><SelectValue placeholder="Payment" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Payment</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
@@ -153,29 +153,29 @@ export default function Sales({
                   <SelectItem value="unpaid">Due</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-initial min-w-[140px]">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 h-8 w-[160px]" />
+                <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 h-8 w-full sm:w-[160px]" />
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto print-area">
-            <Table>
+          <div className="overflow-x-auto scroll-x print-area -mx-4 sm:mx-0 px-4 sm:px-0">
+            <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[100px]">Action</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Invoice No.</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Ledger</TableHead>
-                  <TableHead>Payment Status</TableHead>
-                  <TableHead>Payment Method</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
-                  <TableHead className="text-right">Total Paid</TableHead>
-                  <TableHead className="text-right">Sale Due</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[88px] sticky left-0 bg-muted/50 z-10">Action</TableHead>
+                  <TableHead className="whitespace-nowrap">Date</TableHead>
+                  <TableHead className="whitespace-nowrap">Invoice No.</TableHead>
+                  <TableHead className="whitespace-nowrap">Customer</TableHead>
+                  <TableHead className="hidden lg:table-cell">Ledger</TableHead>
+                  <TableHead className="whitespace-nowrap">Payment</TableHead>
+                  <TableHead className="hidden md:table-cell">Method</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Total</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Paid</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Due</TableHead>
+                  <TableHead className="whitespace-nowrap">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -199,7 +199,7 @@ export default function Sales({
                         className="cursor-pointer hover:bg-muted/30"
                         onClick={() => navigate(`/sales/${sale.id}`)}
                       >
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell onClick={(e) => e.stopPropagation()} className="sticky left-0 bg-background z-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
@@ -268,10 +268,10 @@ export default function Sales({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                        <TableCell className="text-sm">{new Date(sale.sale_date).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-medium text-sm">{sale.invoice_number}</TableCell>
-                        <TableCell className="text-sm">{sale.customers?.name || "Walk-in"}</TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="text-sm whitespace-nowrap">{new Date(sale.sale_date).toLocaleDateString()}</TableCell>
+                        <TableCell className="font-medium text-sm whitespace-nowrap">{sale.invoice_number}</TableCell>
+                        <TableCell className="text-sm whitespace-nowrap max-w-[160px] truncate">{sale.customers?.name || "Walk-in"}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()} className="hidden lg:table-cell">
                           {sale.customer_id ? (
                             <Button
                               variant="link"
@@ -286,10 +286,10 @@ export default function Sales({
                           )}
                         </TableCell>
                         <TableCell>{paymentBadge(sale.payment_status)}</TableCell>
-                        <TableCell className="text-sm capitalize">{sale.payment_method || "—"}</TableCell>
-                        <TableCell className="text-right font-medium">৳{Number(sale.total_amount).toLocaleString()}</TableCell>
-                        <TableCell className="text-right text-sm">৳{paid.toLocaleString()}</TableCell>
-                        <TableCell className="text-right text-sm">{due > 0 ? `৳${due.toLocaleString()}` : "৳0"}</TableCell>
+                        <TableCell className="text-sm capitalize hidden md:table-cell">{sale.payment_method || "—"}</TableCell>
+                        <TableCell className="text-right font-medium whitespace-nowrap">৳{Number(sale.total_amount).toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-sm hidden md:table-cell whitespace-nowrap">৳{paid.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-sm hidden md:table-cell whitespace-nowrap">{due > 0 ? `৳${due.toLocaleString()}` : "৳0"}</TableCell>
                         <TableCell>{statusBadge(sale.status)}</TableCell>
                       </TableRow>
                     );
@@ -299,16 +299,17 @@ export default function Sales({
               {!isLoading && filtered.length > 0 && (
                 <TableFooter>
                   <TableRow className="bg-muted/70 font-semibold">
-                    <TableCell colSpan={5} className="text-center font-bold">Total:</TableCell>
+                    <TableCell colSpan={4} className="text-center font-bold sticky left-0 bg-muted/70 z-10">Total:</TableCell>
+                    <TableCell className="hidden lg:table-cell"></TableCell>
                     <TableCell className="text-xs">
                       {paidCount > 0 && <div>Paid - {paidCount}</div>}
                       {partialCount > 0 && <div>Partial - {partialCount}</div>}
                       {dueCount > 0 && <div>Due - {dueCount}</div>}
                     </TableCell>
-                    <TableCell></TableCell>
-                    <TableCell className="text-right font-bold">৳{totalAmount.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-bold">৳{totalPaid.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-bold text-destructive">৳{totalDue.toLocaleString()}</TableCell>
+                    <TableCell className="hidden md:table-cell"></TableCell>
+                    <TableCell className="text-right font-bold whitespace-nowrap">৳{totalAmount.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-bold hidden md:table-cell whitespace-nowrap">৳{totalPaid.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-bold text-destructive hidden md:table-cell whitespace-nowrap">৳{totalDue.toLocaleString()}</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableFooter>
