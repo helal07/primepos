@@ -1,14 +1,22 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Search, Plus, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { usePurchaseOrders } from "@/hooks/usePurchases";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function PurchaseOrders() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: orders, isLoading } = usePurchaseOrders();
   const [search, setSearch] = useState("");
 
@@ -17,9 +25,25 @@ export default function PurchaseOrders() {
     o.suppliers?.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this purchase order?")) return;
+    const { error } = await supabase.from("purchase_orders").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
+    toast.success("Purchase order deleted");
+  };
+
   return (
     <div className="space-y-4">
-      <PageHeader title="Purchase Orders" description="Manage purchase orders" />
+      <PageHeader
+        title="Purchase Orders"
+        description="Manage purchase orders"
+        actions={
+          <Button onClick={() => navigate("/purchase-orders/add")}>
+            <Plus className="h-4 w-4 mr-2" /> Add Purchase Order
+          </Button>
+        }
+      />
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 mb-4">
@@ -31,6 +55,7 @@ export default function PurchaseOrders() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[110px]">Action</TableHead>
                 <TableHead>Reference</TableHead>
                 <TableHead>Supplier</TableHead>
                 <TableHead>Order Date</TableHead>
@@ -41,13 +66,31 @@ export default function PurchaseOrders() {
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>{Array.from({ length: 5 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}</TableRow>
+                  <TableRow key={i}>{Array.from({ length: 6 }).map((_, j) => <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>)}</TableRow>
                 ))
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No purchase orders found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No purchase orders found</TableCell></TableRow>
               ) : (
                 filtered.map((o: any) => (
                   <TableRow key={o.id}>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                            Actions <ChevronDown className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => navigate(`/purchase-orders/add?edit=${o.id}`)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(o.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                     <TableCell className="font-medium">{o.reference_number || "—"}</TableCell>
                     <TableCell>{o.suppliers?.name || "—"}</TableCell>
                     <TableCell>{new Date(o.order_date).toLocaleDateString()}</TableCell>
