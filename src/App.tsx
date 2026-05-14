@@ -233,6 +233,7 @@ const App = () => (
                         <Route path="/purchases/:id" element={<ModuleGate module="purchases"><PurchaseView /></ModuleGate>} />
                         <Route path="/purchases/:id/edit" element={<ModuleGate module="purchases"><PurchaseEditRedirect /></ModuleGate>} />
                         <Route path="/purchase-orders" element={<ModuleGate module="purchases"><PurchaseOrders /></ModuleGate>} />
+                        <Route path="/purchase-orders/add" element={<ModuleGate module="purchases"><PurchaseOrderAdd /></ModuleGate>} />
                         <Route path="/purchases/returns" element={<ModuleGate module="purchases"><PlaceholderPage title="Purchase Returns" /></ModuleGate>} />
                         <Route path="/customers" element={<ModuleGate module="contacts"><Customers /></ModuleGate>} />
                         <Route path="/customers/:id" element={<ModuleGate module="contacts"><ContactProfile kind="customer" /></ModuleGate>} />
