@@ -192,10 +192,11 @@ export default function PackageManagement() {
               </div>
             </div>
             <div><Label className="text-foreground/90">Sort Order</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-foreground/90">Popular</Label></div>
               <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-foreground/90">Active</Label></div>
               <div className="flex items-center gap-2"><Switch checked={form.show_on_landing} onCheckedChange={(v) => setForm({ ...form, show_on_landing: v })} /><Label className="text-foreground/90">Show on Landing</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_trial} onCheckedChange={(v) => setForm({ ...form, is_trial: v })} /><Label className="text-foreground/90">Free trial plan</Label></div>
             </div>
           </div>
           <DialogFooter className="border-t border-border pt-4">
