@@ -12,11 +12,17 @@ interface Section {
   image_url?: string;
 }
 
-function setMeta(name: string, content: string) {
+function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
   if (!content) return;
-  let tag = document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
-  if (!tag) { tag = document.createElement("meta"); tag.setAttribute("name", name); document.head.appendChild(tag); }
+  let tag = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
+  if (!tag) { tag = document.createElement("meta"); tag.setAttribute(attr, name); document.head.appendChild(tag); }
   tag.setAttribute("content", content);
+}
+function setLink(rel: string, href: string) {
+  if (!href) return;
+  let tag = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+  if (!tag) { tag = document.createElement("link"); tag.setAttribute("rel", rel); document.head.appendChild(tag); }
+  tag.setAttribute("href", href);
 }
 
 export default function PublicCmsPage() {
@@ -28,6 +34,21 @@ export default function PublicCmsPage() {
     if (!page) return;
     document.title = page.meta_title || page.title;
     setMeta("description", page.meta_description || "");
+    const ogTitle = page.og_title || page.meta_title || page.title;
+    const ogDesc = page.og_description || page.meta_description || "";
+    const ogImage = page.og_image || page.featured_image || "";
+    setMeta("og:title", ogTitle, "property");
+    setMeta("og:description", ogDesc, "property");
+    setMeta("og:type", "article", "property");
+    if (ogImage) setMeta("og:image", ogImage, "property");
+    if (page.canonical_url) {
+      setLink("canonical", page.canonical_url);
+      setMeta("og:url", page.canonical_url, "property");
+    }
+    setMeta("twitter:card", "summary_large_image");
+    if (ogTitle) setMeta("twitter:title", ogTitle);
+    if (ogDesc) setMeta("twitter:description", ogDesc);
+    if (ogImage) setMeta("twitter:image", ogImage);
   }, [page]);
 
   if (isLoading) {

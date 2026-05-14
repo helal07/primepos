@@ -408,6 +408,7 @@ export type Database = {
       }
       cms_pages: {
         Row: {
+          canonical_url: string | null
           content: Json
           created_at: string
           created_by: string | null
@@ -415,6 +416,9 @@ export type Database = {
           id: string
           meta_description: string | null
           meta_title: string | null
+          og_description: string | null
+          og_image: string | null
+          og_title: string | null
           slug: string
           status: string
           tenant_id: string | null
@@ -422,6 +426,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          canonical_url?: string | null
           content?: Json
           created_at?: string
           created_by?: string | null
@@ -429,6 +434,9 @@ export type Database = {
           id?: string
           meta_description?: string | null
           meta_title?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
           slug: string
           status?: string
           tenant_id?: string | null
@@ -436,6 +444,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          canonical_url?: string | null
           content?: Json
           created_at?: string
           created_by?: string | null
@@ -443,6 +452,9 @@ export type Database = {
           id?: string
           meta_description?: string | null
           meta_title?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
           slug?: string
           status?: string
           tenant_id?: string | null
