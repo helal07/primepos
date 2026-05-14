@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
-  FileText, UserCircle2,
+  FileText, UserCircle2, Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +37,7 @@ const smsItems = [
 
 const systemItems = [
   { to: "/superadmin/profile", label: "My Profile", icon: UserCircle2 },
+  { to: "/superadmin/trial-emails", label: "Trial Emails", icon: Mail },
   { to: "/superadmin/settings", label: "Settings", icon: Settings },
 ];
 

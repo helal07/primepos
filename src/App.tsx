@@ -101,6 +101,7 @@ const PackageManagement = lazy(() => import("./pages/admin/PackageManagement"));
 const LandingCms = lazy(() => import("./pages/admin/LandingCms"));
 const AdminTransactions = lazy(() => import("./pages/admin/AdminTransactions"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const TrialEmailTemplates = lazy(() => import("./pages/admin/TrialEmailTemplates"));
 const SuperadminProfile = lazy(() => import("./pages/superadmin/SuperadminProfile"));
 const TenantDetail = lazy(() => import("./pages/admin/TenantDetail"));
 const Sitemap = lazy(() => import("./pages/admin/Sitemap"));
@@ -142,6 +143,7 @@ const SuperadminRoutes = () => (
             <Route path="payment-gateways" element={<PaymentGateways />} />
             <Route path="transactions" element={<AdminTransactions />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="trial-emails" element={<TrialEmailTemplates />} />
             <Route path="profile" element={<SuperadminProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
