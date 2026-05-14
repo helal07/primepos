@@ -8,6 +8,34 @@ const corsHeaders = {
 
 const MARKERS = [7, 3, 1, 0];
 
+type Tmpl = { subject: string; headline: string; body: string };
+const DEFAULT_TEMPLATES: Record<string, Tmpl> = {
+  "7": {
+    subject: "{{days_left}} days left on your {{plan_name}} trial",
+    headline: "{{days_left}} days left on your {{plan_name}} trial",
+    body: "Hi {{tenant_name}},<br/><br/>Your <b>{{plan_name}}</b> trial ends in <b>{{days_left}} days</b> on <b>{{expiry_date}}</b>. Upgrade now to keep your account and data without interruption.",
+  },
+  "3": {
+    subject: "Only {{days_left}} days left on your {{plan_name}} trial",
+    headline: "{{days_left}} days left on your {{plan_name}} trial",
+    body: "Hi {{tenant_name}},<br/><br/>Just a heads up — your <b>{{plan_name}}</b> trial ends in <b>{{days_left}} days</b> on <b>{{expiry_date}}</b>. Choose a plan to avoid losing access.",
+  },
+  "1": {
+    subject: "Your {{plan_name}} trial ends tomorrow ({{expiry_date}})",
+    headline: "1 day left on your {{plan_name}} trial",
+    body: "Hi {{tenant_name}},<br/><br/>This is a final reminder — your <b>{{plan_name}}</b> trial ends tomorrow on <b>{{expiry_date}}</b>. Upgrade now to keep working without interruption.",
+  },
+  "0": {
+    subject: "Your {{plan_name}} trial has ended — upgrade to keep access",
+    headline: "Your {{plan_name}} trial has ended",
+    body: "Hi {{tenant_name}},<br/><br/>Your <b>{{plan_name}}</b> trial ended on <b>{{expiry_date}}</b>. To avoid losing access to your data, please choose a plan now.",
+  },
+};
+
+function renderVars(s: string, vars: Record<string, string>) {
+  return s.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
+}
+
 function escapeHtml(s: string) {
   return String(s ?? "")
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -27,26 +55,26 @@ interface EmailVars {
   daysLeft: number;
   expiryAt: Date;
   upgradeUrl: string;
+  template: Tmpl;
 }
 
 function buildEmail(v: EmailVars) {
-  const { tenantName, planName, daysLeft, expiryAt, upgradeUrl } = v;
+  const { tenantName, planName, daysLeft, expiryAt, upgradeUrl, template } = v;
   const isExpired = daysLeft <= 0;
   const tName = escapeHtml(tenantName);
   const pName = escapeHtml(planName);
   const expiryLabel = escapeHtml(formatExpiry(expiryAt));
-
-  const subject = isExpired
-    ? `Your ${planName} trial has ended — upgrade to keep access`
-    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left on your ${planName} trial`;
-
-  const headline = isExpired
-    ? `Your ${pName} trial has ended`
-    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left on your ${pName} trial`;
-
-  const body = isExpired
-    ? `Hi ${tName},<br/><br/>Your <b>${pName}</b> trial ended on <b>${expiryLabel}</b>. To avoid losing access to your data, please choose a plan now.`
-    : `Hi ${tName},<br/><br/>Just a friendly reminder that your <b>${pName}</b> trial ends in <b>${daysLeft} day${daysLeft === 1 ? "" : "s"}</b> on <b>${expiryLabel}</b>. Upgrade now to keep your account and data without interruption.`;
+  const htmlVars: Record<string, string> = {
+    tenant_name: tName, plan_name: pName, days_left: String(daysLeft),
+    expiry_date: expiryLabel, upgrade_url: upgradeUrl,
+  };
+  const plainVars: Record<string, string> = {
+    tenant_name: tenantName, plan_name: planName, days_left: String(daysLeft),
+    expiry_date: formatExpiry(expiryAt), upgrade_url: upgradeUrl,
+  };
+  const subject = renderVars(template.subject, plainVars);
+  const headline = renderVars(template.headline, htmlVars);
+  const body = renderVars(template.body.replace(/\n/g, "<br/>"), htmlVars);
 
   const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#f6f7fb;margin:0;padding:24px;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e8ef;">
@@ -109,6 +137,15 @@ Deno.serve(async (req) => {
       "https://primepos.lovable.app";
     const upgradeUrl = `${baseUrl.replace(/\/$/, "")}/subscription`;
 
+    // Load admin-customized templates (merge over defaults per marker)
+    const { data: tmplRow } = await supabase
+      .from("business_settings").select("value").eq("key", "trial_email_templates").maybeSingle();
+    const saved = (tmplRow?.value ?? {}) as Record<string, Partial<Tmpl>>;
+    const templates: Record<string, Tmpl> = {};
+    for (const k of Object.keys(DEFAULT_TEMPLATES)) {
+      templates[k] = { ...DEFAULT_TEMPLATES[k], ...(saved[k] ?? {}) };
+    }
+
     // Fetch active trial tenants
     const { data: tenants, error } = await supabase
       .from("tenants")
@@ -151,6 +188,7 @@ Deno.serve(async (req) => {
         daysLeft,
         expiryAt: end,
         upgradeUrl,
+        template: templates[String(marker)],
       });
       try {
         await client.send({
