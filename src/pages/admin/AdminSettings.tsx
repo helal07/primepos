@@ -52,6 +52,7 @@ export default function AdminSettings() {
         <TabsList className="bg-muted border border-border">
           <TabsTrigger value="payment">Payment Gateways</TabsTrigger>
           <TabsTrigger value="sms">SMS Gateways</TabsTrigger>
+          <TabsTrigger value="email">Email Gateway</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
         </TabsList>
 
@@ -76,6 +77,21 @@ export default function AdminSettings() {
           <GatewayCard settingsKey="sms_mimsms" title="MIM SMS" fields={[
             { name: "api_key", label: "API Key" }, { name: "sender_id", label: "Sender ID" },
           ]} />
+        </TabsContent>
+
+        <TabsContent value="email" className="mt-4 space-y-4">
+          <GatewayCard settingsKey="email_smtp" title="SMTP Email" fields={[
+            { name: "host", label: "SMTP Host (e.g. smtp.gmail.com)" },
+            { name: "port", label: "Port (587 / 465)" },
+            { name: "username", label: "Username" },
+            { name: "password", label: "Password / App Password", type: "password" },
+            { name: "from_email", label: "From Email" },
+            { name: "from_name", label: "From Name" },
+            { name: "secure", label: "Use SSL (true / false)" },
+          ]} />
+          <p className="text-xs text-muted-foreground px-1">
+            Used for trial reminder emails (7, 3, 1 days before expiry &amp; on expiry day). Save credentials and toggle &quot;Enabled&quot; to start sending.
+          </p>
         </TabsContent>
 
         <TabsContent value="appearance" className="mt-4">

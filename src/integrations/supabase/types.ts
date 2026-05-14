@@ -4056,6 +4056,44 @@ export type Database = {
           },
         ]
       }
+      trial_reminders_log: {
+        Row: {
+          days_marker: number
+          email: string | null
+          error: string | null
+          id: string
+          sent_at: string
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          days_marker: number
+          email?: string | null
+          error?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          days_marker?: number
+          email?: string | null
+          error?: string | null
+          id?: string
+          sent_at?: string
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_reminders_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           created_at: string
