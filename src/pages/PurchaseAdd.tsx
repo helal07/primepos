@@ -735,6 +735,51 @@ export default function PurchaseAdd() {
           </Suspense>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Add Supplier Dialog */}
+      <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add Supplier</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Name *</Label>
+                <Input value={newSupplier.name} onChange={e => setNewSupplier({ ...newSupplier, name: e.target.value })} placeholder="Supplier name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input value={newSupplier.phone} onChange={e => setNewSupplier({ ...newSupplier, phone: e.target.value })} placeholder="+880..." />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={newSupplier.email} onChange={e => setNewSupplier({ ...newSupplier, email: e.target.value })} placeholder="email@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Company</Label>
+                <Input value={newSupplier.company} onChange={e => setNewSupplier({ ...newSupplier, company: e.target.value })} placeholder="Company name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Tax Number</Label>
+                <Input value={newSupplier.tax_number} onChange={e => setNewSupplier({ ...newSupplier, tax_number: e.target.value })} placeholder="TIN / VAT" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Textarea value={newSupplier.address} onChange={e => setNewSupplier({ ...newSupplier, address: e.target.value })} rows={2} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={newSupplier.is_active} onCheckedChange={v => setNewSupplier({ ...newSupplier, is_active: v })} />
+              <Label>Active</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSupplierDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateSupplier} disabled={!newSupplier.name || creatingSupplier}>
+              {creatingSupplier ? "Creating..." : "Create Supplier"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
