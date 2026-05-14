@@ -3,6 +3,7 @@ import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 // ─── Packages ────────────────────────────────────────────
 export function usePackages() {
