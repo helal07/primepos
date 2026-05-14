@@ -150,6 +150,12 @@ export default function CmsPages() {
               <div className="space-y-2"><Label>Meta Title</Label><Input value={form.meta_title || ""} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Page title for search engines" /></div>
               <div className="space-y-2"><Label>Meta Description</Label><Textarea value={form.meta_description || ""} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} placeholder="Brief description for search results" /></div>
               <div className="space-y-2"><Label>Featured Image URL</Label><Input value={form.featured_image || ""} onChange={(e) => setForm({ ...form, featured_image: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Canonical URL</Label><Input value={form.canonical_url || ""} onChange={(e) => setForm({ ...form, canonical_url: e.target.value })} placeholder="https://yourdomain.com/p/slug" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2"><Label>Open Graph Title</Label><Input value={form.og_title || ""} onChange={(e) => setForm({ ...form, og_title: e.target.value })} placeholder="Defaults to Meta Title" /></div>
+                <div className="space-y-2"><Label>Open Graph Image</Label><Input value={form.og_image || ""} onChange={(e) => setForm({ ...form, og_image: e.target.value })} placeholder="https://..." /></div>
+              </div>
+              <div className="space-y-2"><Label>Open Graph Description</Label><Textarea value={form.og_description || ""} onChange={(e) => setForm({ ...form, og_description: e.target.value })} rows={2} placeholder="Defaults to Meta Description" /></div>
             </TabsContent>
           </Tabs>
 
