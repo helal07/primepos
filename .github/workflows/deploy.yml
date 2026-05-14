@@ -31,13 +31,29 @@ jobs:
             cp public/.htaccess dist/.htaccess
           fi
 
-      - name: Deploy to Hostinger via SSH (rsync)
-        uses: easingthemes/ssh-deploy@v5.1.0
-        with:
+      - name: Deploy to Hostinger via SSH (rsync with retry)
+        env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_PORT: ${{ secrets.SSH_PORT }}
-          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
-          SOURCE: "dist/"
-          TARGET: ${{ secrets.SSH_TARGET_DIR }}
-          ARGS: "-rltgoDzvO --delete --exclude='.well-known'"
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_TARGET_DIR: ${{ secrets.SSH_TARGET_DIR }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          for attempt in 1 2 3; do
+            echo "Deploy attempt $attempt of 3"
+            rsync -rltgoDzvO --delete --exclude='.well-known' \
+              -e "ssh -p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=2" \
+              dist/ "$SSH_USERNAME@$SSH_HOST:$SSH_TARGET_DIR" && exit 0
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "SSH connection failed; retrying in 30 seconds..."
+              sleep 30
+            fi
+          done
+
+          echo "Deployment failed because the SSH server did not respond. Check Hostinger SSH host, port, firewall, and server status."
+          exit 1
