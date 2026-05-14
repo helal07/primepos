@@ -418,9 +418,26 @@ export default function POS() {
         <div className="flex-1 flex flex-col border-r bg-card overflow-hidden">
           {/* Cart Header: Customer + Search + Date */}
           <div className="p-3 border-b space-y-2">
+            {/* Search row — full width on mobile */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Product / SKU / IMEI / Barcode"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="pl-8 h-11 md:h-9 text-base md:text-sm"
+                />
+              </div>
+              <Button variant="outline" size="icon" className="h-11 w-11 md:h-9 md:w-9 shrink-0" onClick={() => setShowScanner(true)}>
+                <ScanBarcode className="h-5 w-5 md:h-4 md:w-4" />
+              </Button>
+            </div>
+            {/* Customer row */}
             <div className="flex items-center gap-2">
               <Select value={customerSelectValue} onValueChange={(v) => setCustomerId(v === "walk-in" ? "" : v)}>
-                <SelectTrigger className="w-[180px] h-9 text-sm">
+                <SelectTrigger className="flex-1 md:flex-none md:w-[180px] h-10 md:h-9 text-sm">
                   <SelectValue placeholder="Walk-in Customer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -433,25 +450,11 @@ export default function POS() {
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 shrink-0"
+                className="h-10 w-10 md:h-9 md:w-9 shrink-0"
                 onClick={() => setShowAddCustomer(true)}
                 title="Add new customer"
               >
                 <UserPlus className="h-4 w-4" />
-              </Button>
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Enter Product name / SKU / IMEI / Scan barcode"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  className="pl-8 h-9 text-sm"
-                  autoFocus
-                />
-              </div>
-              <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setShowScanner(true)}>
-                <ScanBarcode className="h-4 w-4" />
               </Button>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
