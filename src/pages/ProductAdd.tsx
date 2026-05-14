@@ -185,17 +185,19 @@ export default function ProductAdd() {
   const set = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/products")}>
+    <div className="space-y-4 sm:space-y-6 pb-20 lg:pb-0">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={() => navigate("/products")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <PageHeader title={editId ? "Edit Product" : "Add Product"} description="Fill in the product details below" />
+        <div className="min-w-0 flex-1">
+          <PageHeader title={editId ? "Edit Product" : "Add Product"} description="Fill in the product details below" />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column — Main Info */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Product Type */}
           <Card>
             <CardHeader className="pb-3">
@@ -208,7 +210,7 @@ export default function ProductAdd() {
                     key={t.value}
                     type="button"
                     onClick={() => set("product_type", t.value)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`px-4 min-h-[44px] py-2 rounded-lg text-sm font-medium border transition-colors active:scale-[0.97] ${
                       form.product_type === t.value
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
@@ -230,7 +232,7 @@ export default function ProductAdd() {
               <CardTitle className="text-base">Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>Product Name *</Label>
                   <Input value={form.name} onChange={e => set("name", e.target.value)} placeholder="Enter product name" />
@@ -253,7 +255,7 @@ export default function ProductAdd() {
               <CardTitle className="text-base">Pricing</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>Purchase Price</Label>
                   <Input type="number" step="0.01" value={form.purchase_price} onChange={e => set("purchase_price", e.target.value)} />
@@ -268,7 +270,7 @@ export default function ProductAdd() {
                 </div>
                 <div className="space-y-2">
                   <Label>Profit Margin</Label>
-                  <div className="h-9 flex items-center px-3 rounded-md border bg-muted/50">
+                  <div className="h-10 flex items-center px-3 rounded-md border bg-muted/50">
                     <span className={`text-sm font-semibold ${parseFloat(profitMargin) >= 0 ? "text-green-600" : "text-destructive"}`}>
                       {profitMargin}%
                     </span>
@@ -288,13 +290,13 @@ export default function ProductAdd() {
                 <p className="text-xs text-muted-foreground mb-3">
                   Set tier-specific prices. Leave blank to use the default selling price for that group.
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {priceGroups.filter(g => g.is_active).map((g) => {
                     const row = groupPriceRows[g.id] || { price: "", price_type: "fixed" as const };
                     return (
-                      <div key={g.id} className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-4 text-sm font-medium">{g.name}</div>
-                        <div className="col-span-4">
+                      <div key={g.id} className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:items-center border sm:border-0 rounded-lg p-3 sm:p-0">
+                        <div className="sm:col-span-4 text-sm font-medium">{g.name}</div>
+                        <div className="sm:col-span-4">
                           <Input
                             type="number"
                             step="0.01"
@@ -303,7 +305,7 @@ export default function ProductAdd() {
                             onChange={(e) => setGroupPriceRows(prev => ({ ...prev, [g.id]: { ...row, price: e.target.value } }))}
                           />
                         </div>
-                        <div className="col-span-4">
+                        <div className="sm:col-span-4">
                           <Select
                             value={row.price_type}
                             onValueChange={(v) => setGroupPriceRows(prev => ({ ...prev, [g.id]: { ...row, price_type: v as "fixed" | "percent" } }))}
@@ -329,7 +331,7 @@ export default function ProductAdd() {
               <CardTitle className="text-base">Classification</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
                   <div className="flex gap-2">
@@ -385,7 +387,7 @@ export default function ProductAdd() {
               <CardTitle className="text-base">Identifiers & Stock</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>SKU / Code</Label>
                   <Input value={form.sku} onChange={e => set("sku", e.target.value)} placeholder="Auto if empty" />
@@ -417,7 +419,7 @@ export default function ProductAdd() {
                 <CardTitle className="text-base">Warranty & Guarantee</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-2">
                     <Label>Duration (months)</Label>
                     <Input type="number" value={form.warranty_duration} onChange={e => set("warranty_duration", e.target.value)} />
@@ -461,35 +463,35 @@ export default function ProductAdd() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {showVarForm && (
-                  <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Name *</Label>
+                  <div className="border rounded-lg p-3 sm:p-4 space-y-3 bg-muted/30">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Name *</Label>
                         <Input value={varForm.name} onChange={e => setVarForm({ ...varForm, name: e.target.value })} placeholder="e.g. Red / 128GB" />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">SKU</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">SKU</Label>
                         <Input value={varForm.sku} onChange={e => setVarForm({ ...varForm, sku: e.target.value })} placeholder="SKU" />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Barcode</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Barcode</Label>
                         <Input value={varForm.barcode} onChange={e => setVarForm({ ...varForm, barcode: e.target.value })} placeholder="Barcode" />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Purchase Price</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Purchase Price</Label>
                         <Input type="number" step="0.01" value={varForm.purchase_price} onChange={e => setVarForm({ ...varForm, purchase_price: e.target.value })} />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Selling Price</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Selling Price</Label>
                         <Input type="number" step="0.01" value={varForm.selling_price} onChange={e => setVarForm({ ...varForm, selling_price: e.target.value })} />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Stock</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-sm">Stock</Label>
                         <Input type="number" value={varForm.stock_quantity} onChange={e => setVarForm({ ...varForm, stock_quantity: e.target.value })} />
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" disabled={!varForm.name} onClick={() => {
+                      <Button className="flex-1 sm:flex-none" disabled={!varForm.name} onClick={() => {
                         const payload = {
                           product_id: editId,
                           name: varForm.name,
@@ -508,7 +510,7 @@ export default function ProductAdd() {
                       }}>
                         {varEditId ? "Update" : "Add"}
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => { setShowVarForm(false); setVarEditId(null); }}>Cancel</Button>
+                      <Button variant="ghost" className="flex-1 sm:flex-none" onClick={() => { setShowVarForm(false); setVarEditId(null); }}>Cancel</Button>
                     </div>
                   </div>
                 )}
@@ -562,7 +564,7 @@ export default function ProductAdd() {
         </div>
 
         {/* Right Column — Image & Options */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Image Upload */}
           <Card>
             <CardHeader className="pb-3">
@@ -613,35 +615,48 @@ export default function ProductAdd() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Options</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="space-y-1">
+              <div className="flex items-center justify-between min-h-[44px] py-1">
                 <Label>Active</Label>
                 <Switch checked={form.is_active} onCheckedChange={v => set("is_active", v)} />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between min-h-[44px] py-1">
                 <div>
                   <Label>Show on Website</Label>
                   {isService && <p className="text-xs text-muted-foreground">Disabled for Service type</p>}
                 </div>
                 <Switch checked={form.show_on_website} onCheckedChange={v => set("show_on_website", v)} disabled={isService} />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between min-h-[44px] py-1">
                 <Label>Serial Tracking</Label>
                 <Switch checked={form.serial_tracking} onCheckedChange={v => set("serial_tracking", v)} />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between min-h-[44px] py-1">
                 <Label>Has Warranty</Label>
                 <Switch checked={form.has_warranty} onCheckedChange={v => set("has_warranty", v)} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Save */}
-          <Button className="w-full" size="lg" onClick={handleSubmit} disabled={!form.name || create.isPending || update.isPending || uploading}>
+          {/* Save (desktop inline) */}
+          <Button className="w-full hidden lg:flex" size="lg" onClick={handleSubmit} disabled={!form.name || create.isPending || update.isPending || uploading}>
             <Save className="mr-2 h-4 w-4" />
             {uploading ? "Uploading..." : editId ? "Update Product" : "Save Product"}
           </Button>
         </div>
+      </div>
+
+      {/* Sticky save bar on mobile/tablet */}
+      <div className="lg:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 bg-gradient-to-t from-background via-background/95 to-background/0 pointer-events-none">
+        <Button
+          className="w-full pointer-events-auto shadow-lg"
+          size="lg"
+          onClick={handleSubmit}
+          disabled={!form.name || create.isPending || update.isPending || uploading}
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {uploading ? "Uploading..." : editId ? "Update Product" : "Save Product"}
+        </Button>
       </div>
     </div>
   );
