@@ -42,7 +42,7 @@ export function AppHeader() {
           className="h-10 md:h-9 gap-1.5 font-semibold rounded-full px-4 shadow-sm"
         >
           <MonitorSmartphone className="h-4 w-4" />
-          <span className="hidden xs:inline sm:inline">POS</span>
+          <span className="hidden sm:inline">POS</span>
         </Button>
         <Button variant="ghost" size="icon" className="relative h-10 w-10 md:h-9 md:w-9 rounded-full">
           <Bell className="h-4 w-4" />
