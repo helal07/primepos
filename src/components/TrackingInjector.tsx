@@ -95,6 +95,3 @@ export function TrackingInjector() {
 
   return null;
 }
-
-  return null;
-}
