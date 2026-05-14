@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -32,7 +33,7 @@ export function useWarrantyMutations() {
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["warranty_claims"] }); toast.success("Claim saved"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const deleteClaim = useMutation({
@@ -41,7 +42,7 @@ export function useWarrantyMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["warranty_claims"] }); toast.success("Claim deleted"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { upsertClaim, deleteClaim };
@@ -73,7 +74,7 @@ export function useCmsMutations() {
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["cms_pages"] }); toast.success("Page saved"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const deletePage = useMutation({
@@ -82,7 +83,7 @@ export function useCmsMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["cms_pages"] }); toast.success("Page deleted"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { upsertPage, deletePage };

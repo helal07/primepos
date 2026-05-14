@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ export function useExpenseMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["expenses"] }); toast.success("Expense added"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const update = useMutation({
@@ -73,7 +74,7 @@ export function useExpenseMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["expenses"] }); toast.success("Expense updated"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const remove = useMutation({
@@ -82,7 +83,7 @@ export function useExpenseMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["expenses"] }); toast.success("Expense deleted"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { create, update, remove };
@@ -107,7 +108,7 @@ export function useExpenseCategoryMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["expense_categories"] }); toast.success("Category created"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
   const update = useMutation({
     mutationFn: async ({ id, ...input }: { id: string; name?: string; parent_id?: string | null; is_active?: boolean }) => {
@@ -115,7 +116,7 @@ export function useExpenseCategoryMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["expense_categories"] }); toast.success("Category updated"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
   const remove = useMutation({
     mutationFn: async (id: string) => {
@@ -123,7 +124,7 @@ export function useExpenseCategoryMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["expense_categories"] }); toast.success("Category deleted"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
   return { create, update, remove };
 }

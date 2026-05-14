@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -164,7 +165,7 @@ export function usePurchaseMutations() {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
       toast.success("Purchase created successfully");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const updatePurchaseStatus = useMutation({
@@ -179,7 +180,7 @@ export function usePurchaseMutations() {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
       toast.success("Purchase updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const receivePurchase = useMutation({
@@ -217,7 +218,7 @@ export function usePurchaseMutations() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Stock received successfully");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const updatePurchase = useMutation({
@@ -260,7 +261,7 @@ export function usePurchaseMutations() {
       queryClient.invalidateQueries({ queryKey: ["purchase_items"] });
       toast.success("Purchase updated successfully");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const deletePurchase = useMutation({
@@ -272,7 +273,7 @@ export function usePurchaseMutations() {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
       toast.success("Purchase deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const createPurchasePayments = useMutation({
@@ -285,7 +286,7 @@ export function usePurchaseMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchase_payments"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { createPurchase, createPurchasePayments, updatePurchaseStatus, updatePurchase, receivePurchase, deletePurchase };

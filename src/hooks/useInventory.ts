@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -26,7 +27,7 @@ export function useCategoryMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Category created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -35,7 +36,7 @@ export function useCategoryMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Category updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -49,7 +50,7 @@ export function useCategoryMutations() {
       if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission to delete this category.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -78,7 +79,7 @@ export function useBrandMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Brand created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -87,7 +88,7 @@ export function useBrandMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Brand updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -97,7 +98,7 @@ export function useBrandMutations() {
       if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Brand deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -126,7 +127,7 @@ export function useUnitMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Unit created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -135,7 +136,7 @@ export function useUnitMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Unit updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -145,7 +146,7 @@ export function useUnitMutations() {
       if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
     },
     onSuccess: () => { invalidate(); toast({ title: "Unit deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -177,7 +178,7 @@ export function useProductMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Product created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -186,7 +187,7 @@ export function useProductMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Product updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -248,7 +249,7 @@ export function useProductMutations() {
         duration: 8000,
       });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -279,7 +280,7 @@ export function useVariationMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Variation created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -288,7 +289,7 @@ export function useVariationMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Variation updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -297,7 +298,7 @@ export function useVariationMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Variation deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -333,7 +334,7 @@ export function useStockAdjustmentMutations() {
       qc.invalidateQueries({ queryKey: ["products"] });
       toast({ title: "Stock adjusted" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create };
@@ -366,7 +367,7 @@ export function useStockTransferMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Transfer created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -375,7 +376,7 @@ export function useStockTransferMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Transfer updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update };

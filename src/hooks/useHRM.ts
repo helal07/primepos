@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -30,7 +31,7 @@ export function useEmployeeMutations() {
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["employees"] }); toast.success("Employee saved"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const deleteEmployee = useMutation({
@@ -39,7 +40,7 @@ export function useEmployeeMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["employees"] }); toast.success("Employee deleted"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { upsertEmployee, deleteEmployee };
@@ -68,7 +69,7 @@ export function useAttendanceMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attendance"] }); toast.success("Attendance saved"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { markAttendance };
@@ -96,7 +97,7 @@ export function useLeaveMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leave_requests"] }); toast.success("Leave request created"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const updateLeaveStatus = useMutation({
@@ -105,7 +106,7 @@ export function useLeaveMutations() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leave_requests"] }); toast.success("Leave status updated"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { createLeave, updateLeaveStatus };
@@ -141,7 +142,7 @@ export function usePayrollMutations() {
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["payroll"] }); toast.success("Payroll saved"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { upsertPayroll };

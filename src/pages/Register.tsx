@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles, CreditCard, CheckCircle2, Store, Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+import { toFriendlyError } from "@/lib/friendlyError";
 
 interface Pkg {
   id: string;
@@ -104,7 +105,7 @@ export default function Register() {
       toast({ title: "Account created", description: "Choose a payment method to activate your plan." });
       window.location.assign(`/subscription?from=register&plan=${encodeURIComponent(packageId)}`);
     } catch (err: any) {
-      toast({ title: "Registration failed", description: err.message ?? "Try again.", variant: "destructive" });
+      toast({ title: "Registration failed", description: toFriendlyError(err), variant: "destructive" });
     } finally {
       setLoading(false);
     }
