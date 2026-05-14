@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
-  ScanBarcode, FileText, Clock, Pencil, UserPlus,
+  ScanBarcode, FileText, Clock, UserPlus,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
