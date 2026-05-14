@@ -142,6 +142,7 @@ export default function LandingCms() {
           <TabsTrigger value="why" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Why Us</TabsTrigger>
           <TabsTrigger value="reviews" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Reviews</TabsTrigger>
           <TabsTrigger value="seo" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">SEO</TabsTrigger>
+          <TabsTrigger value="tracking" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Tracking</TabsTrigger>
           <TabsTrigger value="features" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Features Heading</TabsTrigger>
           <TabsTrigger value="testimonials" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">Testimonials Heading</TabsTrigger>
           <TabsTrigger value="faq" className="data-[state=active]:bg-background data-[state=active]:text-foreground text-muted-foreground">FAQ</TabsTrigger>
@@ -195,6 +196,20 @@ export default function LandingCms() {
             { name: "og_image", label: "Open Graph Image URL" },
             { name: "canonical_url", label: "Canonical URL" },
             { name: "twitter_handle", label: "Twitter Handle (@yourbrand)" },
+          ]} />
+        </TabsContent>
+        <TabsContent value="tracking" className="mt-4 space-y-4">
+          <Alert className="border-primary/30 bg-primary/5">
+            <AlertDescription className="text-sm">
+              Paste your tracking IDs below. Scripts are injected on every public page (landing + CMS pages). Leave blank to disable.
+            </AlertDescription>
+          </Alert>
+          <CmsSection sectionKey="cms_tracking" title="Marketing & Analytics Tracking" fields={[
+            { name: "gtm_id", label: "Google Tag Manager ID (e.g. GTM-XXXXXX)" },
+            { name: "ga4_id", label: "Google Analytics 4 Measurement ID (e.g. G-XXXXXXX)" },
+            { name: "fb_pixel_id", label: "Meta / Facebook Pixel ID (numeric)" },
+            { name: "fb_conversion_token", label: "Meta Conversions API Access Token (server-side, optional)" },
+            { name: "fb_test_event_code", label: "Meta Test Event Code (optional, for debugging)" },
           ]} />
         </TabsContent>
         <TabsContent value="features" className="mt-4">
