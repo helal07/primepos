@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DollarSign, Package, AlertTriangle, Clock, TrendingUp, TrendingDown,
   ShoppingCart, Plus, MonitorSmartphone, Activity, ArrowUpRight,
-  ArrowDownRight, Banknote, CreditCard, BarChart3, AlertCircle,
+  ArrowDownRight, Banknote, CreditCard, BarChart3, AlertCircle, ChevronDown,
 } from "lucide-react";
 import {
   Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
@@ -21,6 +21,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { data: stats, isLoading } = useDashboardStats();
   const [chartView, setChartView] = useState<"monthly" | "weekly">("monthly");
+  // On mobile we collapse the middle/bottom rows by default to reduce scrolling.
+  // Keys: "stock", "due", "top", "recentSales", "activity". `null` = closed, true = open.
+  const [openSection, setOpenSection] = useState<Record<string, boolean>>({
+    stock: true,
+    due: false,
+    top: true,
+    recentSales: false,
+    activity: false,
+  });
+  const toggle = (k: string) => setOpenSection((s) => ({ ...s, [k]: !s[k] }));
+  const sectionContentCls = (k: string) =>
+    `${openSection[k] ? "block" : "hidden"} md:block`;
+  const chevronCls = (k: string) =>
+    `h-4 w-4 transition-transform md:hidden ${openSection[k] ? "rotate-180" : ""}`;
 
   const summaryCards = [
     {
@@ -192,18 +206,21 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {/* Stock Alerts */}
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 cursor-pointer md:cursor-default" onClick={() => toggle("stock")}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 Stock Alerts
               </CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/products")}>
-                View All
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); navigate("/products"); }}>
+                  View All
+                </Button>
+                <ChevronDown className={chevronCls("stock")} />
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className={sectionContentCls("stock")}>
             {isLoading ? (
               <Skeleton className="h-48 w-full" />
             ) : (stats?.stockAlerts ?? []).length === 0 ? (
@@ -241,13 +258,16 @@ export default function Dashboard() {
 
         {/* Due Payments */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-red-500" />
-              Due Payments
-            </CardTitle>
+          <CardHeader className="pb-2 cursor-pointer md:cursor-default" onClick={() => toggle("due")}>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-red-500" />
+                Due Payments
+              </CardTitle>
+              <ChevronDown className={chevronCls("due")} />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className={sectionContentCls("due")}>
             <Tabs defaultValue="sales-due">
               <TabsList className="w-full h-8 mb-3">
                 <TabsTrigger value="sales-due" className="flex-1 text-xs h-6">
@@ -304,10 +324,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Top Products */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Top Selling Products</CardTitle>
+          <CardHeader className="pb-2 cursor-pointer md:cursor-default" onClick={() => toggle("top")}>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-medium">Top Selling Products</CardTitle>
+              <ChevronDown className={chevronCls("top")} />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className={sectionContentCls("top")}>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (stats?.topProducts ?? []).length === 0 ? (
@@ -337,15 +360,18 @@ export default function Dashboard() {
 
         {/* Recent Sales */}
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 cursor-pointer md:cursor-default" onClick={() => toggle("recentSales")}>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-medium">Recent Sales</CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate("/sales")}>
-                View All
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); navigate("/sales"); }}>
+                  View All
+                </Button>
+                <ChevronDown className={chevronCls("recentSales")} />
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className={sectionContentCls("recentSales")}>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (stats?.recentSales ?? []).length === 0 ? (
@@ -378,10 +404,13 @@ export default function Dashboard() {
 
         {/* Recent Activity */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
+          <CardHeader className="pb-2 cursor-pointer md:cursor-default" onClick={() => toggle("activity")}>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-medium">Recent Activity</CardTitle>
+              <ChevronDown className={chevronCls("activity")} />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className={sectionContentCls("activity")}>
             {isLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : (stats?.recentActivity ?? []).length === 0 ? (
