@@ -314,3 +314,133 @@ export function useLandingCmsMutation() {
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 }
+
+// ---------- Landing Features ----------
+export function useLandingFeatures(adminMode = false) {
+  return useQuery({
+    queryKey: ["landing_features", adminMode],
+    queryFn: async () => {
+      const q = supabase.from("landing_features").select("*").order("sort_order");
+      const { data, error } = adminMode ? await q : await q.eq("is_active", true);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useLandingFeatureMutations() {
+  const qc = useQueryClient();
+  const upsert = useMutation({
+    mutationFn: async (row: any) => {
+      if (row.id) {
+        const { id, created_at, updated_at, ...rest } = row;
+        const { error } = await supabase.from("landing_features").update(rest).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("landing_features").insert(row);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_features"] }); toast.success("Feature saved"); },
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
+  });
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("landing_features").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_features"] }); toast.success("Deleted"); },
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
+  });
+  return { upsert, remove };
+}
+
+// ---------- Landing Reviews ----------
+export function useLandingReviews(adminMode = false) {
+  return useQuery({
+    queryKey: ["landing_reviews", adminMode],
+    queryFn: async () => {
+      const q = supabase.from("landing_reviews").select("*").order("sort_order");
+      const { data, error } = adminMode ? await q : await q.eq("is_active", true);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useLandingReviewMutations() {
+  const qc = useQueryClient();
+  const upsert = useMutation({
+    mutationFn: async (row: any) => {
+      if (row.id) {
+        const { id, created_at, updated_at, ...rest } = row;
+        const { error } = await supabase.from("landing_reviews").update(rest).eq("id", id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("landing_reviews").insert(row);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_reviews"] }); toast.success("Review saved"); },
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
+  });
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("landing_reviews").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_reviews"] }); toast.success("Deleted"); },
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
+  });
+  return { upsert, remove };
+}
+
+// ---------- Public landing pricing (uses saas_packages) ----------
+export function useLandingPricing() {
+  return useQuery({
+    queryKey: ["landing_pricing"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("saas_packages")
+        .select("*")
+        .eq("is_active", true)
+        .eq("show_on_landing", true)
+        .order("price");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ---------- Published CMS pages (footer auto-list / public route) ----------
+export function usePublishedCmsPages() {
+  return useQuery({
+    queryKey: ["cms_pages_published"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cms_pages")
+        .select("id,title,slug,content,meta_title,meta_description,featured_image,updated_at")
+        .eq("status", "published")
+        .order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function usePublishedCmsPage(slug: string | undefined) {
+  return useQuery({
+    enabled: !!slug,
+    queryKey: ["cms_page_public", slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cms_pages")
+        .select("*")
+        .eq("slug", slug!)
+        .eq("status", "published")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
