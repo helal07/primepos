@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, Printer } from "lucide-react";
+import { ArrowLeft, Pencil, Printer, MessageCircle } from "lucide-react";
 import { useSale, useSaleItems, useSalePayments } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
+import { buildSaleWhatsappUrl } from "@/lib/whatsappShare";
+import { useToast } from "@/hooks/use-toast";
 
 const statusColors: Record<string, string> = {
   completed: "bg-green-100 text-green-800",
@@ -26,6 +28,7 @@ export default function SaleView() {
   const { data: payments } = useSalePayments(id || null);
   const { data: settings } = useSettings();
   const [showInvoice, setShowInvoice] = useState(false);
+  const { toast } = useToast();
 
   if (isLoading) {
     return <div className="space-y-4 p-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>;
@@ -53,6 +56,22 @@ export default function SaleView() {
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${id}/edit`)}>
               <Pencil className="h-4 w-4 mr-2" /> Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-emerald-600 border-emerald-600/40 hover:bg-emerald-50"
+              onClick={() => {
+                const phone = (sale as any).customers?.phone || "";
+                if (!phone.replace(/\D/g, "")) {
+                  toast({ title: "Customer phone missing", description: "Add a phone number to send via WhatsApp.", variant: "destructive" });
+                  return;
+                }
+                const url = buildSaleWhatsappUrl({ sale, payments: payments ?? [], settings: settings ?? {} });
+                window.open(url, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" /> WhatsApp
             </Button>
             <Button size="sm" onClick={() => setShowInvoice(true)}>
               <Printer className="h-4 w-4 mr-2" /> Print Invoice
