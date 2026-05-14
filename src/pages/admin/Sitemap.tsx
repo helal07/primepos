@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Download, Copy, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Download, Copy, ExternalLink, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const FREQS = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
 const SITEMAP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sitemap`;
+const DEFAULT_BASE = "https://pos.itsheba.bd";
 
 export default function Sitemap() {
   const qc = useQueryClient();
@@ -22,6 +23,60 @@ export default function Sitemap() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<any>({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" });
+  const [baseUrl, setBaseUrl] = useState<string>(DEFAULT_BASE);
+  const [generatedXml, setGeneratedXml] = useState<string>("");
+  const [generating, setGenerating] = useState(false);
+
+  // Load saved canonical base from business_settings.cms_seo
+  useQuery({
+    queryKey: ["cms_seo_base"],
+    queryFn: async () => {
+      const { data } = await supabase.from("business_settings").select("value").eq("key", "cms_seo").maybeSingle();
+      const v = (data?.value as any) || {};
+      const candidate = v.canonical_url || v.site_url || v.base_url;
+      if (candidate) setBaseUrl(String(candidate).replace(/\/$/, ""));
+      return data ?? null;
+    },
+  });
+
+  const liveUrl = `${SITEMAP_URL}?base=${encodeURIComponent(baseUrl.replace(/\/$/, ""))}`;
+
+  const generate = async () => {
+    const clean = baseUrl.trim().replace(/\/$/, "");
+    if (!/^https?:\/\//.test(clean)) {
+      toast({ title: "Invalid URL", description: "Base URL must start with http:// or https://", variant: "destructive" });
+      return;
+    }
+    setGenerating(true);
+    try {
+      // Persist canonical base to business_settings.cms_seo
+      const { data: existing } = await supabase.from("business_settings").select("value").eq("key", "cms_seo").maybeSingle();
+      const merged = { ...((existing?.value as any) || {}), canonical_url: clean };
+      if (existing) {
+        await supabase.from("business_settings").update({ value: merged }).eq("key", "cms_seo");
+      } else {
+        await supabase.from("business_settings").insert({ key: "cms_seo", value: merged });
+      }
+      const res = await fetch(`${SITEMAP_URL}?base=${encodeURIComponent(clean)}&t=${Date.now()}`);
+      const xml = await res.text();
+      setGeneratedXml(xml);
+      toast({ title: "Sitemap generated", description: `Base URL set to ${clean}` });
+    } catch (e: any) {
+      toast({ title: "Generation failed", description: e.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const downloadGenerated = () => {
+    const xml = generatedXml;
+    if (!xml) return;
+    const blob = new Blob([xml], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "sitemap.xml"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["sitemap_entries"],
@@ -64,7 +119,7 @@ export default function Sitemap() {
 
   const downloadXml = async () => {
     try {
-      const res = await fetch(SITEMAP_URL);
+      const res = await fetch(liveUrl);
       const xml = await res.text();
       const blob = new Blob([xml], { type: "application/xml" });
       const url = URL.createObjectURL(blob);
@@ -90,10 +145,37 @@ export default function Sitemap() {
         <CardContent className="p-3 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs text-muted-foreground mb-1">Live sitemap URL — entries you save here are served instantly. /sitemap.xml redirects here on Apache hosting; robots.txt also references it.</p>
-            <p className="font-mono text-xs truncate">{SITEMAP_URL}</p>
+            <p className="font-mono text-xs truncate">{liveUrl}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(SITEMAP_URL); toast({ title: "Copied" }); }}><Copy className="h-3 w-3 mr-1" />Copy</Button>
-          <Button size="sm" variant="outline" asChild><a href={SITEMAP_URL} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3 mr-1" />Open</a></Button>
+          <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(liveUrl); toast({ title: "Copied" }); }}><Copy className="h-3 w-3 mr-1" />Copy</Button>
+          <Button size="sm" variant="outline" asChild><a href={liveUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-3 w-3 mr-1" />Open</a></Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div>
+            <Label>Site Base URL</Label>
+            <p className="text-xs text-muted-foreground mb-2">All sitemap URLs will use this domain. Saved as the canonical site URL.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://pos.itsheba.bd" className="font-mono" />
+              <Button onClick={generate} disabled={generating} className="shrink-0">
+                <RefreshCw className={`h-4 w-4 mr-1 ${generating ? "animate-spin" : ""}`} />
+                {generating ? "Generating…" : "Generate Sitemap"}
+              </Button>
+            </div>
+          </div>
+          {generatedXml && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Preview ({(generatedXml.match(/<url>/g) || []).length} URLs)</p>
+                <Button size="sm" variant="outline" onClick={downloadGenerated}>
+                  <Download className="h-3 w-3 mr-1" />Download XML
+                </Button>
+              </div>
+              <pre className="text-xs bg-muted p-3 rounded max-h-64 overflow-auto font-mono">{generatedXml}</pre>
+            </div>
+          )}
         </CardContent>
       </Card>
 
