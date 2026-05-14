@@ -53,8 +53,8 @@ export function MobileBottomNav() {
       )}
 
       {/* Bottom nav bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border md:hidden">
-        <div className="flex items-center justify-around h-16 px-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border/60 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around h-16 px-1.5">
           {mainItems.map((item) => {
             const isActive = item.url === "/"
               ? location.pathname === "/"
@@ -64,23 +64,23 @@ export function MobileBottomNav() {
                 key={item.url}
                 to={item.url}
                 end={item.url === "/"}
-                className="flex flex-col items-center gap-0.5 px-2 py-1 text-muted-foreground transition-colors"
-                activeClassName="text-primary"
+                className="flex flex-col items-center justify-center gap-0.5 min-w-[58px] px-2 py-1.5 rounded-xl text-muted-foreground transition-all active:scale-95"
+                activeClassName="text-primary bg-primary/10"
               >
-                <item.icon className="h-5 w-5" />
-                <span className="text-[10px] font-medium">{item.title}</span>
+                <item.icon className="h-[22px] w-[22px]" />
+                <span className="text-[10px] font-medium leading-none">{item.title}</span>
               </NavLink>
             );
           })}
           <button
             onClick={() => setMoreOpen(!moreOpen)}
             className={cn(
-              "flex flex-col items-center gap-0.5 px-2 py-1 transition-colors",
-              moreOpen ? "text-primary" : "text-muted-foreground"
+              "flex flex-col items-center justify-center gap-0.5 min-w-[58px] px-2 py-1.5 rounded-xl transition-all active:scale-95",
+              moreOpen ? "text-primary bg-primary/10" : "text-muted-foreground"
             )}
           >
-            {moreOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            <span className="text-[10px] font-medium">More</span>
+            {moreOpen ? <X className="h-[22px] w-[22px]" /> : <Menu className="h-[22px] w-[22px]" />}
+            <span className="text-[10px] font-medium leading-none">More</span>
           </button>
         </div>
       </nav>

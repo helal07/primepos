@@ -22,8 +22,8 @@ export function AppHeader() {
     : user?.email?.slice(0, 2).toUpperCase() ?? "??";
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
+    <header className="sticky top-0 z-30 flex h-14 md:h-16 items-center gap-2 md:gap-4 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/75 px-3 md:px-5">
+      <SidebarTrigger className="-ml-1 tap-target" />
 
       <div className="hidden md:flex w-full max-w-md">
         <div className="relative w-full">
@@ -35,16 +35,16 @@ export function AppHeader() {
         </div>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-1.5 md:gap-2">
         <Button
           size="sm"
           onClick={() => navigate("/pos")}
-          className="h-9 gap-1.5 font-semibold"
+          className="h-10 md:h-9 gap-1.5 font-semibold rounded-full px-4 shadow-sm"
         >
           <MonitorSmartphone className="h-4 w-4" />
-          POS
+          <span className="hidden xs:inline sm:inline">POS</span>
         </Button>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+        <Button variant="ghost" size="icon" className="relative h-10 w-10 md:h-9 md:w-9 rounded-full">
           <Bell className="h-4 w-4" />
           <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
             3
@@ -53,7 +53,7 @@ export function AppHeader() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
+            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-9 md:w-9 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                   {initials}

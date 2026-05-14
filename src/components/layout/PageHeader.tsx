@@ -12,14 +12,20 @@ export function PageHeader({ title, description, subtitle, actions, children }: 
   const desc = description || subtitle;
   const acts = actions || children;
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-5 md:mb-6">
+      <div className="min-w-0">
+        <h1 className="text-xl md:text-3xl font-semibold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          {title}
+        </h1>
         {desc && (
-          <p className="text-sm text-muted-foreground mt-1">{desc}</p>
+          <p className="text-[13px] md:text-sm text-muted-foreground mt-1 line-clamp-2">{desc}</p>
         )}
       </div>
-      {acts && <div className="flex items-center gap-2 mt-2 sm:mt-0">{acts}</div>}
+      {acts && (
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2 sm:shrink-0">
+          {acts}
+        </div>
+      )}
     </div>
   );
 }
