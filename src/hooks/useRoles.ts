@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -102,7 +103,7 @@ export function useSaveRole() {
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); toast({ title: "Role saved" }); },
-    onError: (e: any) => { toast({ title: "Error", description: e.message, variant: "destructive" }); },
+    onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },
   });
 }
 
@@ -115,7 +116,7 @@ export function useDeleteRole() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); toast({ title: "Role deleted" }); },
-    onError: (e: any) => { toast({ title: "Error", description: e.message, variant: "destructive" }); },
+    onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },
   });
 }
 
@@ -133,7 +134,7 @@ export function useSavePermissions() {
       }
     },
     onSuccess: (_, vars) => { qc.invalidateQueries({ queryKey: ["role_permissions", vars.roleId] }); toast({ title: "Permissions saved" }); },
-    onError: (e: any) => { toast({ title: "Error", description: e.message, variant: "destructive" }); },
+    onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },
   });
 }
 
@@ -157,7 +158,7 @@ export function useUpdateUserRole() {
       if (delErr) throw delErr;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users_with_roles"] }); toast({ title: "Role updated" }); },
-    onError: (e: any) => { toast({ title: "Error", description: e.message, variant: "destructive" }); },
+    onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },
   });
 }
 
@@ -176,6 +177,6 @@ export function useDeleteUser() {
       qc.invalidateQueries({ queryKey: ["users_with_roles"] });
       toast({ title: "User deleted" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 }

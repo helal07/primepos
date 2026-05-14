@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -27,7 +28,7 @@ export function useAccountMutations() {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["accounts"] }); toast.success("Account created"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const update = useMutation({
@@ -36,7 +37,7 @@ export function useAccountMutations() {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["accounts"] }); toast.success("Account updated"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const remove = useMutation({
@@ -45,7 +46,7 @@ export function useAccountMutations() {
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["accounts"] }); toast.success("Account deleted"); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { create, update, remove };
@@ -123,7 +124,7 @@ export function useJournalMutations() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       toast.success("Journal entry created");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const deleteEntry = useMutation({
@@ -137,7 +138,7 @@ export function useJournalMutations() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       toast.success("Journal entry deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { createEntry, deleteEntry };

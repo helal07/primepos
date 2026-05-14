@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
@@ -25,7 +26,7 @@ export function useCustomerMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Customer created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -34,7 +35,7 @@ export function useCustomerMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Customer updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -43,7 +44,7 @@ export function useCustomerMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Customer deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -71,7 +72,7 @@ export function useSupplierMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Supplier created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -80,7 +81,7 @@ export function useSupplierMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Supplier updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -89,7 +90,7 @@ export function useSupplierMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Supplier deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };

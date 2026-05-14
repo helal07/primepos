@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -52,7 +53,7 @@ export function useSellingPriceGroupMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Price group created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -61,7 +62,7 @@ export function useSellingPriceGroupMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Price group updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -70,7 +71,7 @@ export function useSellingPriceGroupMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Price group deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -102,7 +103,7 @@ export function useCustomerGroupMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Customer group created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -111,7 +112,7 @@ export function useCustomerGroupMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Customer group updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -120,7 +121,7 @@ export function useCustomerGroupMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); toast({ title: "Customer group deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -176,7 +177,7 @@ export function useProductGroupPriceMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -185,7 +186,7 @@ export function useProductGroupPriceMutations() {
       if (error) throw error;
     },
     onSuccess: () => { invalidate(); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { upsert, remove };

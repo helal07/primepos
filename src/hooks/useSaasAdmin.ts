@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,7 +44,7 @@ export function usePackageMutations() {
       qc.invalidateQueries({ queryKey: ["saas_packages"] });
       toast({ title: "Package created" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -60,7 +61,7 @@ export function usePackageMutations() {
       qc.invalidateQueries({ queryKey: ["saas_packages"] });
       toast({ title: "Package updated" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -72,7 +73,7 @@ export function usePackageMutations() {
       qc.invalidateQueries({ queryKey: ["saas_packages"] });
       toast({ title: "Package deleted" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -130,7 +131,7 @@ export function useTenantMutations() {
       qc.invalidateQueries({ queryKey: ["tenants"] });
       toast({ title: "Tenant created" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -152,7 +153,7 @@ export function useTenantMutations() {
       qc.invalidateQueries({ queryKey: ["tenants"] });
       toast({ title: "Tenant updated" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -164,7 +165,7 @@ export function useTenantMutations() {
       qc.invalidateQueries({ queryKey: ["tenants"] });
       toast({ title: "Tenant deleted" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const suspend = useMutation({
@@ -310,6 +311,6 @@ export function useLandingCmsMutation() {
       qc.invalidateQueries({ queryKey: ["business_settings", key] });
       toast({ title: "Saved" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 }

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -153,7 +154,7 @@ export function useSaleMutations() {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       toast.success("Sale created successfully");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const createSalePayments = useMutation({
@@ -166,7 +167,7 @@ export function useSaleMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sale_payments"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const updateSaleStatus = useMutation({
@@ -181,7 +182,7 @@ export function useSaleMutations() {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       toast.success("Sale updated");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const updateSale = useMutation({
@@ -228,7 +229,7 @@ export function useSaleMutations() {
       queryClient.invalidateQueries({ queryKey: ["sale_items"] });
       toast.success("Sale updated successfully");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const deleteSale = useMutation({
@@ -240,7 +241,7 @@ export function useSaleMutations() {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       toast.success("Sale deleted");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   return { createSale, createSalePayments, updateSaleStatus, updateSale, deleteSale };

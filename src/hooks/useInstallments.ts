@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,7 +30,7 @@ export function useInstallmentCustomerMutations() {
       if (error) throw error;
     },
     onSuccess: () => { inv(); toast({ title: "Installment customer created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
@@ -38,7 +39,7 @@ export function useInstallmentCustomerMutations() {
       if (error) throw error;
     },
     onSuccess: () => { inv(); toast({ title: "Customer updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
@@ -47,7 +48,7 @@ export function useInstallmentCustomerMutations() {
       if (error) throw error;
     },
     onSuccess: () => { inv(); toast({ title: "Customer deleted" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
@@ -93,7 +94,7 @@ export function useInstallmentSaleMutations() {
       return data;
     },
     onSuccess: () => { inv(); toast({ title: "Installment sale created" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const updateStatus = useMutation({
@@ -102,7 +103,7 @@ export function useInstallmentSaleMutations() {
       if (error) throw error;
     },
     onSuccess: () => { inv(); toast({ title: "Status updated" }); },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, updateStatus };
@@ -185,7 +186,7 @@ export function useCollectionMutations() {
       qc.invalidateQueries({ queryKey: ["installment_schedules"] });
       toast({ title: "Payment collected" });
     },
-    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { collect };
