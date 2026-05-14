@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles, CreditCard, CheckCircle2, Store, Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { toFriendlyError } from "@/lib/friendlyError";
+import { trackEvent } from "@/lib/tracking";
 
 interface Pkg {
   id: string;
@@ -98,11 +99,34 @@ export default function Register() {
       }
       if (choice === "trial") {
         toast({ title: `Trial activated`, description: `${TRIAL_DAYS} days of full access.` });
+        const eid = `lead-${Date.now()}`;
+        if ((window as any).fbq) (window as any).fbq("track", "Lead", { content_name: "Trial signup" }, { eventID: eid });
+        trackEvent("Lead", {
+          event_id: eid,
+          user_data: {
+            email: form.contactEmail.trim().toLowerCase(),
+            phone: form.contactPhone.trim(),
+            first_name: form.contactName.trim().split(" ")[0],
+            last_name: form.contactName.trim().split(" ").slice(1).join(" ") || undefined,
+          },
+          custom_data: { content_name: "Trial signup", lead_type: "trial" },
+        });
         window.location.assign("/dashboard");
         return;
       }
       // Paid: send to subscription page with chosen plan to pay via gateway
       toast({ title: "Account created", description: "Choose a payment method to activate your plan." });
+      const eidPaid = `lead-paid-${Date.now()}`;
+      if ((window as any).fbq) (window as any).fbq("track", "Lead", { content_name: "Paid signup" }, { eventID: eidPaid });
+      trackEvent("Lead", {
+        event_id: eidPaid,
+        user_data: {
+          email: form.contactEmail.trim().toLowerCase(),
+          phone: form.contactPhone.trim(),
+          first_name: form.contactName.trim().split(" ")[0],
+        },
+        custom_data: { content_name: "Paid signup", lead_type: "paid", package_id: packageId },
+      });
       window.location.assign(`/subscription?from=register&plan=${encodeURIComponent(packageId)}`);
     } catch (err: any) {
       toast({ title: "Registration failed", description: toFriendlyError(err), variant: "destructive" });
