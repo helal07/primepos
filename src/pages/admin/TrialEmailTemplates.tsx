@@ -56,12 +56,14 @@ const VARS = [
 ];
 
 function render(template: string, daysLeft: number) {
-  return template
-    .replaceAll("{{tenant_name}}", SAMPLE.tenant_name)
-    .replaceAll("{{plan_name}}", SAMPLE.plan_name)
-    .replaceAll("{{days_left}}", String(daysLeft))
-    .replaceAll("{{expiry_date}}", SAMPLE.expiry_date)
-    .replaceAll("{{upgrade_url}}", SAMPLE.upgrade_url);
+  const vars: Record<string, string> = {
+    tenant_name: SAMPLE.tenant_name,
+    plan_name: SAMPLE.plan_name,
+    days_left: String(daysLeft),
+    expiry_date: SAMPLE.expiry_date,
+    upgrade_url: SAMPLE.upgrade_url,
+  };
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
 }
 
 function MarkerEditor({
