@@ -418,9 +418,26 @@ export default function POS() {
         <div className="flex-1 flex flex-col border-r bg-card overflow-hidden">
           {/* Cart Header: Customer + Search + Date */}
           <div className="p-3 border-b space-y-2">
+            {/* Search row — full width on mobile */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Product / SKU / IMEI / Barcode"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="pl-8 h-11 md:h-9 text-base md:text-sm"
+                />
+              </div>
+              <Button variant="outline" size="icon" className="h-11 w-11 md:h-9 md:w-9 shrink-0" onClick={() => setShowScanner(true)}>
+                <ScanBarcode className="h-5 w-5 md:h-4 md:w-4" />
+              </Button>
+            </div>
+            {/* Customer row */}
             <div className="flex items-center gap-2">
               <Select value={customerSelectValue} onValueChange={(v) => setCustomerId(v === "walk-in" ? "" : v)}>
-                <SelectTrigger className="w-[180px] h-9 text-sm">
+                <SelectTrigger className="flex-1 md:flex-none md:w-[180px] h-10 md:h-9 text-sm">
                   <SelectValue placeholder="Walk-in Customer" />
                 </SelectTrigger>
                 <SelectContent>
@@ -433,25 +450,11 @@ export default function POS() {
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 shrink-0"
+                className="h-10 w-10 md:h-9 md:w-9 shrink-0"
                 onClick={() => setShowAddCustomer(true)}
                 title="Add new customer"
               >
                 <UserPlus className="h-4 w-4" />
-              </Button>
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Enter Product name / SKU / IMEI / Scan barcode"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  className="pl-8 h-9 text-sm"
-                  autoFocus
-                />
-              </div>
-              <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setShowScanner(true)}>
-                <ScanBarcode className="h-4 w-4" />
               </Button>
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -762,12 +765,74 @@ export default function POS() {
               </div>
             ))}
           </ScrollArea>
-          <div className="border-t p-3 space-y-2">
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total</span><span>৳{totalAmount.toFixed(2)}</span>
+          <div className="border-t p-3 space-y-3">
+            {/* Discount + Shipping inline */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Discount (-)</Label>
+                <Input
+                  type="number" min={0} value={discountValue}
+                  onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                  className="h-9 text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Shipping (+)</Label>
+                <Input
+                  type="number" min={0} value={shippingCost}
+                  onChange={(e) => setShippingCost(parseFloat(e.target.value) || 0)}
+                  className="h-9 text-sm"
+                />
+              </div>
             </div>
-            <Button className="w-full h-12" disabled={cart.length === 0} onClick={() => { setShowMobileCart(false); setShowPayment(true); }}>
-              Pay ৳{totalAmount.toFixed(2)}
+            <div className="flex justify-between items-baseline">
+              <span className="text-sm text-muted-foreground">Subtotal: ৳{subtotal.toFixed(0)}</span>
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground">Total Payable</div>
+                <div className="text-2xl font-bold">৳{totalAmount.toFixed(2)}</div>
+              </div>
+            </div>
+            {/* Payment buttons grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                className="h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold"
+                onClick={async () => { await handleQuickCash(); }}
+                disabled={cart.length === 0 || createSale.isPending}
+              >
+                💵 Cash
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-sm font-semibold"
+                onClick={async () => { await handleCardSale(); }}
+                disabled={cart.length === 0 || createSale.isPending}
+              >
+                <CreditCard className="h-4 w-4 mr-1" /> Card
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-sm font-semibold"
+                onClick={async () => { await handleCreditSale(); }}
+                disabled={cart.length === 0 || !customerId || createSale.isPending}
+                title={!customerId ? "Select a customer first" : undefined}
+              >
+                ✓ Credit Sale
+              </Button>
+              <Button
+                className="h-12 text-sm font-semibold"
+                onClick={() => { setShowMobileCart(false); setShowPayment(true); }}
+                disabled={cart.length === 0}
+              >
+                <Banknote className="h-4 w-4 mr-1" /> Multi-Pay
+              </Button>
+            </div>
+            <Button
+              variant="destructive"
+              className="w-full h-10 text-sm"
+              onClick={() => { handleCancel(); setShowMobileCart(false); }}
+              disabled={cart.length === 0}
+            >
+              ✕ Cancel Sale
             </Button>
           </div>
         </SheetContent>
