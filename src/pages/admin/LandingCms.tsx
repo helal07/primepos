@@ -207,6 +207,7 @@ export default function LandingCms() {
           <CmsSection sectionKey="cms_tracking" title="Marketing & Analytics Tracking" fields={[
             { name: "gtm_id", label: "Google Tag Manager ID (e.g. GTM-XXXXXX)" },
             { name: "ga4_id", label: "Google Analytics 4 Measurement ID (e.g. G-XXXXXXX)" },
+            { name: "ga4_api_secret", label: "GA4 Measurement Protocol API Secret (server-side)" },
             { name: "fb_pixel_id", label: "Meta / Facebook Pixel ID (numeric)" },
             { name: "fb_conversion_token", label: "Meta Conversions API Access Token (server-side, optional)" },
             { name: "fb_test_event_code", label: "Meta Test Event Code (optional, for debugging)" },
