@@ -500,19 +500,19 @@ export default function POS() {
               <div className="text-center py-16 text-muted-foreground text-sm">Search and add products to the cart</div>
             ) : (
               <div className="overflow-x-auto">
-              <Table className="min-w-[420px]">
+              <Table className="min-w-0 w-full">
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">Product</TableHead>
-                    <TableHead className="w-[120px] sm:w-[140px] text-center font-semibold">Qty</TableHead>
-                    <TableHead className="w-[90px] sm:w-[100px] text-right font-semibold">Subtotal</TableHead>
-                    <TableHead className="w-[36px]"></TableHead>
+                    <TableHead className="w-[110px] sm:w-[140px] text-center font-semibold px-1 sm:px-4">Qty</TableHead>
+                    <TableHead className="w-[70px] sm:w-[100px] text-right font-semibold px-1 sm:px-4">Subtotal</TableHead>
+                    <TableHead className="w-[32px] px-0 sm:px-4"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {cart.map((item, idx) => (
                     <TableRow key={idx}>
-                      <TableCell>
+                      <TableCell className="px-2 sm:px-4">
                         <div className="font-medium text-sm text-primary">{item.product_name}</div>
                         {item.serial_tracking && item.selected_serials && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -528,7 +528,7 @@ export default function POS() {
                         )}
                         
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-1 sm:px-4">
                         <div className="flex items-center justify-center gap-1">
                           {!item.serial_tracking ? (
                             <>
@@ -539,7 +539,7 @@ export default function POS() {
                               <Input
                                 type="number" min={1} value={item.quantity}
                                 onChange={(e) => updateQty(idx, parseInt(e.target.value) || 1)}
-                                className="h-7 w-14 text-center text-sm"
+                                className="h-7 w-10 sm:w-14 text-center text-sm px-1"
                               />
                               <Button variant="outline" size="icon" className="h-7 w-7 text-primary border-primary/30"
                                 onClick={() => updateQty(idx, item.quantity + 1)}>
@@ -551,9 +551,9 @@ export default function POS() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-semibold">৳ {item.total.toFixed(0)}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeItem(idx)}>
+                      <TableCell className="text-right font-semibold px-1 sm:px-4 text-sm">৳{item.total.toFixed(0)}</TableCell>
+                      <TableCell className="px-0 pr-1 sm:px-4">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeItem(idx)} aria-label="Remove from cart">
                           <X className="h-4 w-4" />
                         </Button>
                       </TableCell>
