@@ -61,11 +61,12 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-lg max-h-[100dvh] sm:max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3 text-center">
           <div className="p-3 rounded-lg bg-muted">
@@ -87,7 +88,7 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
         <Separator />
 
         {/* Payment Rows */}
-        <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+        <div className="space-y-3">
           {payments.map((row, idx) => (
             <div key={idx} className="flex gap-2 items-end">
               <div className="w-28">
@@ -97,6 +98,7 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
                   min={0}
                   value={row.amount}
                   onChange={(e) => updatePayment(idx, "amount", parseFloat(e.target.value) || 0)}
+                  onFocus={(e) => e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })}
                   className="h-9"
                 />
               </div>
@@ -116,6 +118,7 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
                 <Input
                   value={row.payment_note}
                   onChange={(e) => updatePayment(idx, "payment_note", e.target.value)}
+                  onFocus={(e) => e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })}
                   placeholder="Optional note"
                   className="h-9"
                 />
@@ -140,8 +143,9 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
             {paymentStatus === "paid" ? "Fully Paid" : paymentStatus === "partial" ? "Partial Payment" : "Credit (Unpaid)"}
           </span>
         </div>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t bg-background px-6 py-3">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => onFinalize(payments.filter(p => p.amount > 0), paymentStatus)} disabled={isPending}>
             {isPending ? "Processing..." : "Finalize Payment"}
