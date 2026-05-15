@@ -41,6 +41,7 @@ import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
+import { useProductStockMap } from "@/hooks/useWarehouses";
 import { resolvePrice } from "@/lib/priceGroup";
 
 interface CartItem extends SaleItem {
@@ -87,6 +88,15 @@ export default function POS() {
   const { data: priceGroups } = useSellingPriceGroups();
   const { data: customerGroups } = useCustomerGroups();
   const { data: groupPriceMap } = useProductGroupPricesMap();
+  const { data: stockMap } = useProductStockMap();
+  const getStock = useCallback(
+    (p: any) => {
+      const ws = stockMap?.get(p.id);
+      if (typeof ws === "number") return ws;
+      return Number(p?.stock_quantity ?? 0);
+    },
+    [stockMap]
+  );
 
   const [search, setSearch] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -249,8 +259,8 @@ export default function POS() {
       p.barcode?.toLowerCase().includes(q)
     );
     matches.sort((a: any, b: any) => {
-      const aStock = Number(a.stock_quantity ?? 0) > 0 ? 0 : 1;
-      const bStock = Number(b.stock_quantity ?? 0) > 0 ? 0 : 1;
+      const aStock = getStock(a) > 0 ? 0 : 1;
+      const bStock = getStock(b) > 0 ? 0 : 1;
       if (aStock !== bStock) return aStock - bStock;
       const an = a.name?.toLowerCase() ?? "";
       const bn = b.name?.toLowerCase() ?? "";
@@ -260,7 +270,7 @@ export default function POS() {
       return an.localeCompare(bn);
     });
     return matches.slice(0, 20);
-  }, [search, products]);
+  }, [search, products, getStock]);
 
   const addToCart = useCallback((product: any) => {
     const isSerial = product.serial_tracking || product.product_type === "imei" || product.product_type === "serial";
@@ -477,7 +487,8 @@ export default function POS() {
                       <div className="px-3 py-3 text-sm text-muted-foreground">No products found</div>
                     ) : (
                       suggestions.map((p: any) => {
-                        const inStock = Number(p.stock_quantity ?? 0) > 0;
+                        const stockQty = getStock(p);
+                        const inStock = stockQty > 0;
                         return (
                           <button
                             key={p.id}
@@ -499,7 +510,7 @@ export default function POS() {
                             <div className="text-right shrink-0">
                               <div className="text-sm font-semibold">{Number(p.selling_price).toFixed(2)}</div>
                               <div className={cn("text-[10px]", inStock ? "text-emerald-600" : "text-destructive")}>
-                                {inStock ? `Stock: ${p.stock_quantity}` : "Out of stock"}
+                                {inStock ? `Stock: ${stockQty}` : "Out of stock"}
                               </div>
                             </div>
                           </button>
@@ -761,7 +772,7 @@ export default function POS() {
                         <span className="text-xs font-bold text-primary">৳{Number(product.selling_price).toLocaleString()}</span>
                         <div className="flex items-center gap-1">
                           {isSerial && <Badge variant="secondary" className="text-[8px] h-4 px-1">IMEI</Badge>}
-                          <span className="text-[10px] text-muted-foreground">{product.stock_quantity} Pcs</span>
+                          <span className="text-[10px] text-muted-foreground">{getStock(product)} Pcs</span>
                         </div>
                       </div>
                     </button>
