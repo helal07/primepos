@@ -12,6 +12,7 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onScan, onClose, continuous = true }: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const startAfterRenderRef = useRef<"environment" | "user" | null>(null);
   const [error, setError] = useState("");
   const [permissionState, setPermissionState] = useState<"idle" | "prompt" | "granted" | "denied" | "no_camera" | "busy">("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
@@ -144,6 +145,17 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (permissionState !== "prompt" || !startAfterRenderRef.current) return;
+    const facing = startAfterRenderRef.current;
+    startAfterRenderRef.current = null;
+    const frame = window.requestAnimationFrame(() => {
+      startScanner(facing, { skipPermissionProbe: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permissionState]);
+
   const toggleCamera = async () => {
     const next = facingMode === "environment" ? "user" : "environment";
     setFacingMode(next);
@@ -163,8 +175,8 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
       });
       // Release immediately — html5-qrcode opens its own stream.
       stream.getTracks().forEach((t) => t.stop());
+      startAfterRenderRef.current = facingMode;
       setPermissionState("prompt");
-      await startScanner(facingMode, { skipPermissionProbe: true });
     } catch (err: any) {
       const name = err?.name || "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
@@ -186,8 +198,8 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
   // bypassing the permissions.query cache.
   const handleHardRestart = async () => {
     setError("");
+    startAfterRenderRef.current = facingMode;
     setPermissionState("prompt");
-    await startScanner(facingMode, { skipPermissionProbe: true });
   };
 
   const handleFilePick = async (file: File) => {
@@ -279,10 +291,12 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
             <div className="mt-2 space-y-2">
               <p><b>Android Chrome (most common):</b></p>
               <ol className="list-decimal pl-5 space-y-1">
-                <li>Tap the <b>⋮</b> menu (top-right) → <b>Settings</b> → <b>Site settings</b> → <b>Camera</b>.</li>
-                <li>Find <span className="font-mono">{host || "this site"}</span> in the <b>Blocked</b> list and tap it.</li>
+                <li>Tap <b>Allow camera</b> here first. Chrome only adds this site to Camera settings after the page asks for camera once.</li>
+                <li>If the popup still does not appear, tap the <b>🔒</b> icon in the address bar → <b>Permissions</b> → set Camera to <b>Allow</b>.</li>
+                <li>If the site is not listed there, open <b>⋮</b> → <b>Settings</b> → <b>Site settings</b> → <b>Camera</b>, keep <b>Site can ask for your camera</b> selected, then return here and tap <b>Allow camera</b> again.</li>
+                <li>After allowing, tap <b>I've allowed it — restart camera</b>.</li>
+                <li>If <span className="font-mono">{host || "this site"}</span> appears in the <b>Blocked</b> list, tap it.</li>
                 <li>Tap <b>Reset permissions</b> or change Camera to <b>Allow</b>.</li>
-                <li>Come back here, tap <b>"I've allowed it — restart camera"</b>.</li>
               </ol>
               <p className="pt-2"><b>Faster alternative:</b> tap the <b>🔒 / ⓘ</b> icon left of the URL → <b>Permissions</b> → set Camera to <b>Allow</b> → reload.</p>
               <p className="pt-2"><b>iPhone (Safari):</b> Settings → Safari → Camera → Allow. Then reload this page. Also check Settings → Safari → Advanced → Website Data is not blocking the site.</p>
