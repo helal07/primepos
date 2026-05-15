@@ -202,6 +202,9 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
 
   const showDeniedPanel = permissionState === "denied" || permissionState === "no_camera" || permissionState === "busy";
 
+  const isSecure = typeof window !== "undefined" && (window.isSecureContext || window.location.hostname === "localhost");
+  const host = typeof window !== "undefined" ? window.location.host : "";
+
   if (showDeniedPanel) {
     return (
       <div className="space-y-4">
@@ -224,13 +227,19 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
                 "Another app is using the camera. Close it and try again, or upload a photo of the barcode."}
             </p>
           </div>
+          {!isSecure && permissionState === "denied" && (
+            <p className="text-xs text-destructive bg-destructive/10 rounded px-3 py-2 text-left">
+              <b>This page is not loaded over HTTPS.</b> Browsers only allow camera access on secure (https://) sites.
+              Open this app via <span className="font-mono">https://{host}</span> and try again.
+            </p>
+          )}
           {error && (
             <p className="text-xs text-destructive bg-destructive/10 rounded px-3 py-2 text-left">
               {error}
             </p>
           )}
           <div className="flex flex-col gap-2">
-            <Button onClick={handleAllowCamera} className="w-full">
+            <Button onClick={handleAllowCamera} className="w-full" disabled={!isSecure}>
               <Camera className="h-4 w-4 mr-2" /> Allow camera
             </Button>
             <Button variant="secondary" onClick={handleHardRestart} className="w-full">
@@ -252,11 +261,21 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
 
         {permissionState === "denied" && (
           <details className="text-xs text-muted-foreground bg-muted/40 rounded-md p-3">
-            <summary className="cursor-pointer font-medium">How to enable camera in your browser</summary>
+            <summary className="cursor-pointer font-medium">How to unblock camera for {host || "this site"}</summary>
             <div className="mt-2 space-y-2">
-              <p><b>iPhone (Safari):</b> Settings → Safari → Camera → Allow. Then reload this page.</p>
-              <p><b>Android (Chrome):</b> Tap the lock icon in the address bar → Permissions → Camera → Allow. Then reload.</p>
-              <p><b>Desktop:</b> Click the lock/site-settings icon next to the URL → set Camera to Allow → reload.</p>
+              <p><b>Android Chrome (most common):</b></p>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Tap the <b>⋮</b> menu (top-right) → <b>Settings</b> → <b>Site settings</b> → <b>Camera</b>.</li>
+                <li>Find <span className="font-mono">{host || "this site"}</span> in the <b>Blocked</b> list and tap it.</li>
+                <li>Tap <b>Reset permissions</b> or change Camera to <b>Allow</b>.</li>
+                <li>Come back here, tap <b>"I've allowed it — restart camera"</b>.</li>
+              </ol>
+              <p className="pt-2"><b>Faster alternative:</b> tap the <b>🔒 / ⓘ</b> icon left of the URL → <b>Permissions</b> → set Camera to <b>Allow</b> → reload.</p>
+              <p className="pt-2"><b>iPhone (Safari):</b> Settings → Safari → Camera → Allow. Then reload this page. Also check Settings → Safari → Advanced → Website Data is not blocking the site.</p>
+              <p><b>Desktop:</b> Click the lock icon next to the URL → set Camera to Allow → reload.</p>
+              {!isSecure && (
+                <p className="text-destructive pt-2"><b>Note:</b> Your address bar must show <b>https://</b>. If it shows http:// the camera will never work — ask your admin to enable HTTPS for {host}.</p>
+              )}
             </div>
           </details>
         )}
