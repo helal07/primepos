@@ -74,3 +74,25 @@ export function useWarehouseStock(warehouseId?: string) {
     },
   });
 }
+
+/**
+ * Returns a Map of product_id -> total on-hand quantity across all warehouses.
+ * Used by POS to show real stock instead of the (often stale) products.stock_quantity column.
+ */
+export function useProductStockMap() {
+  return useQuery({
+    queryKey: ["product_stock_map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warehouse_stock")
+        .select("product_id, quantity");
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const row of data ?? []) {
+        if (!row.product_id) continue;
+        map.set(row.product_id, (map.get(row.product_id) ?? 0) + Number(row.quantity || 0));
+      }
+      return map;
+    },
+  });
+}
