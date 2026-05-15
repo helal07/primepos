@@ -89,6 +89,7 @@ export default function POS() {
   const { data: groupPriceMap } = useProductGroupPricesMap();
 
   const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState("");
   const customerSelectValue = customerId || "walk-in";
@@ -238,6 +239,28 @@ export default function POS() {
     }
     return filtered;
   }, [search, products, filterType, selectedCategory, selectedBrand]);
+
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!products || q.length < 3) return [];
+    const matches = (products as any[]).filter((p: any) =>
+      p.name?.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
+      p.barcode?.toLowerCase().includes(q)
+    );
+    matches.sort((a: any, b: any) => {
+      const aStock = Number(a.stock_quantity ?? 0) > 0 ? 0 : 1;
+      const bStock = Number(b.stock_quantity ?? 0) > 0 ? 0 : 1;
+      if (aStock !== bStock) return aStock - bStock;
+      const an = a.name?.toLowerCase() ?? "";
+      const bn = b.name?.toLowerCase() ?? "";
+      const aStarts = an.startsWith(q) ? 0 : 1;
+      const bStarts = bn.startsWith(q) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return an.localeCompare(bn);
+    });
+    return matches.slice(0, 20);
+  }, [search, products]);
 
   const addToCart = useCallback((product: any) => {
     const isSerial = product.serial_tracking || product.product_type === "imei" || product.product_type === "serial";
@@ -444,8 +467,47 @@ export default function POS() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                   className="pl-8 h-11 md:h-9 text-base md:text-sm"
                 />
+                {showSuggestions && search.trim().length >= 3 && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg">
+                    {suggestions.length === 0 ? (
+                      <div className="px-3 py-3 text-sm text-muted-foreground">No products found</div>
+                    ) : (
+                      suggestions.map((p: any) => {
+                        const inStock = Number(p.stock_quantity ?? 0) > 0;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              addToCart(p);
+                              setSearch("");
+                              setShowSuggestions(false);
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-accent flex items-center justify-between gap-2 border-b last:border-b-0"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate">{p.name}</div>
+                              <div className="text-[11px] text-muted-foreground truncate">
+                                {p.sku ? `SKU: ${p.sku}` : ""}{p.sku && p.barcode ? " • " : ""}{p.barcode ? `BC: ${p.barcode}` : ""}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-sm font-semibold">{Number(p.selling_price).toFixed(2)}</div>
+                              <div className={cn("text-[10px]", inStock ? "text-emerald-600" : "text-destructive")}>
+                                {inStock ? `Stock: ${p.stock_quantity}` : "Out of stock"}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
               </div>
               <Button variant="outline" size="icon" className="h-11 w-11 md:h-9 md:w-9 shrink-0" onClick={() => setShowScanner(true)}>
                 <ScanBarcode className="h-5 w-5 md:h-4 md:w-4" />
