@@ -23,3 +23,12 @@ verify_jwt = false
 
 [functions.trial-reminders]
 verify_jwt = false
+
+[functions.tenant-backup-export]
+verify_jwt = false
+
+[functions.tenant-backup-restore]
+verify_jwt = false
+
+[functions.tenant-backup-snapshot]
+verify_jwt = false
