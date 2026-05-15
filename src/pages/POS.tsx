@@ -772,7 +772,7 @@ export default function POS() {
                         <span className="text-xs font-bold text-primary">৳{Number(product.selling_price).toLocaleString()}</span>
                         <div className="flex items-center gap-1">
                           {isSerial && <Badge variant="secondary" className="text-[8px] h-4 px-1">IMEI</Badge>}
-                          <span className="text-[10px] text-muted-foreground">{product.stock_quantity} Pcs</span>
+                          <span className="text-[10px] text-muted-foreground">{getStock(product)} Pcs</span>
                         </div>
                       </div>
                     </button>
