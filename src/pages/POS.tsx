@@ -240,6 +240,28 @@ export default function POS() {
     return filtered;
   }, [search, products, filterType, selectedCategory, selectedBrand]);
 
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!products || q.length < 3) return [];
+    const matches = (products as any[]).filter((p: any) =>
+      p.name?.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
+      p.barcode?.toLowerCase().includes(q)
+    );
+    matches.sort((a: any, b: any) => {
+      const aStock = Number(a.stock_quantity ?? 0) > 0 ? 0 : 1;
+      const bStock = Number(b.stock_quantity ?? 0) > 0 ? 0 : 1;
+      if (aStock !== bStock) return aStock - bStock;
+      const an = a.name?.toLowerCase() ?? "";
+      const bn = b.name?.toLowerCase() ?? "";
+      const aStarts = an.startsWith(q) ? 0 : 1;
+      const bStarts = bn.startsWith(q) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return an.localeCompare(bn);
+    });
+    return matches.slice(0, 20);
+  }, [search, products]);
+
   const addToCart = useCallback((product: any) => {
     const isSerial = product.serial_tracking || product.product_type === "imei" || product.product_type === "serial";
     if (isSerial) { setImeiProductId(product.id); return; }
