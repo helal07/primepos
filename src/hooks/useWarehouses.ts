@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -80,6 +81,25 @@ export function useWarehouseStock(warehouseId?: string) {
  * Used by POS to show real stock instead of the (often stale) products.stock_quantity column.
  */
 export function useProductStockMap() {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("warehouse_stock_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "warehouse_stock" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["product_stock_map"] });
+          qc.invalidateQueries({ queryKey: ["warehouse_stock"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   return useQuery({
     queryKey: ["product_stock_map"],
     queryFn: async () => {
