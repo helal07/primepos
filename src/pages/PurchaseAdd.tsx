@@ -348,17 +348,17 @@ export default function PurchaseAdd() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 pb-24 md:pb-0">
       <PageHeader title={isEditMode ? "Edit Purchase" : "Add Purchase"} description={isEditMode ? "Edit purchase details" : "Record a new purchase from supplier"} actions={
-        <Button variant="outline" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+        <Button variant="outline" size="sm" className="h-10 shrink-0" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
+          <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Back</span>
         </Button>
       } />
 
       {/* Top Section */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div>
               <Label>Reference No</Label>
               <Input value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} />
@@ -405,7 +405,7 @@ export default function PurchaseAdd() {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-3 sm:mt-4">
             <div>
               <Label>Supplier Invoice No</Label>
               <Input value={supplierInvoice} onChange={(e) => setSupplierInvoice(e.target.value)} placeholder="Supplier invoice reference" />
@@ -436,8 +436,8 @@ export default function PurchaseAdd() {
 
       {/* Items Section */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex items-center gap-3">
+        <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -464,13 +464,15 @@ export default function PurchaseAdd() {
                 </div>
               )}
             </div>
-            <Button variant="outline" onClick={() => navigate("/products/add")}>
-              <PackagePlus className="h-4 w-4 mr-2" /> Add Product
+            <Button variant="outline" className="shrink-0" onClick={() => navigate("/products/add")}>
+              <PackagePlus className="h-4 w-4 mr-2" /> <span>Add Product</span>
             </Button>
           </div>
 
           {items.length > 0 && (
-            <div className="rounded-md border overflow-x-auto">
+            <>
+            {/* Desktop table */}
+            <div className="hidden md:block rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
@@ -591,6 +593,125 @@ export default function PurchaseAdd() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {items.map((item, idx) => {
+                const isSerial = item.product_type === "imei" || item.product_type === "serial";
+                const hasAnyDupe = isSerial && item.serials.some(s => duplicateSerials.has(s));
+                return (
+                  <div key={idx} className={`rounded-lg border p-3 space-y-3 ${hasAnyDupe ? "border-destructive/50 bg-destructive/5" : "bg-card"}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm truncate">{item.product_name}</div>
+                        <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1">
+                          {item.brand_name && <span>{item.brand_name}</span>}
+                          {item.sku && <span>• {item.sku}</span>}
+                          {isSerial && <Badge variant="secondary" className="text-[10px] px-1">{item.product_type?.toUpperCase()}</Badge>}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeItem(idx)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {isSerial && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">IMEI / Serial Numbers ({item.serials.length})</Label>
+                        {item.serials.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {item.serials.map((sn, si) => (
+                              <Badge key={si} variant={duplicateSerials.has(sn) ? "destructive" : "secondary"} className="text-xs font-mono pr-1 gap-1">
+                                {sn}
+                                <button type="button" onClick={() => removeSerialFromItem(idx, sn)} className="ml-0.5 hover:bg-destructive/20 rounded-full p-0.5">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex gap-1.5">
+                          <Input
+                            id={`m-serial-input-${idx}`}
+                            value={serialInput[idx] || ""}
+                            inputMode="text"
+                            enterKeyHint="done"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="characters"
+                            onChange={(e) => setSerialInput(prev => ({ ...prev, [idx]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const val = (serialInput[idx] || "").trim();
+                                if (val) addSerialToItem(idx, val);
+                              }
+                            }}
+                            onBlur={() => {
+                              const val = (serialInput[idx] || "").trim();
+                              if (val) setTimeout(() => addSerialToItem(idx, val), 0);
+                            }}
+                            placeholder="Type IMEI / Serial"
+                            className="h-10 text-sm font-mono"
+                          />
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="icon"
+                            className="h-10 w-10 shrink-0"
+                            onClick={() => {
+                              const val = (serialInput[idx] || "").trim();
+                              if (val) addSerialToItem(idx, val);
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                          <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setScannerIdx(idx)}>
+                            <ScanBarcode className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {hasAnyDupe && (
+                          <p className="text-[11px] text-destructive flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" /> Duplicate serial found
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Qty</Label>
+                        <Input
+                          type="number" inputMode="numeric" min={isSerial ? 0 : 1}
+                          value={item.quantity}
+                          onChange={(e) => updateItem(idx, "quantity", parseInt(e.target.value) || (isSerial ? 0 : 1))}
+                          className="h-10" disabled={isSerial} tabIndex={isSerial ? -1 : 0}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Unit Cost</Label>
+                        <Input type="number" inputMode="decimal" min={0} value={item.unit_cost} onChange={(e) => updateItem(idx, "unit_cost", parseFloat(e.target.value) || 0)} className="h-10" tabIndex={isSerial ? -1 : 0} />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Discount</Label>
+                        <Input type="number" inputMode="decimal" min={0} value={item.discount} onChange={(e) => updateItem(idx, "discount", parseFloat(e.target.value) || 0)} className="h-10" tabIndex={isSerial ? -1 : 0} />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Tax %</Label>
+                        <Input type="number" inputMode="decimal" min={0} value={item.tax_percent} onChange={(e) => updateItem(idx, "tax_percent", parseFloat(e.target.value) || 0)} className="h-10" tabIndex={isSerial ? -1 : 0} />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-2">
+                      <span className="text-xs text-muted-foreground">Line Total</span>
+                      <span className="font-bold text-base">৳{item.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            </>
           )}
 
           {items.length === 0 && (
@@ -604,8 +725,8 @@ export default function PurchaseAdd() {
 
       {/* Bottom — Payment & Totals */}
       <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
             <div>
               <Label>Discount (৳ or %)</Label>
               <Input value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} placeholder="0 or 10%" />
@@ -630,17 +751,17 @@ export default function PurchaseAdd() {
               </span>
             </div>
             {paymentRows.map((row, idx) => (
-              <div key={idx} className="flex gap-2 items-end">
-                <div className="w-32">
+              <div key={idx} className="grid grid-cols-2 gap-2 md:flex md:gap-2 md:items-end border md:border-0 rounded-lg p-2 md:p-0">
+                <div className="md:w-32">
                   {idx === 0 && <Label className="text-xs">Amount</Label>}
                   <Input
-                    type="number"
+                    type="number" inputMode="decimal"
                     min={0}
                     value={row.amount}
                     onChange={(e) => updatePaymentRow(idx, "amount", parseFloat(e.target.value) || 0)}
                   />
                 </div>
-                <div className="w-36">
+                <div className="md:w-36">
                   {idx === 0 && <Label className="text-xs">Method</Label>}
                   <Select value={row.payment_method} onValueChange={(v) => updatePaymentRow(idx, "payment_method", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -653,7 +774,7 @@ export default function PurchaseAdd() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex-1">
+                <div className="col-span-2 md:flex-1">
                   {idx === 0 && <Label className="text-xs">Note</Label>}
                   <Input
                     value={row.payment_note}
@@ -662,7 +783,7 @@ export default function PurchaseAdd() {
                   />
                 </div>
                 {paymentRows.length > 1 && (
-                  <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => removePaymentRow(idx)}>
+                  <Button variant="ghost" size="icon" className="text-destructive shrink-0 col-span-2 md:col-span-1 justify-self-end" onClick={() => removePaymentRow(idx)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
@@ -675,30 +796,30 @@ export default function PurchaseAdd() {
 
           <Separator className="my-4" />
 
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-end">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 items-end">
             <div>
               <Label className="text-xs text-muted-foreground">Total Items</Label>
-              <div className="text-lg font-bold">{totalItemCount}</div>
+              <div className="text-base sm:text-lg font-bold">{totalItemCount}</div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Subtotal</Label>
-              <div className="text-lg font-bold">৳{subtotal.toFixed(2)}</div>
+              <div className="text-base sm:text-lg font-bold">৳{subtotal.toFixed(2)}</div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Tax</Label>
-              <div className="text-lg font-bold">৳{totalTax.toFixed(2)}</div>
+              <div className="text-base sm:text-lg font-bold">৳{totalTax.toFixed(2)}</div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Grand Total</Label>
-              <div className="text-xl font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
+              <div className="text-lg sm:text-xl font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Paid</Label>
-              <div className="text-xl font-bold text-primary">৳{totalPaying.toFixed(2)}</div>
+              <div className="text-lg sm:text-xl font-bold text-primary">৳{totalPaying.toFixed(2)}</div>
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">{changeReturn > 0 ? "Change" : "Due"}</Label>
-              <div className={`text-xl font-bold ${changeReturn > 0 ? "text-green-600" : dueAmount > 0 ? "text-destructive" : "text-green-600"}`}>
+              <div className={`text-lg sm:text-xl font-bold ${changeReturn > 0 ? "text-green-600" : dueAmount > 0 ? "text-destructive" : "text-green-600"}`}>
                 ৳{(changeReturn > 0 ? changeReturn : dueAmount).toFixed(2)}
               </div>
             </div>
@@ -706,7 +827,7 @@ export default function PurchaseAdd() {
 
           <Separator className="my-4" />
 
-          <div className="flex justify-end gap-3">
+          <div className="hidden md:flex justify-end gap-3">
             <Button variant="outline" onClick={() => navigate("/purchases")}>Cancel</Button>
             <Button
               size="lg"
@@ -718,6 +839,21 @@ export default function PurchaseAdd() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sticky mobile save bar */}
+      <div className="md:hidden fixed bottom-16 inset-x-0 z-30 border-t bg-background/95 backdrop-blur p-3 flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] text-muted-foreground leading-none">Grand Total</div>
+          <div className="text-base font-bold text-primary truncate">৳{grandTotal.toFixed(2)}</div>
+        </div>
+        <Button
+          className="flex-1 h-11"
+          disabled={items.length === 0 || createPurchase.isPending || updatePurchase.isPending || duplicateSerials.size > 0}
+          onClick={handleSavePurchase}
+        >
+          {createPurchase.isPending || updatePurchase.isPending ? "Saving..." : (isEditMode ? "Update" : "Save Purchase")}
+        </Button>
+      </div>
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
