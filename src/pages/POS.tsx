@@ -371,12 +371,18 @@ export default function POS() {
   };
 
   const handleQuickCash = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before taking payment.");
+      return;
+    }
     await handleCompleteWithPayments([{ payment_method: "cash", amount: totalAmount, payment_note: "" }], "paid");
   };
 
   const handleCreditSale = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before recording a credit sale.");
+      return;
+    }
     if (!customerId) {
       toast.error("Select a customer to record a credit sale. Walk-in customers must pay in full.");
       return;
@@ -385,8 +391,19 @@ export default function POS() {
   };
 
   const handleCardSale = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before taking payment.");
+      return;
+    }
     await handleCompleteWithPayments([{ payment_method: "card", amount: totalAmount, payment_note: "" }], "paid");
+  };
+
+  const openPaymentDialog = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before opening payment.");
+      return;
+    }
+    setShowPayment(true);
   };
 
   const handleNewSale = () => {
