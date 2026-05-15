@@ -13,7 +13,7 @@ interface BarcodeScannerProps {
 export default function BarcodeScanner({ onScan, onClose, continuous = true }: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState("");
-  const [permissionState, setPermissionState] = useState<"prompt" | "granted" | "denied" | "no_camera" | "busy">("prompt");
+  const [permissionState, setPermissionState] = useState<"idle" | "prompt" | "granted" | "denied" | "no_camera" | "busy">("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [lastCode, setLastCode] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -131,7 +131,11 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
   };
 
   useEffect(() => {
-    startScanner(facingMode);
+    // Do NOT auto-start. Chrome (and some Android WebViews) will silently
+    // ignore getUserMedia calls that don't originate from a user gesture,
+    // which leaves the site without any recorded permission decision —
+    // meaning it never appears under Site settings → Camera. We show an
+    // explicit "Start camera" button instead so the request is tied to a tap.
     return () => {
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => {});
@@ -200,7 +204,11 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
     }
   };
 
-  const showDeniedPanel = permissionState === "denied" || permissionState === "no_camera" || permissionState === "busy";
+  const showDeniedPanel =
+    permissionState === "idle" ||
+    permissionState === "denied" ||
+    permissionState === "no_camera" ||
+    permissionState === "busy";
 
   const isSecure = typeof window !== "undefined" && (window.isSecureContext || window.location.hostname === "localhost");
   const host = typeof window !== "undefined" ? window.location.host : "";
@@ -214,11 +222,14 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
           </div>
           <div>
             <h3 className="font-semibold text-base">
+              {permissionState === "idle" && "Tap to start camera"}
               {permissionState === "denied" && "Camera permission needed"}
               {permissionState === "no_camera" && "No camera found"}
               {permissionState === "busy" && "Camera is busy"}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
+              {permissionState === "idle" &&
+                "Your browser needs you to tap a button before it will ask for camera access. Tap Start camera below — Chrome will then show an Allow / Block popup."}
               {permissionState === "denied" &&
                 "We need access to your camera to scan barcodes. Tap Allow camera, or use a saved photo instead."}
               {permissionState === "no_camera" &&
@@ -240,11 +251,14 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
           )}
           <div className="flex flex-col gap-2">
             <Button onClick={handleAllowCamera} className="w-full" disabled={!isSecure}>
-              <Camera className="h-4 w-4 mr-2" /> Allow camera
+              <Camera className="h-4 w-4 mr-2" />
+              {permissionState === "idle" ? "Start camera" : "Allow camera"}
             </Button>
-            <Button variant="secondary" onClick={handleHardRestart} className="w-full">
-              <RefreshCw className="h-4 w-4 mr-2" /> I've allowed it — restart camera
-            </Button>
+            {permissionState !== "idle" && (
+              <Button variant="secondary" onClick={handleHardRestart} className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" /> I've allowed it — restart camera
+              </Button>
+            )}
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
               <ImageIcon className="h-4 w-4 mr-2" /> Take / pick photo instead
             </Button>
