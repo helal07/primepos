@@ -279,6 +279,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
             <h3 className="font-semibold text-base">
               {permissionState === "idle" && "Tap to start camera"}
               {permissionState === "denied" && "Camera permission needed"}
+              {permissionState === "policy_blocked" && "Camera blocked by site policy"}
               {permissionState === "no_camera" && "No camera found"}
               {permissionState === "busy" && "Camera is busy"}
             </h3>
@@ -287,6 +288,8 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
                 "Your browser needs you to tap a button before it will ask for camera access. Tap Start camera below — Chrome will then show an Allow / Block popup."}
               {permissionState === "denied" &&
                 "We need access to your camera to scan barcodes. Tap Allow camera, or use a saved photo instead."}
+              {permissionState === "policy_blocked" &&
+                "Chrome cannot show a camera Allow option because the website header is disabling camera access before the browser prompt can open."}
               {permissionState === "no_camera" &&
                 "We couldn't detect a camera. You can upload a photo of the barcode instead."}
               {permissionState === "busy" &&
@@ -305,7 +308,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
             </p>
           )}
           <div className="flex flex-col gap-2">
-            <Button onClick={handleAllowCamera} className="w-full" disabled={!isSecure}>
+            <Button onClick={handleAllowCamera} className="w-full" disabled={!isSecure || cameraAllowedByPolicy === false}>
               <Camera className="h-4 w-4 mr-2" />
               {permissionState === "idle" ? "Start camera" : "Allow camera"}
             </Button>
