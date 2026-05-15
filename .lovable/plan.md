@@ -1,86 +1,63 @@
 ## Goal
 
-Make the public landing page fully driven by the Superadmin CMS. Add a global **Branding & Favicon** controller. Confirm CMS is Superadmin-only (no tenant CMS yet) and tighten access. Integrate the existing **Sections** + **Pages** so they actually render on the public site.
+Make `/purchases/add` usable on a 360px phone, fix the barcode-scanner permission dead end, and make the IMEI/Serial field actually addable from a mobile keyboard (the "Next" key currently jumps to the Price column without saving the IMEI).
 
-## Scope
+## Root causes
 
-### 1. New "Branding" tab under Superadmin → Landing CMS
+1. **Layout** — `src/pages/PurchaseAdd.tsx` renders a wide `<Table>` with fixed column widths inside a single `overflow-x-auto` wrapper. On a 360px viewport this becomes a horizontal scroll nightmare; payment rows, totals grid, and top form also assume desktop widths.
+2. **Barcode permission** — `src/components/pos/BarcodeScanner.tsx` calls `Html5Qrcode.start({ facingMode })` directly. When the browser blocks/denies camera, we only show a text line. There is no "Grant permission" CTA, no proactive `navigator.permissions.query({ name: "camera" })` check, no link to OS/browser settings, and no retry button. On iOS Safari/Chrome the first call must come from a user gesture inside the dialog — which it does, but the failure path leaves the user stuck.
+3. **IMEI field skipping** — On mobile, the on-screen keyboard's "Next" key fires a focus change (not a `keydown: Enter`). Our handler only listens for `Enter`, so tab order moves focus straight to the next `<Input>` in the row (Qty → Unit Cost). The typed IMEI is discarded. There is no visible "Add" button next to the input either.
 
-Stored in `business_settings` under a new global key `cms_branding` (tenant-null row, like other `cms_*` keys today):
+## Fix plan
 
-- Site name / brand short name
-- Logo upload (upload to `branding` bucket — already exists)
-- Favicon URL (32×32 / .ico / .png upload to `branding`)
-- Apple touch icon URL
-- Theme color
-- OG default image
+### 1. `src/pages/PurchaseAdd.tsx` — mobile layout
 
-On save, the public `LandingPage` and `index.html` runtime will:
+- Wrap top form: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3` and `gap-3 sm:gap-4` rhythm; collapse "Supplier Invoice / Notes / Import PO" to single column on mobile.
+- Convert the items table to a **dual rendering**:
+  - `hidden md:block` wrapper around the existing `<Table>` (desktop unchanged).
+  - `md:hidden space-y-3` block that renders each item as a stacked **card** with: product name + brand/sku + remove (top row), IMEI/Serial chip list + input + scan button (full width), then a 2-col grid for Qty / Unit Cost / Discount / Tax / Total.
+- Payment rows: switch from `flex gap-2` to `grid grid-cols-2 gap-2 md:flex md:gap-2` so Amount + Method sit on row 1, Note + remove on row 2 on mobile.
+- Totals strip: `grid-cols-2 sm:grid-cols-3 md:grid-cols-6` with smaller font on mobile (`text-base sm:text-lg`).
+- Add `pb-24 md:pb-0` page padding and a sticky save bar (`md:hidden fixed bottom-16 inset-x-0 border-t bg-background p-3 z-30`) showing Grand Total + Save button so the primary CTA is always reachable above the bottom nav.
+- Header back button: `h-10 w-10 shrink-0`.
 
-- Inject `<link rel="icon">`, `<link rel="apple-touch-icon">`, `<meta name="theme-color">`
-- Replace the hard-coded "Prime POS" wordmark + "P" logo block in the navbar with the branding values
-- Update `document.title` from branding when `cms_seo.title` is empty
+### 2. IMEI input — mobile keyboard fix (in same file)
 
-### 2. Make the entire LandingPage CMS-driven
+In the serial input block (~line 530):
+- Add `inputMode="text"`, `enterKeyHint="done"`, `autoComplete="off"`, `autoCorrect="off"`, `autoCapitalize="characters"`.
+- Add an explicit **"+" Add button** next to the input (alongside the scan button) that calls `addSerialToItem(idx, val)`.
+- Add `onBlur` handler: if the input still has a non-empty value when focus leaves (e.g. user pressed mobile "Next"), call `addSerialToItem(idx, val)` before focus moves on. Use a small `setTimeout(0)` guard so React state updates flush.
+- Make adjacent Qty/Unit Cost/etc inputs `tabIndex={-1}` on mobile-card view so the keyboard "Next" key cycles back to the IMEI input rather than skipping past it. (Desktop table keeps natural tab order.)
+- Bump input height to `h-10` on mobile for 44px touch target.
 
-Today `LandingPage.tsx` reads only `cms_seo`, `cms_promo`, and `faq_entries`. The hero, stats, "why choose us", features list, pricing, reviews, and footer are hard-coded arrays. Move each to a CMS source so superadmin controls every word:
+### 3. `src/components/pos/BarcodeScanner.tsx` — permission UX
 
+- Before `scanner.start(...)`, do a best-effort `navigator.permissions.query({ name: "camera" as PermissionName })`. If state is `"denied"`, skip the start call and render a permission-help panel directly.
+- In the `catch` of `scanner.start`, branch on `err.name`:
+  - `NotAllowedError` / `PermissionDeniedError` → set `permissionState = "denied"`.
+  - `NotFoundError` / `OverconstrainedError` → "No camera found".
+  - `NotReadableError` → "Camera is busy in another app".
+  - default → existing message.
+- New JSX block when `permissionState === "denied"`:
+  - Big icon + heading "Camera permission needed".
+  - One-paragraph explanation.
+  - **"Allow camera"** primary button → calls `startScanner(facingMode)` again (must be inside the same gesture for the browser to re-prompt; on platforms where the prompt is permanently dismissed, the call will throw and we surface the secondary message).
+  - Secondary text with a small accordion / details: how to enable in iOS Safari (Settings → Safari → Camera → Allow) and Android Chrome (lock icon → Permissions → Camera).
+  - Also expose a "Use device gallery" fallback: hidden `<input type="file" accept="image/*" capture="environment">` with a button "Take photo of barcode" that runs `Html5Qrcode.scanFile(file, true)` and returns the decoded text via `onScan`. This unblocks users who can't or won't grant camera access.
+- Add a small "Try again" button that re-runs `startScanner` after error.
+- Make the dialog responsive: scanner container height `min-h-[60vh] sm:min-h-[340px]` and footer buttons full width on mobile.
 
-| Landing block                                        | Source                                                                                                               | Editor location                          |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| Navbar (logo, brand, nav links, CTA labels)          | `business_settings.cms_branding` + `cms_nav`                                                                         | Branding tab + new Navigation tab        |
-| Hero (badge, title, subtitle, primary/secondary CTA) | `cms_hero` (already a section pattern)                                                                               | Existing Sections tab — extend fields    |
-| Stats strip (4 stat tiles)                           | `cms_stats` JSON array                                                                                               | New "Stats" editor in Sections tab       |
-| Features grid (icon, title, desc × N)                | `landing_features` table (new)                                                                                       | New "Features" tab with add/edit/reorder |
-| Why-choose-us (3 cards)                              | `cms_why` JSON                                                                                                       | Sections tab                             |
-| Pricing                                              | Already lives in `saas_packages` — bind landing pricing to `is_active=true` packages instead of the hard-coded array | Existing Packages screen                 |
-| Reviews / testimonials                               | `landing_reviews` table (new)                                                                                        | New "Reviews" tab                        |
-| FAQ                                                  | `faq_entries` (already wired)                                                                                        | Existing FAQ tab                         |
-| Footer (about text, links, contact, social)          | `cms_footer` JSON                                                                                                    | Sections tab                             |
-| **Custom CMS Pages** (`cms_pages`)                   | Already exist but orphaned — render at `/p/:slug` and surface published pages as footer links automatically          | New public route + footer auto-list      |
+### 4. Verification
 
+- Use the browser tool at viewport 360x800 to:
+  1. Visit `/purchases/add`, confirm no horizontal page scroll, top form stacks, save bar visible.
+  2. Add an IMEI product, verify chips list, type IMEI + tap "+", verify chip appears; type IMEI + press keyboard Next, verify chip still appears (blur handler).
+  3. Open scanner — if permission denied path triggers, verify the "Allow camera" + "Take photo" fallback render.
+- Run typecheck via the harness.
 
-### 3. Integrate Sections ↔ Pages
+### Files touched
 
-- Existing **Pages** editor (`/superadmin/cms/pages`) builds section arrays but no public route renders them. Add public route `/p/:slug` → `PublicCmsPage.tsx` that reads `cms_pages` by slug + `status='published'` and renders each section block.
-- Auto-include published pages in the landing footer "Company / Resources" column.
-- Add a "Page" picker on Sections tab so a section block can deep-link to a CMS page.
+- `src/pages/PurchaseAdd.tsx` (mobile layout + IMEI input handlers + sticky save bar)
+- `src/components/pos/BarcodeScanner.tsx` (permission state + denied UI + file fallback + responsive sizing)
 
-### 4. Lock CMS to superadmin only
-
-- Confirm tenant sidebar has no CMS entry (it doesn't today). Tenant `Settings → PWA / Branding` stays separate (per-tenant white-label).
-- Add a top banner inside the superadmin Landing CMS screens: "Global content — affects every visitor of the marketing site."
-- RLS audit: `business_settings` rows where `tenant_id IS NULL` should be readable by anon (so landing works while logged out) but writable only by superadmin. Same for `landing_features`, `landing_reviews`, `cms_pages`. Add migration to set/verify these policies.
-
-### 5. Favicon write-through
-
-Two layers:
-
-- **Static fallback** in `index.html` keeps `/favicon.ico` (current behavior).
-- **Runtime override** in `LandingPage` + global `App` mount: when `cms_branding.favicon_url` is set, swap the `<link rel="icon">` href client-side (mirrors existing `DynamicManifest.tsx` pattern, but global instead of tenant-scoped).
-
-## Technical notes
-
-- Migration adds: `landing_features (id, icon, title, description, sort_order, is_active)`, `landing_reviews (id, name, role, rating, text, avatar_url, sort_order, is_active)`. Both are global (no `tenant_id`) with public SELECT and superadmin-only write via `is_superadmin(auth.uid())`.
-- Reuse upload flow into the existing `branding` bucket for logo / favicon / OG image.
-- Icon picker on Features uses a fixed allowlist of `lucide-react` names (string → component map) to keep payloads safe.
-- Pricing on landing fetches `saas_packages` where `is_active = true AND show_on_landing = true` (add column).
-- New superadmin tabs added to `LandingCms.tsx`: Branding, Navigation, Hero, Stats, Features, Why, Reviews, Footer, FAQ, SEO. Pages stays as its own route.
-- `AdminSidebar.tsx`: rename "Sections" → "Site Content" for clarity; keep "Pages" sub-item.
-
-## Out of scope
-
-- Per-tenant CMS module (explicitly deferred per your message).
-- Multi-language content.
-- Drag-and-drop visual page builder (current section list stays).
-
-## Deliverables
-
-1. Migration: 2 new tables + RLS + `saas_packages.show_on_landing` column.
-2. New `cms_branding` settings + Branding tab UI with file uploads.
-3. New Features / Reviews / Stats / Why / Footer / Navigation editors in Landing CMS.
-4. `LandingPage.tsx` rewritten to read every block from CMS with sensible fallbacks.
-5. New public route `/p/:slug` rendering `cms_pages` content.
-6. Footer auto-lists published CMS pages.
-7. Runtime favicon + theme-color injection from `cms_branding`.
-8. RLS audit migration ensuring superadmin-only writes on all CMS tables.
+No DB / backend / business-logic changes.
