@@ -89,6 +89,7 @@ export default function POS() {
   const { data: groupPriceMap } = useProductGroupPricesMap();
 
   const [search, setSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerId, setCustomerId] = useState("");
   const customerSelectValue = customerId || "walk-in";
