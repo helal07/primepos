@@ -36,7 +36,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
     } catch {}
   };
 
-  const startScanner = async (facing: "environment" | "user") => {
+  const startScanner = async (facing: "environment" | "user", opts?: { skipPermissionProbe?: boolean }) => {
     if (!containerRef.current) return;
     try {
       if (scannerRef.current) {
@@ -45,16 +45,21 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
       }
     } catch {}
 
-    // Proactive permission probe — if denied, skip the start call
-    try {
-      // @ts-ignore - camera is a valid PermissionName in modern browsers
-      const status = await navigator.permissions?.query?.({ name: "camera" as PermissionName });
-      if (status?.state === "denied") {
-        setPermissionState("denied");
-        setError("");
-        return;
-      }
-    } catch {}
+    // Proactive permission probe — only on first auto-start. On user-triggered
+    // retries we skip this because the cached "denied" state can be stale
+    // (e.g. user just enabled camera in browser settings) and querying it
+    // would block the actual prompt from firing.
+    if (!opts?.skipPermissionProbe) {
+      try {
+        // @ts-ignore - camera is a valid PermissionName in modern browsers
+        const status = await navigator.permissions?.query?.({ name: "camera" as PermissionName });
+        if (status?.state === "denied") {
+          setPermissionState("denied");
+          setError("");
+          return;
+        }
+      } catch {}
+    }
 
     const scanner = new Html5Qrcode("barcode-reader", {
       formatsToSupport: [
@@ -112,7 +117,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
       const name = err?.name || "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setPermissionState("denied");
-        setError("");
+        setError("Permission was blocked. If you just allowed camera in browser settings, tap \"I've allowed it — restart\" below.");
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
         setPermissionState("no_camera");
         setError("No camera found on this device.");
@@ -139,6 +144,46 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
     const next = facingMode === "environment" ? "user" : "environment";
     setFacingMode(next);
     await startScanner(next);
+  };
+
+  // User-triggered retry. Calls getUserMedia directly inside the click gesture
+  // so the browser shows its native permission prompt (or surfaces the real
+  // error if the site is hard-blocked). Only after that succeeds do we hand
+  // off to html5-qrcode.
+  const handleAllowCamera = async () => {
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: facingMode } },
+        audio: false,
+      });
+      // Release immediately — html5-qrcode opens its own stream.
+      stream.getTracks().forEach((t) => t.stop());
+      setPermissionState("prompt");
+      await startScanner(facingMode, { skipPermissionProbe: true });
+    } catch (err: any) {
+      const name = err?.name || "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+        setPermissionState("denied");
+        setError("Camera is still blocked for this site. Open the site settings (lock icon in the address bar) and set Camera to Allow, then tap \"I've allowed it — restart\".");
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setPermissionState("no_camera");
+        setError("No camera found on this device.");
+      } else if (name === "NotReadableError") {
+        setPermissionState("busy");
+        setError("Camera is in use by another app. Close it and try again.");
+      } else {
+        setError(err?.message || "Couldn't start the camera. Try again.");
+      }
+    }
+  };
+
+  // After the user enables camera in OS/browser settings, force a clean start
+  // bypassing the permissions.query cache.
+  const handleHardRestart = async () => {
+    setError("");
+    setPermissionState("prompt");
+    await startScanner(facingMode, { skipPermissionProbe: true });
   };
 
   const handleFilePick = async (file: File) => {
@@ -179,15 +224,20 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
                 "Another app is using the camera. Close it and try again, or upload a photo of the barcode."}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <Button
-              onClick={() => { setPermissionState("prompt"); setError(""); startScanner(facingMode); }}
-              className="w-full sm:w-auto"
-            >
+          {error && (
+            <p className="text-xs text-destructive bg-destructive/10 rounded px-3 py-2 text-left">
+              {error}
+            </p>
+          )}
+          <div className="flex flex-col gap-2">
+            <Button onClick={handleAllowCamera} className="w-full">
               <Camera className="h-4 w-4 mr-2" /> Allow camera
             </Button>
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full sm:w-auto">
-              <ImageIcon className="h-4 w-4 mr-2" /> Take / pick photo
+            <Button variant="secondary" onClick={handleHardRestart} className="w-full">
+              <RefreshCw className="h-4 w-4 mr-2" /> I've allowed it — restart camera
+            </Button>
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full">
+              <ImageIcon className="h-4 w-4 mr-2" /> Take / pick photo instead
             </Button>
           </div>
           <input
