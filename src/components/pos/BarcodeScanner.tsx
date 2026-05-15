@@ -14,12 +14,23 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const startAfterRenderRef = useRef<"environment" | "user" | null>(null);
   const [error, setError] = useState("");
-  const [permissionState, setPermissionState] = useState<"idle" | "prompt" | "granted" | "denied" | "no_camera" | "busy">("idle");
+  const [permissionState, setPermissionState] = useState<"idle" | "prompt" | "granted" | "denied" | "no_camera" | "busy" | "policy_blocked">("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [lastCode, setLastCode] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScanRef = useRef<{ code: string; at: number }>({ code: "", at: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isSecure = typeof window !== "undefined" && (window.isSecureContext || window.location.hostname === "localhost");
+  const host = typeof window !== "undefined" ? window.location.host : "";
+  const supportsCameraApi = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+  const cameraAllowedByPolicy = (() => {
+    if (typeof document === "undefined") return true;
+    const policy = (document as any).permissionsPolicy || (document as any).featurePolicy;
+    try {
+      if (typeof policy?.allowsFeature === "function") return policy.allowsFeature("camera");
+    } catch {}
+    return true;
+  })();
 
   const beep = () => {
     try {
@@ -39,6 +50,21 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
 
   const startScanner = async (facing: "environment" | "user", opts?: { skipPermissionProbe?: boolean }) => {
     if (!containerRef.current) return;
+    if (!supportsCameraApi) {
+      setPermissionState("no_camera");
+      setError("Camera API is unavailable in this browser. Open the app in Chrome/Safari, or use Take / pick photo instead.");
+      return;
+    }
+    if (!isSecure) {
+      setPermissionState("denied");
+      setError("Camera can only start on a secure HTTPS page.");
+      return;
+    }
+    if (cameraAllowedByPolicy === false) {
+      setPermissionState("policy_blocked");
+      setError("Camera is blocked by this site's server Permissions-Policy header. Update the hosting .htaccess/header policy to allow camera=(self), then reload.");
+      return;
+    }
     try {
       if (scannerRef.current) {
         try { await scannerRef.current.stop(); } catch {}
@@ -118,7 +144,9 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
       const name = err?.name || "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setPermissionState("denied");
-        setError("Permission was blocked. If you just allowed camera in browser settings, tap \"I've allowed it — restart\" below.");
+        setError(cameraAllowedByPolicy === false
+          ? "Camera is blocked by the site's Permissions-Policy header, so Chrome cannot show an Allow option."
+          : "Permission was blocked. If you just allowed camera in browser settings, tap \"I've allowed it — restart\" below.");
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
         setPermissionState("no_camera");
         setError("No camera found on this device.");
@@ -168,6 +196,21 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
   // off to html5-qrcode.
   const handleAllowCamera = async () => {
     setError("");
+    if (!supportsCameraApi) {
+      setPermissionState("no_camera");
+      setError("Camera API is unavailable in this browser. Open the app in Chrome/Safari, or use Take / pick photo instead.");
+      return;
+    }
+    if (!isSecure) {
+      setPermissionState("denied");
+      setError("Camera can only start on a secure HTTPS page.");
+      return;
+    }
+    if (cameraAllowedByPolicy === false) {
+      setPermissionState("policy_blocked");
+      setError("Camera is blocked by this site's server Permissions-Policy header. Update the hosting .htaccess/header policy to allow camera=(self), then reload.");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: facingMode } },
@@ -181,7 +224,9 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
       const name = err?.name || "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setPermissionState("denied");
-        setError("Camera is still blocked for this site. Open the site settings (lock icon in the address bar) and set Camera to Allow, then tap \"I've allowed it — restart\".");
+        setError(cameraAllowedByPolicy === false
+          ? "Camera is blocked by this site's server Permissions-Policy header, so Chrome cannot show an Allow option."
+          : "Camera is still blocked for this site. Open the site settings (lock icon in the address bar) and set Camera to Allow, then tap \"I've allowed it — restart\".");
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
         setPermissionState("no_camera");
         setError("No camera found on this device.");
@@ -220,10 +265,8 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
     permissionState === "idle" ||
     permissionState === "denied" ||
     permissionState === "no_camera" ||
-    permissionState === "busy";
-
-  const isSecure = typeof window !== "undefined" && (window.isSecureContext || window.location.hostname === "localhost");
-  const host = typeof window !== "undefined" ? window.location.host : "";
+    permissionState === "busy" ||
+    permissionState === "policy_blocked";
 
   if (showDeniedPanel) {
     return (
@@ -236,6 +279,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
             <h3 className="font-semibold text-base">
               {permissionState === "idle" && "Tap to start camera"}
               {permissionState === "denied" && "Camera permission needed"}
+              {permissionState === "policy_blocked" && "Camera blocked by site policy"}
               {permissionState === "no_camera" && "No camera found"}
               {permissionState === "busy" && "Camera is busy"}
             </h3>
@@ -244,6 +288,8 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
                 "Your browser needs you to tap a button before it will ask for camera access. Tap Start camera below — Chrome will then show an Allow / Block popup."}
               {permissionState === "denied" &&
                 "We need access to your camera to scan barcodes. Tap Allow camera, or use a saved photo instead."}
+              {permissionState === "policy_blocked" &&
+                "Chrome cannot show a camera Allow option because the website header is disabling camera access before the browser prompt can open."}
               {permissionState === "no_camera" &&
                 "We couldn't detect a camera. You can upload a photo of the barcode instead."}
               {permissionState === "busy" &&
@@ -262,7 +308,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
             </p>
           )}
           <div className="flex flex-col gap-2">
-            <Button onClick={handleAllowCamera} className="w-full" disabled={!isSecure}>
+            <Button onClick={handleAllowCamera} className="w-full" disabled={!isSecure || cameraAllowedByPolicy === false}>
               <Camera className="h-4 w-4 mr-2" />
               {permissionState === "idle" ? "Start camera" : "Allow camera"}
             </Button>

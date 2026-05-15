@@ -857,7 +857,7 @@ export default function PurchaseAdd() {
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="w-[calc(100vw-1rem)] max-w-md max-h-[92vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Scan IMEI / Serial</DialogTitle>
           </DialogHeader>
