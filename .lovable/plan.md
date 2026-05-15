@@ -1,30 +1,32 @@
-Root cause found: `public/.htaccess` currently sends this header:
+# Fix: POS payment dialog hidden by keyboard on mobile
 
-```text
-Permissions-Policy: geolocation=(), microphone=(), camera=()
-```
+## Problem
 
-That explicitly disables camera for the whole site on Apache/Hostinger deployments. When this header is active, Chrome blocks `getUserMedia` before it can show the camera prompt, so the domain will not appear in Camera site settings and the top-bar lock panel will not show a Camera permission option.
+On the mobile POS sale flow, when the cashier taps the **Amount** field in the **Finalize Payment** dialog, the on-screen keyboard slides up and covers the payment rows, method selector, status line, and the **Finalize Payment** button. Only the summary cards stay visible (see screenshot). The cashier cannot complete the sale.
 
-Plan:
+Root cause: `src/components/payments/PaymentDialog.tsx` uses a fixed-width centered `DialogContent` (`max-w-lg`) with no mobile-aware height, no scroll on the outer container, and a non-sticky footer. On mobile Chrome the visual viewport shrinks when the keyboard opens, but the dialog stays centered against the *layout* viewport, so its bottom half ends up under the keyboard.
 
-1. Update `public/.htaccess`
-   - Change the `Permissions-Policy` header so camera is allowed for the site itself.
-   - Use a safe policy like:
-     ```text
-     Permissions-Policy: geolocation=(), microphone=(), camera=(self)
-     ```
-   - Keep other security headers unchanged.
+## Fix (UI only, `src/components/payments/PaymentDialog.tsx`)
 
-2. Harden `BarcodeScanner.tsx` for this exact failure mode
-   - Detect browser policy blocks (`NotAllowedError` / permission denial with no prompt) and show a clear message: camera may be blocked by site/server policy, not Chrome settings.
-   - Add a diagnostic hint when `navigator.mediaDevices` or secure context is unavailable.
-   - Keep manual photo upload fallback.
+1. **Responsive sizing** — keep desktop look, fix mobile:
+  - `DialogContent` className → `w-[calc(100vw-1rem)] max-w-lg max-h-[100dvh] sm:max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden`
+  - This uses `dvh` (dynamic viewport height) so the dialog naturally shrinks when the mobile keyboard opens.
+2. **Scrollable body, sticky header & footer**
+  - Wrap header in a `shrink-0` container with padding.
+  - Middle section (summary + payment rows + add-row button + status) becomes `flex-1 overflow-y-auto px-6 py-4 space-y-4`.
+  - Footer becomes `shrink-0 border-t bg-background px-6 py-3` so **Cancel** / **Finalize Payment** are always reachable above the keyboard.
+3. **Auto-scroll the focused input into view** — when an Amount/Note input gains focus on mobile, call `e.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" })` so the active row is centered in the visible area above the keyboard.
+4. **Remove the inner `max-h-[40vh]` on the payment rows list** — the outer scroll container now handles overflow, and the inner cap was making things worse on small screens.
 
-3. Improve mobile scanner dialog usability
-   - Make the purchase scanner dialog full-width / scroll-friendly on mobile so all buttons and instructions remain reachable.
-   - Keep desktop size unchanged.
+## Out of scope
 
-4. Verification
-   - Run a targeted test/static check where possible.
-   - Important deployment note: after this fix, the site must be republished/reuploaded to the custom domain host so the updated `.htaccess` is active on `pos.itsheba.bd`.
+- No backend, hook, or sale-logic changes.
+- No changes to `SaleAdd.tsx`, `PurchaseAdd.tsx`, or `POS.tsx` — they only consume the dialog.
+- Barcode scanner work from previous turns is unrelated and left as-is.
+
+## Verification
+
+- Open POS on mobile viewport (360×678), add a product, tap **Pay** → **Finalize Payment**, tap the Amount field. Confirm the **Finalize Payment** button stays visible above the keyboard and the focused row scrolls into view.
+- Desktop view (`sm:` and up) should look identical to today.
+
+**After Products added to cart there is no cacncle or remove option from cart.  Fix the issue also**
