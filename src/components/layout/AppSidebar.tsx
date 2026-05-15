@@ -57,6 +57,7 @@ import {
   Plus,
   Lock,
   Warehouse as WarehouseIcon,
+  DatabaseBackup,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -237,6 +238,7 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
       { title: "Roles & Permissions", url: "/roles", icon: Shield },
       { title: "Activity Log", url: "/activity-log", icon: Activity },
       { title: "Settings", url: "/settings", icon: Settings },
+      { title: "Backup & Restore", url: "/settings/backup", icon: DatabaseBackup },
     ],
   },
 ];
