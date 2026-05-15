@@ -309,7 +309,7 @@ export default function TenantBackup() {
               {recent.map(b => (
                 <div key={b.id} className="flex items-center justify-between border-b pb-2 last:border-0">
                   <div>
-                    <Badge variant="secondary" className="mr-2 capitalize">{b.kind.replaceAll("_", " ")}</Badge>
+                    <Badge variant="secondary" className="mr-2 capitalize">{b.kind.replace(/_/g, " ")}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(b.created_at).toLocaleString()}</span>
                   </div>
                   <span className="text-xs text-muted-foreground">{formatBytes(b.size_bytes)}</span>
