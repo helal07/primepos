@@ -371,12 +371,18 @@ export default function POS() {
   };
 
   const handleQuickCash = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before taking payment.");
+      return;
+    }
     await handleCompleteWithPayments([{ payment_method: "cash", amount: totalAmount, payment_note: "" }], "paid");
   };
 
   const handleCreditSale = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before recording a credit sale.");
+      return;
+    }
     if (!customerId) {
       toast.error("Select a customer to record a credit sale. Walk-in customers must pay in full.");
       return;
@@ -385,8 +391,19 @@ export default function POS() {
   };
 
   const handleCardSale = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before taking payment.");
+      return;
+    }
     await handleCompleteWithPayments([{ payment_method: "card", amount: totalAmount, payment_note: "" }], "paid");
+  };
+
+  const openPaymentDialog = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty. Add at least one product before opening payment.");
+      return;
+    }
+    setShowPayment(true);
   };
 
   const handleNewSale = () => {
@@ -712,7 +729,7 @@ export default function POS() {
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={handleCardSale} disabled={cart.length === 0 || createSale.isPending}>
           <CreditCard className="h-3.5 w-3.5" /> Card
         </Button>
-        <Button size="sm" className="gap-1 text-xs bg-primary hover:bg-primary/90" onClick={() => setShowPayment(true)} disabled={cart.length === 0}>
+        <Button size="sm" className="gap-1 text-xs bg-primary hover:bg-primary/90" onClick={openPaymentDialog} disabled={cart.length === 0}>
           <Banknote className="h-3.5 w-3.5" /> Multiple Pay
         </Button>
         <Button size="sm" className="gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleQuickCash} disabled={cart.length === 0 || createSale.isPending}>
@@ -822,7 +839,7 @@ export default function POS() {
               </Button>
               <Button
                 className="h-12 text-sm font-semibold"
-                onClick={() => { setShowMobileCart(false); setShowPayment(true); }}
+                onClick={() => { setShowMobileCart(false); openPaymentDialog(); }}
                 disabled={cart.length === 0}
               >
                 <Banknote className="h-4 w-4 mr-1" /> Multi-Pay
