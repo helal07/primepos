@@ -46,6 +46,15 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
 
   const paymentStatus = totalPaying >= totalAmount ? "paid" : totalPaying > 0 ? "partial" : "unpaid";
 
+  const hasNegative = payments.some(p => Number(p.amount) < 0);
+  const emptyCart = !(totalAmount > 0);
+  const validationError = emptyCart
+    ? "Add items to the cart before finalizing payment."
+    : hasNegative
+      ? "Payment amounts cannot be negative."
+      : null;
+  const canFinalize = !validationError && !isPending;
+
   const updatePayment = (idx: number, field: keyof PaymentRow, value: any) => {
     setPayments(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
   };
@@ -143,11 +152,22 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
             {paymentStatus === "paid" ? "Fully Paid" : paymentStatus === "partial" ? "Partial Payment" : "Credit (Unpaid)"}
           </span>
         </div>
+        {validationError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive text-center">
+            {validationError}
+          </div>
+        )}
         </div>
 
         <DialogFooter className="shrink-0 border-t bg-background px-6 py-3">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => onFinalize(payments.filter(p => p.amount > 0), paymentStatus)} disabled={isPending}>
+          <Button
+            onClick={() => {
+              if (!canFinalize) return;
+              onFinalize(payments.filter(p => p.amount > 0), paymentStatus);
+            }}
+            disabled={!canFinalize}
+          >
             {isPending ? "Processing..." : "Finalize Payment"}
           </Button>
         </DialogFooter>
