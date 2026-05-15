@@ -14,7 +14,7 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const startAfterRenderRef = useRef<"environment" | "user" | null>(null);
   const [error, setError] = useState("");
-  const [permissionState, setPermissionState] = useState<"idle" | "prompt" | "granted" | "denied" | "no_camera" | "busy">("idle");
+  const [permissionState, setPermissionState] = useState<"idle" | "prompt" | "granted" | "denied" | "no_camera" | "busy" | "policy_blocked">("idle");
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [lastCode, setLastCode] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +39,21 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
 
   const startScanner = async (facing: "environment" | "user", opts?: { skipPermissionProbe?: boolean }) => {
     if (!containerRef.current) return;
+    if (!supportsCameraApi) {
+      setPermissionState("no_camera");
+      setError("Camera API is unavailable in this browser. Open the app in Chrome/Safari, or use Take / pick photo instead.");
+      return;
+    }
+    if (!isSecure) {
+      setPermissionState("denied");
+      setError("Camera can only start on a secure HTTPS page.");
+      return;
+    }
+    if (cameraAllowedByPolicy === false) {
+      setPermissionState("policy_blocked");
+      setError("Camera is blocked by this site's server Permissions-Policy header. Update the hosting .htaccess/header policy to allow camera=(self), then reload.");
+      return;
+    }
     try {
       if (scannerRef.current) {
         try { await scannerRef.current.stop(); } catch {}
@@ -118,7 +133,9 @@ export default function BarcodeScanner({ onScan, onClose, continuous = true }: B
       const name = err?.name || "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setPermissionState("denied");
-        setError("Permission was blocked. If you just allowed camera in browser settings, tap \"I've allowed it — restart\" below.");
+        setError(cameraAllowedByPolicy === false
+          ? "Camera is blocked by the site's Permissions-Policy header, so Chrome cannot show an Allow option."
+          : "Permission was blocked. If you just allowed camera in browser settings, tap \"I've allowed it — restart\" below.");
       } else if (name === "NotFoundError" || name === "OverconstrainedError") {
         setPermissionState("no_camera");
         setError("No camera found on this device.");
