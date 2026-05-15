@@ -3828,6 +3828,50 @@ export type Database = {
           },
         ]
       }
+      tenant_backups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          notes: string | null
+          row_counts: Json | null
+          size_bytes: number | null
+          storage_path: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          notes?: string | null
+          row_counts?: Json | null
+          size_bytes?: number | null
+          storage_path?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          row_counts?: Json | null
+          size_bytes?: number | null
+          storage_path?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_backups_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_payments: {
         Row: {
           amount: number
@@ -4478,6 +4522,12 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      list_tenant_data_tables: {
+        Args: never
+        Returns: {
+          table_name: string
+        }[]
+      }
       place_store_order: {
         Args: {
           p_city: string
@@ -4492,6 +4542,7 @@ export type Database = {
         }
         Returns: Json
       }
+      restore_tenant_from_backup: { Args: { p_payload: Json }; Returns: Json }
       superadmin_delete_tenant: {
         Args: { _tenant_id: string }
         Returns: undefined
