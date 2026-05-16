@@ -16,7 +16,6 @@ const platformItems = [
   { to: "/superadmin/tenants", label: "Tenants", icon: Building2 },
   { to: "/superadmin/packages", label: "Packages", icon: Package },
   { to: "/superadmin/payments", label: "Payments", icon: Wallet2 },
-  { to: "/superadmin/payment-gateways", label: "Payment Gateways", icon: CreditCard },
 ];
 
 const websiteItems = [
