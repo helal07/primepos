@@ -36,16 +36,14 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // Mobile: bottom-sheet (full width, rounded top, slide-up)
-        // Desktop: classic centered modal
         "fixed z-50 grid gap-4 border bg-background shadow-2xl duration-200",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        // Mobile bottom-sheet
-        "inset-x-0 bottom-0 max-h-[92vh] w-full overflow-y-auto rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]",
+        // Mobile bottom-sheet (default)
+        "inset-x-0 bottom-0 top-auto max-h-[92vh] w-full overflow-y-auto rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]",
         "data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
-        // Desktop modal override
-        "sm:left-[50%] sm:top-[50%] sm:bottom-auto sm:inset-x-auto sm:translate-x-[-50%] sm:translate-y-[-50%] sm:w-full sm:max-w-lg sm:rounded-2xl sm:p-6 sm:max-h-[85vh]",
-        "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-left-1/2 sm:data-[state=open]:slide-in-from-top-[48%]",
+        // Desktop: classic centered modal (sm+)
+        "sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg sm:rounded-2xl sm:p-6 sm:max-h-[85vh]",
+        "sm:data-[state=closed]:zoom-out-95 sm:data-[state=open]:zoom-in-95",
         className,
       )}
       {...props}
