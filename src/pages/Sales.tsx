@@ -12,6 +12,7 @@ import { Plus, Search, Eye, Trash2, Pencil, Printer, ChevronDown, FileText, Truc
 import { useSales, useSaleMutations } from "@/hooks/useSales";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Can } from "@/components/Can";
 
 const paymentBadge = (s: string) => {
   switch (s) {
