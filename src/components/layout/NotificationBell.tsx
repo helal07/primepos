@@ -23,6 +23,34 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const seenIds = useRef<Set<string>>(new Set());
   const initialized = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const playChime = () => {
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const now = ctx.currentTime;
+      const notes = [880, 1320]; // A5, E6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const start = now + i * 0.14;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.4);
+      });
+    } catch {
+      // ignore
+    }
+  };
 
   const { data: items = [] } = useQuery({
     queryKey: ["my-notifications"],
@@ -61,6 +89,7 @@ export function NotificationBell() {
           const row = payload.new as NotifRow;
           if (seenIds.current.has(row.id)) return;
           seenIds.current.add(row.id);
+          playChime();
           toast(row.subject || "New notification", {
             description: row.message,
             duration: 8000,
