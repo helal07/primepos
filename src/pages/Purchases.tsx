@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Trash2, Eye, Pencil, Printer, ChevronDown, FileText, FileSpreadsheet, File } from "lucide-react";
 import { usePurchases, usePurchaseMutations } from "@/hooks/usePurchases";
 import { toast } from "sonner";
+import { Can } from "@/components/Can";
 
 const statusBadge = (s: string) => {
   switch (s) {
@@ -78,9 +79,11 @@ export default function Purchases() {
   return (
     <div className="space-y-4">
       <PageHeader title="All Purchases" description="Manage purchase records" actions={
-        <Button onClick={() => navigate("/purchases/add")}>
-          <Plus className="h-4 w-4 mr-2" /> Add Purchase
-        </Button>
+        <Can module="purchases" action="create">
+          <Button onClick={() => navigate("/purchases/add")}>
+            <Plus className="h-4 w-4 mr-2" /> Add Purchase
+          </Button>
+        </Can>
       } />
 
       <Card>
