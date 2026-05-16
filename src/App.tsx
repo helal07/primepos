@@ -145,7 +145,7 @@ const SuperadminRoutes = () => (
             <Route path="notifications" element={<AdminNotifications />} />
             <Route path="notification-templates" element={<NotificationTemplates />} />
             <Route path="payments" element={<SuperPayments />} />
-            <Route path="payment-gateways" element={<PaymentGateways />} />
+            <Route path="payment-gateways" element={<Navigate to="/superadmin/settings" replace />} />
             <Route path="transactions" element={<Navigate to="/superadmin/payments" replace />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="trial-emails" element={<TrialEmailTemplates />} />

@@ -1,21 +1,23 @@
 ## Goal
 
-Remove the redundant **Transactions** page from the Superadmin panel. Keep **Payments** (`SuperPayments`) as the single source of truth — it already shows real payment data (approvals, gateway refs, amounts, periods).
+Remove the duplicate **Payment Gateways** entry from the Superadmin sidebar and consolidate the real gateway editor into **Settings → Payment Gateways** tab. Drop the stub key/value editor currently in Settings.
 
 ## Why
 
-`AdminTransactions.tsx` is a stub: it only lists tenants + package + status + subscription_end, with placeholder text saying "Transaction records will appear here once the gateway is connected." Every column it shows is already present in **Payments** and **Tenants**. **Payments** (`SuperPayments`) shows real `tenant_payments` rows (status, amount, gateway, reference, approved_at, period). Keeping both confuses users.
+Two payment-gateway editors exist:
+
+- `src/pages/admin/PaymentGateways.tsx` — **real**, reads/writes `payment_gateways` + `payment_gateway_credentials` tables; the bKash/EPS callback edge functions consume these rows.
+- `src/pages/admin/AdminSettings.tsx` → "Payment Gateways" tab — a **stub** that stores bKash/SSLCommerz/EPS into `business_settings` key/value rows that no edge function reads.
+
+Both are reachable from the sidebar. Keep the real one.
 
 ## Changes
 
-- **Sidebar** (`src/components/admin/AdminSidebar.tsx`): remove the `Transactions` entry from `platformItems`.
-- **Mobile nav** (`src/components/admin/AdminMobileNav.tsx`): remove the Transactions link if present.
-- **Router** (`src/App.tsx`):
-  - Remove `<Route path="transactions" …>` and the `AdminTransactions` lazy import.
-  - Add a redirect: `/superadmin/transactions` → `/superadmin/payments` (so any bookmarks/old links don't 404).
-- **Delete file** `src/pages/admin/AdminTransactions.tsx`.
+- **`src/pages/admin/AdminSettings.tsx`**: replace the contents of the existing `<TabsContent value="payment">` with the real gateway editor by rendering the `<PaymentGateways />` page component inside the tab (or extracting the body into a shared component and reusing it). Simpler path: import and render `<PaymentGateways />` directly inside the tab.
+- **`src/components/admin/AdminSidebar.tsx`**: remove the `Payment Gateways` entry from `platformItems` (it now lives under Settings → Payment Gateways).
+- **`src/App.tsx`**: keep the `payment-gateways` lazy import (still used inside Settings tab). Change the standalone route `<Route path="payment-gateways" element={<PaymentGateways />} />` to a redirect to `/superadmin/settings` so old bookmarks land on the Settings page.
 
 ## Not changing
 
-- `SuperPayments` page itself — it already populates from `tenant_payments` as the user requested ("populate data according payments existing").
-- No DB changes.
+- DB schema, `payment_gateways` / `payment_gateway_credentials` data, edge functions.
+- SMS Gateways / Email Gateway / Appearance tabs in Settings.
