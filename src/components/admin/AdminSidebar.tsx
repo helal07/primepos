@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
-  FileText, UserCircle2, Mail,
+  FileText, UserCircle2, Mail, Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +33,10 @@ const smsItems = [
   { to: "/superadmin/sms/providers", label: "SMS Providers", icon: MessageSquare },
   { to: "/superadmin/sms/plans", label: "SMS Plans", icon: Send },
   { to: "/superadmin/sms/purchases", label: "SMS Purchases", icon: Wallet },
+];
+
+const notificationItems = [
+  { to: "/superadmin/notifications", label: "Send Notification", icon: Bell },
 ];
 
 const systemItems = [
@@ -194,6 +198,7 @@ export function AdminSidebar({ onNavigate }: Props) {
         </div>
 
         {renderGroup("System", systemItems)}
+        {renderGroup("Notifications", notificationItems)}
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
