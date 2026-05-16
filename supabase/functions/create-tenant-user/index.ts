@@ -37,22 +37,44 @@ Deno.serve(async (req) => {
 
     const callerId = claimsData.claims.sub;
 
-    // Check superadmin
+    // Allow superadmin OR tenant manager (scoped to their own tenant)
     const { data: isSA } = await anonClient.rpc("is_superadmin", { _user_id: callerId });
-    if (!isSA) {
-      return new Response(JSON.stringify({ error: "Forbidden: Superadmin only" }), {
+    const { data: isTM } = await anonClient.rpc("is_tenant_manager_or_above", { _user_id: callerId });
+    if (!isSA && !isTM) {
+      return new Response(JSON.stringify({ error: "Forbidden: Tenant Manager or Superadmin only" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { email, password, display_name, tenant_id, role_name } = await req.json();
+    const body = await req.json();
+    const { email, password, display_name, role_name } = body;
+    let { tenant_id } = body;
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: "Email and password are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Tenant Managers can only add users to their own tenant. Force tenant_id.
+    if (!isSA) {
+      const { data: callerTenantId } = await anonClient.rpc("get_user_tenant_id", { _user_id: callerId });
+      if (!callerTenantId) {
+        return new Response(JSON.stringify({ error: "No tenant context for caller" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      tenant_id = callerTenantId;
+      // Tenant Managers must not be able to assign Superadmin role
+      if (role_name === "Superadmin") {
+        return new Response(JSON.stringify({ error: "Cannot assign Superadmin role" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Use service role to create user

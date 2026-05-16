@@ -91,7 +91,11 @@ export default function Suppliers() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Suppliers" description="Manage your Suppliers" />
+      <PageHeader title="Suppliers" description="Manage your Suppliers" actions={
+        <Button onClick={() => { resetForm(); setOpen(true); }}>
+          <Plus className="mr-2 h-4 w-4" /> Add Supplier
+        </Button>
+      } />
 
       <Card>
         <CardHeader className="pb-3">
@@ -171,7 +175,7 @@ export default function Suppliers() {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between">
           <CardTitle className="text-base">All your Suppliers</CardTitle>
-          <Button onClick={() => { resetForm(); setOpen(true); }}>
+          <Button onClick={() => { resetForm(); setOpen(true); }} className="hidden sm:inline-flex">
             <Plus className="mr-2 h-4 w-4" /> Add
           </Button>
         </CardHeader>
