@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
   LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
-  FileText, UserCircle2, Mail, Bell,
+  FileText, UserCircle2, Mail, Bell, FileEdit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +37,7 @@ const smsItems = [
 
 const notificationItems = [
   { to: "/superadmin/notifications", label: "Send Notification", icon: Bell },
+  { to: "/superadmin/notification-templates", label: "Notification Templates", icon: FileEdit },
 ];
 
 const systemItems = [
@@ -56,6 +57,10 @@ export function AdminSidebar({ onNavigate }: Props) {
   const [smsOpen, setSmsOpen] = useState(smsActive);
   const cmsActive = location.pathname.startsWith("/superadmin/cms");
   const [cmsOpen, setCmsOpen] = useState(cmsActive);
+  const notifActive =
+    location.pathname.startsWith("/superadmin/notifications") ||
+    location.pathname.startsWith("/superadmin/notification-templates");
+  const [notifOpen, setNotifOpen] = useState(notifActive);
 
   const linkClass = (isActive: boolean) =>
     cn(
@@ -198,7 +203,48 @@ export function AdminSidebar({ onNavigate }: Props) {
         </div>
 
         {renderGroup("System", systemItems)}
-        {renderGroup("Notifications", notificationItems)}
+
+        <div className="pt-2">
+          <div className="px-2 pt-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+            Notifications
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotifOpen((v) => !v)}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              notifActive
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Bell className="h-[18px] w-[18px]" />
+            <span className="flex-1 text-left">Notifications</span>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", notifOpen && "rotate-180")} />
+          </button>
+          {notifOpen && (
+            <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border/60 pl-3">
+              {notificationItems.map((s) => (
+                <NavLink
+                  key={s.to}
+                  to={s.to}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent/80 text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-accent-foreground"
+                    )
+                  }
+                >
+                  <s.icon className="h-[15px] w-[15px]" />
+                  {s.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
