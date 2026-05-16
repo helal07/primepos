@@ -57,10 +57,16 @@ Deno.serve(async (req) => {
     }
 
     const { data: tenant } = await admin.from("tenants")
-      .select("subscription_end").eq("id", pay.tenant_id).maybeSingle();
+      .select("subscription_end,status").eq("id", pay.tenant_id).maybeSingle();
     const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+    // Only stack onto existing subscription_end when the tenant is currently
+    // active (true renewal). For trial/pending/suspended, start fresh from today
+    // so a pre-set placeholder end-date does not double the granted duration.
     const baseStr = tenant?.subscription_end ?? null;
-    const base = baseStr && new Date(baseStr) > today ? new Date(baseStr) : today;
+    const isRenewal = tenant?.status === "active";
+    const base = isRenewal && baseStr && new Date(baseStr) > today
+      ? new Date(baseStr)
+      : today;
     const newEnd = new Date(base.getTime() + durationDays * 86_400_000);
     const newEndStr = newEnd.toISOString().slice(0, 10);
 
