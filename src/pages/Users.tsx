@@ -185,13 +185,20 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingUser(editingUser === user.user_id ? null : user.user_id)}
-                        >
-                          {editingUser === user.user_id ? "Cancel" : "Change Role"}
-                        </Button>
+                        {currentUser?.id !== user.user_id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingUser(editingUser === user.user_id ? null : user.user_id)}
+                          >
+                            {editingUser === user.user_id ? "Cancel" : "Change Role"}
+                          </Button>
+                        )}
+                        {currentUser?.id === user.user_id && (
+                          <span className="text-xs text-muted-foreground italic px-2">
+                            You can't change your own role
+                          </span>
+                        )}
                         {currentUser?.id !== user.user_id && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
