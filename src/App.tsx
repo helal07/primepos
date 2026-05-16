@@ -283,10 +283,10 @@ const App = () => (
                         <Route path="/installment/collections" element={<ModuleGate module="installments"><InstallmentCollections /></ModuleGate>} />
                         <Route path="/installment/schedule" element={<ModuleGate module="installments"><InstallmentSchedule /></ModuleGate>} />
                         <Route path="/installment/agreement/:id" element={<ModuleGate module="installments"><InstallmentAgreement /></ModuleGate>} />
-                        <Route path="/users" element={<UsersPage />} />
-                        <Route path="/roles" element={<RolesPage />} />
+                        <Route path="/users" element={<PermissionGate module="users" action="view"><UsersPage /></PermissionGate>} />
+                        <Route path="/roles" element={<PermissionGate module="roles" action="view"><RolesPage /></PermissionGate>} />
                         <Route path="/activity-log" element={<ActivityLogPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
+                        <Route path="/settings" element={<PermissionGate module="settings" action="view"><SettingsPage /></PermissionGate>} />
                         <Route path="/settings/backup" element={<TenantBackupPage />} />
                         <Route path="/profile" element={<ProfilePage />} />
                         <Route path="*" element={<NotFound />} />
