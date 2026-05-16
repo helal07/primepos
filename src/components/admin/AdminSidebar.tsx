@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   ShieldCheck, Building2, Package, Globe, CreditCard, Settings, LogOut, Wallet2,
-  LayoutDashboard, MessageSquare, Send, Wallet, FileCode, ChevronDown,
+  LayoutDashboard, MessageSquare, Send, Wallet, ChevronDown,
   FileText, UserCircle2, Mail, Bell, FileEdit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,10 +16,6 @@ const platformItems = [
   { to: "/superadmin/tenants", label: "Tenants", icon: Building2 },
   { to: "/superadmin/packages", label: "Packages", icon: Package },
   { to: "/superadmin/payments", label: "Payments", icon: Wallet2 },
-];
-
-const websiteItems = [
-  { to: "/superadmin/sitemap", label: "Sitemap", icon: FileCode },
 ];
 
 const cmsItems = [
@@ -145,17 +141,6 @@ export function AdminSidebar({ onNavigate }: Props) {
               ))}
             </div>
           )}
-          {websiteItems.map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              onClick={onNavigate}
-              className={({ isActive }) => linkClass(isActive)}
-            >
-              <it.icon className="h-[18px] w-[18px]" />
-              {it.label}
-            </NavLink>
-          ))}
         </div>
 
         <div className="pt-2">
