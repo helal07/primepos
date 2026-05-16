@@ -12,6 +12,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import { ModuleGate } from "@/components/ModuleGate";
+import { PermissionGate } from "@/components/PermissionGate";
 import { DynamicManifest } from "@/components/DynamicManifest";
 import { BrandingInjector } from "@/components/BrandingInjector";
 import { TrackingInjector } from "@/components/TrackingInjector";
