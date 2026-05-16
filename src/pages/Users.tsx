@@ -8,9 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUsersWithRoles, useRoles, useUpdateUserRole, useDeleteUser } from "@/hooks/useRoles";
 import { useAuth } from "@/contexts/AuthContext";
-import { Shield, Users as UsersIcon, Trash2 } from "lucide-react";
+import { Shield, Users as UsersIcon, Trash2, Plus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { toFriendlyError } from "@/lib/friendlyError";
 
 export default function UsersPage() {
   const { data: users, isLoading } = useUsersWithRoles();
@@ -19,6 +26,45 @@ export default function UsersPage() {
   const deleteUser = useDeleteUser();
   const { user: currentUser } = useAuth();
   const [editingUser, setEditingUser] = useState<string | null>(null);
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ display_name: "", email: "", password: "", role_name: "Staff" });
+
+  const resetForm = () => setForm({ display_name: "", email: "", password: "", role_name: "Staff" });
+
+  const handleAdd = async () => {
+    if (!form.email || !form.password) {
+      toast({ title: "Email and password are required", variant: "destructive" });
+      return;
+    }
+    if (form.password.length < 6) {
+      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-tenant-user", {
+        body: {
+          email: form.email,
+          password: form.password,
+          display_name: form.display_name || form.email,
+          role_name: form.role_name,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "User created" });
+      qc.invalidateQueries({ queryKey: ["users_with_roles"] });
+      setAddOpen(false);
+      resetForm();
+    } catch (e: any) {
+      toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const getInitials = (name: string | null) =>
     name ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "??";
@@ -32,11 +78,51 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Users" description="Manage user accounts and their roles" actions={
-        <Badge variant="outline" className="gap-1">
-          <UsersIcon className="h-3 w-3" />
-          {users?.length ?? 0} users
-        </Badge>
+        <>
+          <Badge variant="outline" className="gap-1">
+            <UsersIcon className="h-3 w-3" />
+            {users?.length ?? 0} users
+          </Badge>
+          <Button onClick={() => { resetForm(); setAddOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Add User
+          </Button>
+        </>
       } />
+
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) resetForm(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Add User</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input value={form.display_name} onChange={e => setForm({ ...form, display_name: e.target.value })} placeholder="Full name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email *</Label>
+              <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Password *</Label>
+              <Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Min 6 characters" />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={form.role_name} onValueChange={(v) => setForm({ ...form, role_name: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {roles?.filter(r => r.name !== "Superadmin").map((r) => (
+                    <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)} disabled={saving}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={saving}>{saving ? "Creating..." : "Create User"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardContent className="p-0">
