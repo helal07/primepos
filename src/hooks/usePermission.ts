@@ -15,6 +15,7 @@ interface PermRow {
 interface PermResult {
   isAdmin: boolean;
   perms: Record<string, PermRow>;
+  keys: Set<string>;
 }
 
 export function useMyPermissions() {
@@ -25,7 +26,7 @@ export function useMyPermissions() {
     staleTime: 60_000,
     queryFn: async (): Promise<PermResult> => {
       const { data: tmFlag } = await supabase.rpc("is_tenant_manager_or_above", { _user_id: user!.id });
-      if (tmFlag) return { isAdmin: true, perms: {} };
+      if (tmFlag) return { isAdmin: true, perms: {}, keys: new Set() };
 
       // Get role ids for this user, then their permissions
       const { data: ur } = await supabase
@@ -33,7 +34,7 @@ export function useMyPermissions() {
         .select("role_id")
         .eq("user_id", user!.id);
       const roleIds = (ur ?? []).map((r) => r.role_id);
-      if (roleIds.length === 0) return { isAdmin: false, perms: {} };
+      if (roleIds.length === 0) return { isAdmin: false, perms: {}, keys: new Set() };
 
       const { data: rps } = await supabase
         .from("role_permissions")
@@ -53,7 +54,15 @@ export function useMyPermissions() {
           can_delete: cur.can_delete || row.can_delete,
         };
       }
-      return { isAdmin: false, perms: merged };
+
+      // Granular Ultimate POS-style grants
+      const { data: grants } = await supabase
+        .from("role_permission_grants")
+        .select("permission_key")
+        .in("role_id", roleIds);
+      const keys = new Set<string>((grants ?? []).map((g: any) => g.permission_key));
+
+      return { isAdmin: false, perms: merged, keys };
     },
   });
 }
@@ -61,5 +70,12 @@ export function useMyPermissions() {
 export function useCan(module: string, action: PermAction = "view") {
   const { data, isLoading } = useMyPermissions();
   const allowed = !!data && (data.isAdmin || !!data.perms[module]?.[`can_${action}` as keyof PermRow]);
+  return { allowed, isLoading };
+}
+
+/** Check a granular Ultimate POS-style permission key (e.g. "sell.edit_price_on_pos"). */
+export function useCanKey(key: string) {
+  const { data, isLoading } = useMyPermissions();
+  const allowed = !!data && (data.isAdmin || data.keys.has(key));
   return { allowed, isLoading };
 }

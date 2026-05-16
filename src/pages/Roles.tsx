@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRoles, useRolePermissions, useSaveRole, useDeleteRole, useSavePermissions, MODULE_LIST, type RolePermission } from "@/hooks/useRoles";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  useRoles, useSaveRole, useDeleteRole,
+  usePermissionCatalog, useRoleGrants, useSaveRoleGrants, MODULE_LABELS,
+} from "@/hooks/useRoles";
 import { Plus, Pencil, Trash2, Shield, Lock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -133,62 +136,164 @@ export default function RolesPage() {
 }
 
 function PermissionsEditor({ roleId }: { roleId: string }) {
-  const { data: permissions, isLoading } = useRolePermissions(roleId);
-  const savePerms = useSavePermissions();
-  const [local, setLocal] = useState<Record<string, { can_view: boolean; can_create: boolean; can_edit: boolean; can_delete: boolean }>>({});
+  const { data: catalog, isLoading: catLoading } = usePermissionCatalog();
+  const { data: grants, isLoading: grantsLoading } = useRoleGrants(roleId);
+  const saveGrants = useSaveRoleGrants();
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("sell");
 
-  // Sync from server when permissions load or roleId changes
-  if (permissions && initialized !== roleId) {
-    const map: typeof local = {};
-    for (const m of MODULE_LIST) {
-      const p = permissions.find(pp => pp.module === m);
-      map[m] = { can_view: p?.can_view ?? false, can_create: p?.can_create ?? false, can_edit: p?.can_edit ?? false, can_delete: p?.can_delete ?? false };
+  useEffect(() => {
+    if (grants && initialized !== roleId) {
+      setSelected(new Set(grants));
+      setInitialized(roleId);
     }
-    setLocal(map);
-    setInitialized(roleId);
-  }
+  }, [grants, roleId, initialized]);
 
-  const toggle = (mod: string, perm: "can_view" | "can_create" | "can_edit" | "can_delete") => {
-    setLocal(prev => ({ ...prev, [mod]: { ...prev[mod], [perm]: !prev[mod]?.[perm] } }));
+  const byModule = useMemo(() => {
+    const m = new Map<string, Array<{ group: string; items: typeof catalog }>>();
+    if (!catalog) return m;
+    for (const entry of catalog) {
+      if (!m.has(entry.module)) m.set(entry.module, []);
+    }
+    // group by module -> group_label
+    for (const [mod] of m) {
+      const items = catalog.filter((c) => c.module === mod);
+      const groups = new Map<string, typeof catalog>();
+      for (const it of items) {
+        if (!groups.has(it.group_label)) groups.set(it.group_label, [] as any);
+        (groups.get(it.group_label) as any).push(it);
+      }
+      m.set(
+        mod,
+        Array.from(groups.entries()).map(([group, items]) => ({ group, items }))
+      );
+    }
+    return m;
+  }, [catalog]);
+
+  const modules = useMemo(() => Array.from(byModule.keys()), [byModule]);
+
+  useEffect(() => {
+    if (modules.length && !modules.includes(activeTab)) setActiveTab(modules[0]);
+  }, [modules, activeTab]);
+
+  const toggle = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleAllInModule = (mod: string, on: boolean) => {
+    const keys = (catalog ?? []).filter((c) => c.module === mod).map((c) => c.key);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      keys.forEach((k) => (on ? next.add(k) : next.delete(k)));
+      return next;
+    });
+  };
+
+  const toggleAllInGroup = (mod: string, group: string, on: boolean) => {
+    const keys = (catalog ?? [])
+      .filter((c) => c.module === mod && c.group_label === group)
+      .map((c) => c.key);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      keys.forEach((k) => (on ? next.add(k) : next.delete(k)));
+      return next;
+    });
   };
 
   const handleSave = () => {
-    const perms = MODULE_LIST.filter(m => local[m] && (local[m].can_view || local[m].can_create || local[m].can_edit || local[m].can_delete))
-      .map(m => ({ role_id: roleId, module: m, ...local[m] }));
-    savePerms.mutate({ roleId, permissions: perms });
+    saveGrants.mutate({ roleId, keys: Array.from(selected) });
   };
 
-  if (isLoading) return <Skeleton className="h-40 w-full" />;
-
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  if (catLoading || grantsLoading) return <Skeleton className="h-60 w-full" />;
+  if (!modules.length) return <p className="text-sm text-muted-foreground">No permission catalog found.</p>;
 
   return (
     <div className="space-y-4">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Module</TableHead>
-            <TableHead className="text-center w-20">View</TableHead>
-            <TableHead className="text-center w-20">Create</TableHead>
-            <TableHead className="text-center w-20">Edit</TableHead>
-            <TableHead className="text-center w-20">Delete</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {MODULE_LIST.map((mod) => (
-            <TableRow key={mod}>
-              <TableCell className="font-medium">{capitalize(mod)}</TableCell>
-              {(["can_view", "can_create", "can_edit", "can_delete"] as const).map((perm) => (
-                <TableCell key={perm} className="text-center">
-                  <Checkbox checked={local[mod]?.[perm] ?? false} onCheckedChange={() => toggle(mod, perm)} />
-                </TableCell>
-              ))}
-            </TableRow>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="flex flex-wrap h-auto justify-start gap-1 bg-muted/50 p-1">
+          {modules.map((mod) => (
+            <TabsTrigger key={mod} value={mod} className="text-xs">
+              {MODULE_LABELS[mod] ?? mod}
+            </TabsTrigger>
           ))}
-        </TableBody>
-      </Table>
-      <Button onClick={handleSave} disabled={savePerms.isPending}>{savePerms.isPending ? "Saving..." : "Save Permissions"}</Button>
+        </TabsList>
+
+        {modules.map((mod) => {
+          const modKeys = (catalog ?? []).filter((c) => c.module === mod).map((c) => c.key);
+          const allOn = modKeys.length > 0 && modKeys.every((k) => selected.has(k));
+          return (
+            <TabsContent key={mod} value={mod} className="mt-4 space-y-5">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-semibold">{MODULE_LABELS[mod] ?? mod}</h3>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <Checkbox
+                    checked={allOn}
+                    onCheckedChange={(v) => toggleAllInModule(mod, !!v)}
+                  />
+                  Select all in {MODULE_LABELS[mod] ?? mod}
+                </label>
+              </div>
+
+              {(byModule.get(mod) ?? []).map(({ group, items }) => {
+                const groupKeys = (items ?? []).map((i) => i.key);
+                const groupAllOn = groupKeys.length > 0 && groupKeys.every((k) => selected.has(k));
+                return (
+                  <div key={group} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="text-[11px]">{group}</Badge>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={groupAllOn}
+                          onCheckedChange={(v) => toggleAllInGroup(mod, group, !!v)}
+                        />
+                        Select all
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 pl-1">
+                      {(items ?? []).map((it) => (
+                        <label
+                          key={it.key}
+                          className="flex items-start gap-2 text-sm cursor-pointer py-1"
+                          title={it.description ?? undefined}
+                        >
+                          <Checkbox
+                            checked={selected.has(it.key)}
+                            onCheckedChange={() => toggle(it.key)}
+                            className="mt-0.5"
+                          />
+                          <span>
+                            <span className="text-foreground">{it.label}</span>
+                            {it.description && (
+                              <span className="block text-xs text-muted-foreground">{it.description}</span>
+                            )}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
+
+      <div className="flex items-center justify-between pt-4 border-t">
+        <span className="text-xs text-muted-foreground">
+          {selected.size} permission{selected.size === 1 ? "" : "s"} selected
+        </span>
+        <Button onClick={handleSave} disabled={saveGrants.isPending}>
+          {saveGrants.isPending ? "Saving..." : "Save Permissions"}
+        </Button>
+      </div>
     </div>
   );
 }

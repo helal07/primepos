@@ -732,6 +732,7 @@ export type Database = {
       }
       exchange_purchases: {
         Row: {
+          assigned_to: string | null
           brand: string | null
           condition_notes: string | null
           created_at: string
@@ -761,6 +762,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           brand?: string | null
           condition_notes?: string | null
           created_at?: string
@@ -790,6 +792,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           brand?: string | null
           condition_notes?: string | null
           created_at?: string
@@ -1814,6 +1817,36 @@ export type Database = {
           },
         ]
       }
+      permission_catalog: {
+        Row: {
+          created_at: string
+          description: string | null
+          group_label: string
+          key: string
+          label: string
+          module: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          group_label: string
+          key: string
+          label: string
+          module: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          group_label?: string
+          key?: string
+          label?: string
+          module?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       product_group_prices: {
         Row: {
           created_at: string
@@ -2356,6 +2389,7 @@ export type Database = {
       }
       purchases: {
         Row: {
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           discount_amount: number
@@ -2376,6 +2410,7 @@ export type Database = {
           warehouse_id: string | null
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           discount_amount?: number
@@ -2396,6 +2431,7 @@ export type Database = {
           warehouse_id?: string | null
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           discount_amount?: number
@@ -2435,6 +2471,42 @@ export type Database = {
             columns: ["warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permission_grants: {
+        Row: {
+          granted_at: string
+          permission_key: string
+          role_id: string
+          tenant_id: string | null
+        }
+        Insert: {
+          granted_at?: string
+          permission_key: string
+          role_id: string
+          tenant_id?: string | null
+        }
+        Update: {
+          granted_at?: string
+          permission_key?: string
+          role_id?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permission_grants_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permission_grants_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2732,6 +2804,7 @@ export type Database = {
       sales: {
         Row: {
           additional_expenses: Json | null
+          assigned_to: string | null
           attach_document_url: string | null
           created_at: string
           created_by: string | null
@@ -2767,6 +2840,7 @@ export type Database = {
         }
         Insert: {
           additional_expenses?: Json | null
+          assigned_to?: string | null
           attach_document_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -2802,6 +2876,7 @@ export type Database = {
         }
         Update: {
           additional_expenses?: Json | null
+          assigned_to?: string | null
           attach_document_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -4406,6 +4481,7 @@ export type Database = {
       }
       warranty_claims: {
         Row: {
+          assigned_to: string | null
           claim_date: string
           created_at: string
           created_by: string | null
@@ -4422,6 +4498,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           claim_date?: string
           created_at?: string
           created_by?: string | null
@@ -4438,6 +4515,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           claim_date?: string
           created_at?: string
           created_by?: string | null
@@ -4564,6 +4642,7 @@ export type Database = {
         Args: { _module: string; _permission: string; _user_id: string }
         Returns: boolean
       }
+      has_perm: { Args: { _key: string; _user_id: string }; Returns: boolean }
       is_superadmin: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_manager_or_above: {
         Args: { _user_id: string }
@@ -4598,6 +4677,7 @@ export type Database = {
         Args: { _module: string; _user_id: string }
         Returns: boolean
       }
+      user_sell_scope: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
