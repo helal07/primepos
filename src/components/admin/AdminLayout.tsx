@@ -1,11 +1,12 @@
 import { AdminSidebar } from "./AdminSidebar";
-import { Bell, Menu, ShieldCheck } from "lucide-react";
+import { Menu, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -63,9 +64,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </Link>
           <h2 className="hidden text-sm font-medium text-muted-foreground lg:block">Control Panel</h2>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" size="icon" aria-label="Notifications">
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationBell />
             <div className="hidden text-right sm:block">
               <div className="text-xs font-medium leading-tight">{user?.email}</div>
               <div className="text-[11px] text-muted-foreground leading-tight">Owner</div>
