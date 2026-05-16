@@ -328,6 +328,27 @@ export function AppSidebar() {
   const { data: enabledModules } = useEnabledModules();
   const { data: permData } = useMyPermissions();
   const isAdmin = permData?.isAdmin ?? false;
+
+  // Audit: record the effective permissions used to render the sidebar.
+  // Dedupe per session+route so we don't spam inserts on every re-render.
+  useEffect(() => {
+    if (!user || !permData) return;
+    const route = location.pathname;
+    const key = `spa_audit:${user.id}:${route}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    const keys = Array.from(permData.keys ?? []);
+    const modulePerms = permData.perms ?? {};
+    supabase.from("sidebar_permission_audit" as any).insert({
+      user_id: user.id,
+      is_admin: !!permData.isAdmin,
+      permission_keys: keys,
+      module_permissions: modulePerms as any,
+      route,
+      user_agent: navigator.userAgent,
+    }).then(() => {}, () => {});
+  }, [user, permData, location.pathname]);
+
   const canSeeUrl = (url: string) => {
     if (isAdmin || isSuperadmin) return true;
     const mod = URL_PERM_MODULE[url];

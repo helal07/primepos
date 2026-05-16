@@ -3101,6 +3101,42 @@ export type Database = {
           },
         ]
       }
+      sidebar_permission_audit: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean
+          module_permissions: Json
+          permission_keys: string[]
+          route: string | null
+          tenant_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          module_permissions?: Json
+          permission_keys?: string[]
+          route?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          module_permissions?: Json
+          permission_keys?: string[]
+          route?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sitemap_entries: {
         Row: {
           changefreq: string
