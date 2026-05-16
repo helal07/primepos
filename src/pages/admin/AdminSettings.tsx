@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { Save } from "lucide-react";
 import { ThemePicker } from "@/components/settings/ThemePicker";
+import PaymentGateways from "./PaymentGateways";
 
 function GatewayCard({ settingsKey, title, fields }: {
   settingsKey: string; title: string;
@@ -57,17 +58,7 @@ export default function AdminSettings() {
         </TabsList>
 
         <TabsContent value="payment" className="mt-4 space-y-4">
-          <GatewayCard settingsKey="gateway_bkash" title="bKash" fields={[
-            { name: "app_key", label: "App Key" }, { name: "app_secret", label: "App Secret", type: "password" },
-            { name: "username", label: "Username" }, { name: "password", label: "Password", type: "password" },
-          ]} />
-          <GatewayCard settingsKey="gateway_sslcommerz" title="SSLCommerz" fields={[
-            { name: "store_id", label: "Store ID" }, { name: "store_passwd", label: "Store Password", type: "password" },
-            { name: "mode", label: "Mode (sandbox/live)" },
-          ]} />
-          <GatewayCard settingsKey="gateway_eps" title="EPS" fields={[
-            { name: "merchant_id", label: "Merchant ID" }, { name: "api_key", label: "API Key", type: "password" },
-          ]} />
+          <PaymentGateways />
         </TabsContent>
 
         <TabsContent value="sms" className="mt-4 space-y-4">
