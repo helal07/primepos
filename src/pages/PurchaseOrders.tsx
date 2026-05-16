@@ -13,6 +13,7 @@ import { usePurchaseOrders } from "@/hooks/usePurchases";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Can } from "@/components/Can";
 
 export default function PurchaseOrders() {
   const navigate = useNavigate();
@@ -83,9 +84,11 @@ export default function PurchaseOrders() {
         title="Purchase Orders"
         description="Manage purchase orders"
         actions={
-          <Button onClick={() => navigate("/purchase-orders/add")}>
-            <Plus className="h-4 w-4 mr-2" /> Add Purchase Order
-          </Button>
+          <Can module="purchases" action="create">
+            <Button onClick={() => navigate("/purchase-orders/add")}>
+              <Plus className="h-4 w-4 mr-2" /> Add Purchase Order
+            </Button>
+          </Can>
         }
       />
       <Card>
