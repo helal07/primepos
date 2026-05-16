@@ -111,6 +111,7 @@ const SmsProviders = lazy(() => import("./pages/admin/SmsProviders"));
 const SmsPlans = lazy(() => import("./pages/admin/SmsPlans"));
 const SmsPurchases = lazy(() => import("./pages/admin/SmsPurchases"));
 const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
+const NotificationTemplates = lazy(() => import("./pages/admin/NotificationTemplates"));
 const SuperPayments = lazy(() => import("./pages/admin/SuperPayments"));
 const PaymentGateways = lazy(() => import("./pages/admin/PaymentGateways"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -143,6 +144,7 @@ const SuperadminRoutes = () => (
             <Route path="sms/plans" element={<SmsPlans />} />
             <Route path="sms/purchases" element={<SmsPurchases />} />
             <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="notification-templates" element={<NotificationTemplates />} />
             <Route path="payments" element={<SuperPayments />} />
             <Route path="payment-gateways" element={<PaymentGateways />} />
             <Route path="transactions" element={<AdminTransactions />} />
