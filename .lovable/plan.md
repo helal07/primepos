@@ -1,129 +1,72 @@
-# Tenant Data Backup & Restore
+## Goal
 
-Give each tenant owner a self-service way to **download a full JSON backup of their own data**, see **automatic nightly snapshots** of their tenant, and **restore** their tenant from any backup file or snapshot — replacing all current data, with zero impact on other tenants.
+Permissions configured by the Tenant Manager on each role must dynamically control what every user can see and do — across every module, not just expenses. If a permission box is unchecked, the user must not be able to perform that action via the menu, a button, a direct URL, or a direct API call.
 
-## How it will work (plain English)
+## Current gaps
 
-- A new **"Backup & Restore"** page appears in Settings, visible **only to the tenant owner**.
-- The page shows:
-  - A big **"Download backup now"** button → produces a single `.json` file with everything in their tenant.
-  - A list of **automatic nightly snapshots** (last 2 kept), each with a Download and Restore button.
-  - An **"Upload backup file to restore"** area for restoring from a previously downloaded file.
-- **Restore is full-replace**: a clear confirmation dialog ("Type your tenant name to confirm") wipes all current tenant data and rebuilds it exactly from the backup. Only that tenant's data is touched — other tenants are untouched because every operation is filtered by `tenant_id`.
-- **Auth users are not in scope**: staff login accounts live in `auth.users` and are global; the backup includes their `profiles` rows (so role assignments restore), but it does not delete or recreate auth accounts.
-- **Uploaded files (images, docs) are  included**. 
+1. **Frontend routes** — only Sales, Purchases, Expenses, Customers, Suppliers are wrapped in `PermissionGate`. Products, Stock Adjustments / Transfers, POS, Accounting, HRM, Warranty, Exchange, Installments, Warehouses, Shipments, Returns, Quotations, Drafts, Invoices currently have only `ModuleGate` — anyone in the tenant can hit them.
+2. **Sidebar & action buttons** — menu links and "Add / Edit / Delete / Receive / Pay" buttons are always rendered regardless of permission, so users see and click actions they cannot perform.
+3. **POS** — no permission check at all (`sales.create` should be required).
+4. **Database RLS inconsistencies**:
+   - `purchases / purchase_items / purchase_orders / purchase_order_items / journal_entries / warehouse_stock` insert/update/delete policies check `has_module_permission(...)` only, with no Tenant Manager bypass → the tenant admin can be unexpectedly blocked.
+   - Stock tables mix permission keys (`products` vs custom).
+   - Several UPDATE/DELETE policies are missing the standard `(is_superadmin OR same tenant) AND (is_tenant_manager_or_above OR has_module_permission)` shape.
 
-## What gets backed up
+## Plan
 
-Every tenant-scoped table in the project, including (non-exhaustive):
+### 1. Database — harden RLS (one migration)
 
-products, product_variations, categories, brands, units, warehouses, warehouse_stock,
-customers, customer_groups, suppliers, contacts,
-sales, sale_items, purchases, purchase_items, purchase_orders, sales_orders,
-stock_adjustments, stock_transfers, shipments,
-expenses, expense_categories, transactions, accounts, journal_entries,
-installments (all related tables), exchange (all related tables),
-warranties, warranty_claims,
-employees, attendance, leaves, payroll,
-store_orders, store_order_items, store_settings, cms_pages,
-profiles (tenant staff), user_roles (tenant scoped), price_groups,
-business_settings (tenant rows only).
+Rewrite every PERMISSIVE INSERT/UPDATE/DELETE policy on the tables below to the same uniform shape:
 
-The exact list will be derived from the live schema at build time so nothing is missed.
-
-## Technical Details
-
-### File format
-
-A single JSON document:
-
-```text
-{
-  "schema_version": 1,
-  "exported_at": "2026-05-15T12:00:00Z",
-  "tenant_id": "<uuid>",
-  "tenant_snapshot": { "name": "...", "slug": "...", ... },
-  "tables": {
-    "products":        [ {...}, {...} ],
-    "product_variations": [ ... ],
-    "sales":           [ ... ],
-    "sale_items":      [ ... ],
-    ...
-  }
-}
+```
+(is_superadmin(uid) OR tenant_id = get_user_tenant_id(uid))
+AND (is_tenant_manager_or_above(uid) OR has_module_permission(uid, '<module>', '<action>'))
 ```
 
-Rows are stored as-is (UUIDs and FKs preserved) so restore is byte-faithful.
+Keep the existing `tenant_isolation_*` and `module_entitlement_required` RESTRICTIVE policies untouched. Tables and module keys:
 
-### New edge functions (3)
+| Table | Module |
+|---|---|
+| purchases, purchase_items, purchase_orders, purchase_order_items, purchase_payments | purchases |
+| sales, sale_items, sale_payments, shipments | sales |
+| products, product_variations, brands, categories, units, variations | products |
+| stock_adjustments, stock_transfers, warehouse_stock, warehouses | products |
+| customers, customer_groups, suppliers | contacts |
+| expenses, expense_categories | expenses |
+| chart_of_accounts, journal_entries, transactions | accounting |
+| exchange_purchases | exchange |
+| installment_customers, installment_sales, installment_payments | installments |
+| warranty_claims, warranties | warranty |
+| employees, attendance, leave_requests, payroll | hrm |
+| cms_pages, store_settings, store_orders | cms |
 
-All deploy with `verify_jwt = false` and validate the caller's JWT in code via `getClaims()`, then resolve `tenant_id` via `get_user_tenant_id`, then verify the caller is the **tenant owner** (`tenants.owner_user_id = auth.uid()`).
+### 2. Frontend — wrap every mutating route
 
-1. `**tenant-backup-export**` (POST)
-  - Uses service role key.
-  - Iterates the curated table list, runs `SELECT * WHERE tenant_id = <caller tenant>` for each.
-  - Streams an NDJSON-internally / JSON-output payload back as a download (`Content-Disposition: attachment`).
-  - Logs the export to a new `tenant_backups` row (kind = 'manual_export').
-2. `**tenant-backup-restore**` (POST, multipart with the JSON file or `{ snapshot_id }`)
-  - Validates `schema_version` and that the file's `tenant_id` matches the caller's tenant; if it doesn't, **forcibly overwrite** every row's `tenant_id` to the caller's tenant before insert (defense-in-depth — a tampered file can never write into another tenant).
-  - Calls a new SQL function `restore_tenant_from_backup(p_payload jsonb)` that runs in a single transaction:
-  1. `SET LOCAL session_replication_role = 'replica'` to disable triggers (so `warehouse_stock`, expense→transactions sync, etc. are not double-applied — the backup already contains those rows).
-  2. Delete all rows in dependency order `WHERE tenant_id = <caller>` for every tenant table.
-  3. Insert rows from the payload table-by-table in parent→child order. Force `tenant_id` to caller on insert.
-  4. Reset `session_replication_role`.
-    gs to `tenant_backups` (kind = 'restore').
-3. `**tenant-backup-snapshot**` (scheduled, no caller)
-  - Cron-triggered nightly via `pg_cron` (or a Lovable scheduled function).
-  - For every active tenant, generates the same JSON and uploads to a new private storage bucket `tenant-backups` at path `{tenant_id}/{YYYY-MM-DD}.json`.
-  - Keeps the most recent 7 per tenant; older are deleted.
-  - Records each snapshot in `tenant_backups`.
+In `src/App.tsx`, add `<PermissionGate module="…" action="view|create|edit">` inside every existing `<ModuleGate>` for: products & add/edit, categories, brands, units, variations, price-groups, stock-adjustments, stock-transfers, warehouses, warehouse-stock, POS (`sales.create`), sales orders/drafts/quotations/returns/invoices/shipments, purchase-returns, accounts/transactions/journal/trial-balance/cash-flow, employees/attendance/leave/payroll, warranty-claims, exchange/*, installment/*, CMS pages.
 
-### New table
+### 3. Sidebar — hide unauthorized links
 
-```text
-tenant_backups
-  id uuid pk
-  tenant_id uuid (RLS-scoped)
-  kind text  -- 'manual_export' | 'snapshot' | 'restore'
-  storage_path text nullable  -- for snapshots
-  size_bytes int nullable
-  row_counts jsonb nullable
-  created_by uuid nullable
-  created_at timestamptz default now()
-```
+In `src/components/layout/AppSidebar.tsx` (and `AppHeader`, `MobileBottomNav`), filter each menu item / group by `useMyPermissions()`. If the user has no `view` on the link's module, the link is not rendered; empty groups collapse. Tenant Manager / Superadmin bypass (already exposed as `isAdmin` by the hook).
 
-RLS: tenant owner can `SELECT` rows where `tenant_id = get_user_tenant_id(auth.uid())`; superadmin sees all.
+### 4. Action buttons inside pages
 
-### New storage bucket
+Add a small `<Can module action>{children}</Can>` wrapper around `useCan`, then use it to hide:
 
-`tenant-backups` (private). RLS: only edge functions (service role) write/read; tenant owners get **signed URLs** from the edge function to download their snapshot files.
+- "Add" buttons on every list page (Products, Purchases, PurchaseOrders, Sales, Customers, Suppliers, Expenses, StockAdjustments, StockTransfers, JournalEntries, Employees, Exchange, Installments…).
+- Row actions: Edit, Delete, Receive (PO), Mark Paid, Convert, Confirm, Pay.
+- POS checkout button (`sales.create`).
 
-### UI changes
+Files to edit: `Purchases.tsx`, `PurchaseOrders.tsx`, `PurchaseAdd.tsx`, `Sales.tsx`, `SaleAdd.tsx`, `POS.tsx`, `Products.tsx`, `ProductAdd.tsx`, `StockAdjustments.tsx`, `StockTransfers.tsx`, `Customers.tsx`, `Suppliers.tsx`, `Expenses.tsx`, `JournalEntries.tsx`, `Employees.tsx`, `Exchange*.tsx`, `Installment*.tsx`, `WarrantyClaims.tsx`, `Warehouses.tsx`, `WarehouseStock.tsx`, `Shipments.tsx`.
 
-- New page `src/pages/settings/TenantBackup.tsx` with three sections:
-  1. Manual download (button + last-export timestamp)
-  2. Snapshots list (7 rows, with Download / Restore actions)
-  3. Restore from file (drag-drop, then confirmation modal: "Type `{tenant.name}` to confirm full replace")
-- Sidebar entry under Settings, gated to owner only via `tenants.owner_user_id === auth.uid()` check (not just role).
+### 5. QA matrix
 
-### Safety guarantees
+After implementation, log in as three users:
+1. Tenant Manager → full access in enabled modules.
+2. Role with only `sales.view + sales.create` → sees only POS/Sales in menu, can create a sale, cannot edit/delete; Purchases menu hidden; direct URL `/purchases/add` shows Access Denied; DB rejects insert if forced.
+3. Role with `purchases.view` only → sees Purchases list but no Add button, row Edit/Delete hidden, `/purchases/add` denied, Receive on PO denied.
 
-- Every SELECT, DELETE, INSERT in the restore SQL function is `WHERE tenant_id = <caller_tenant>` — **no cross-tenant write is possible**, even with a malicious uploaded file.
-- Restore runs in **one transaction** — partial failure leaves tenant data untouched.
-- A pre-restore snapshot of the current state is auto-saved to the `tenant-backups` bucket so the user can roll back if a restore was a mistake.
-- Sequences (invoice numbers, etc.) are global and intentionally not reset — new invoices keep counting forward; restored historical invoice numbers stay as-is in their rows.
+## Notes for non-technical readers
 
-### Out of scope (this plan)
-
-- Restoring uploaded files from storage buckets (product images, invoice PDFs, exchange docs). 
-- Restoring `auth.users` accounts. Staff with deleted login accounts will need to be re-invited; their `profiles` and role rows still come back.
-- Per-table partial restore. v1 is whole-tenant only.
-
-## Deliverables
-
-1. Migration: `tenant_backups` table + RLS + `restore_tenant_from_backup()` SQL function + storage bucket + bucket policies.
-2. Three edge functions: `tenant-backup-export`, `tenant-backup-restore`, `tenant-backup-snapshot` (+ `pg_cron` schedule).
-3. Settings UI page + sidebar entry, owner-gated.
-4. Documentation note in the page explaining what is and isn't included.
-
-After you approve, I'll implement in this order: migration → edge functions → UI → schedule the nightly snapshot job.
+- Whatever permissions you tick on a role will now drive both what that user **sees** (menu items, buttons) and what they can **do** (the backend will refuse blocked actions).
+- The Tenant Manager always behaves as full admin and is unaffected.
+- No changes to who owns the tenant or how you create roles — only enforcement is tightened across every screen.

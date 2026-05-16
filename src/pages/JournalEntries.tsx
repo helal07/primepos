@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plus, Trash2 } from "lucide-react";
 import { useJournalEntries, useJournalMutations, useAccounts } from "@/hooks/useAccounting";
+import { Can } from "@/components/Can";
 
 interface JournalLine {
   account_id: string;
@@ -54,7 +55,9 @@ export default function JournalEntries() {
   return (
     <div className="space-y-4">
       <PageHeader title="Journal Entries" description="Record double-entry journal entries" actions={
-        <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> New Entry</Button>
+        <Can module="accounting" action="create">
+          <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" /> New Entry</Button>
+        </Can>
       } />
       <Card>
         <CardContent className="pt-6">

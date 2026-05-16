@@ -83,6 +83,56 @@ import {
 } from "@/components/ui/collapsible";
 import { useEnabledModules } from "@/hooks/useEnabledModules";
 import type { ModuleKey } from "@/lib/modules";
+import { useMyPermissions } from "@/hooks/usePermission";
+
+// Map sidebar URL → permission module key (must match MODULE_LIST in useRoles).
+// URLs not present here are not gated by per-role permissions (only by tenant
+// module entitlement). Tenant Manager and Superadmin always bypass.
+const URL_PERM_MODULE: Record<string, string> = {
+  "/dashboard": "dashboard",
+  "/products": "products",
+  "/products/add": "products",
+  "/products/price-groups": "products",
+  "/products/import": "products",
+  "/products/export": "products",
+  "/products/labels": "products",
+  "/categories": "categories",
+  "/brands": "brands",
+  "/units": "units",
+  "/variations": "products",
+  "/stock-adjustments": "products",
+  "/stock-transfers": "products",
+  "/sales": "sales",
+  "/sales/orders": "sales",
+  "/sales/drafts": "sales",
+  "/sales/returns": "sales",
+  "/invoices": "sales",
+  "/quotations": "sales",
+  "/shipments": "sales",
+  "/pos": "pos",
+  "/purchases": "purchases",
+  "/purchases/add": "purchases",
+  "/purchase-orders": "purchases",
+  "/purchases/returns": "purchases",
+  "/customers": "customers",
+  "/contacts/customer-groups": "customers",
+  "/suppliers": "suppliers",
+  "/accounts": "accounting",
+  "/transactions": "accounting",
+  "/journal": "accounting",
+  "/trial-balance": "accounting",
+  "/cash-flow": "accounting",
+  "/account-list": "accounting",
+  "/employees": "hrm",
+  "/attendance": "hrm",
+  "/leave": "hrm",
+  "/payroll": "hrm",
+  "/warranties": "warranty",
+  "/warranty-claims": "warranty",
+  "/users": "users",
+  "/roles": "roles",
+  "/settings": "settings",
+};
 
 
 const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
@@ -276,8 +326,18 @@ export function AppSidebar() {
   }, [user]);
 
   const { data: enabledModules } = useEnabledModules();
+  const { data: permData } = useMyPermissions();
+  const isAdmin = permData?.isAdmin ?? false;
+  const canSeeUrl = (url: string) => {
+    if (isAdmin || isSuperadmin) return true;
+    const mod = URL_PERM_MODULE[url];
+    if (!mod) return true;
+    return !!permData?.perms?.[mod]?.can_view;
+  };
   // Show every group; locked groups route to the upgrade page.
-  const allGroups = menuGroups;
+  const allGroups = menuGroups
+    .map((g) => ({ ...g, items: g.items.filter((it: any) => canSeeUrl(it.url)) }))
+    .filter((g) => g.items.length > 0);
   const isLocked = (g: typeof menuGroups[number]) =>
     !!g.module && !!enabledModules && !enabledModules.includes(g.module);
 

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search, AlertTriangle } from "lucide-react";
+import { Can } from "@/components/Can";
 
 export default function Products() {
   const navigate = useNavigate();
@@ -38,7 +39,9 @@ export default function Products() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by name or SKU..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <Button onClick={() => navigate("/products/add")}><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
+        <Can module="products" action="create">
+          <Button onClick={() => navigate("/products/add")}><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
+        </Can>
       </div>
 
       <div className="border rounded-lg overflow-x-auto">

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Can } from "@/components/Can";
 
 const NONE = "__none__";
 const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", credit_limit: "", customer_group_id: NONE, notes: "", is_active: true };
@@ -111,9 +112,11 @@ export default function Customers() {
   return (
     <div className="space-y-6">
       <PageHeader title="Customers" description="Manage your Customers" actions={
-        <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Customer
-        </Button>
+        <Can module="customers" action="create">
+          <Button onClick={() => { resetForm(); setOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Add Customer
+          </Button>
+        </Can>
       } />
 
       <Card>
