@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Row {
@@ -39,7 +39,7 @@ export default function SuperPayments() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"pending" | "all">("pending");
+  const [filter, setFilter] = useState<"all" | "pending" | "active" | "rejected">("all");
 
   const load = async () => {
     setLoading(true);
@@ -74,7 +74,16 @@ export default function SuperPayments() {
     } finally { setBusy(null); }
   };
 
-  const visible = rows.filter(r => filter === "all" || r.status === "pending");
+  const visible = rows.filter(r => filter === "all" || r.status === filter);
+
+  const stats = {
+    total: rows.length,
+    pending: rows.filter(r => r.status === "pending").length,
+    active: rows.filter(r => r.status === "active").length,
+    rejected: rows.filter(r => r.status === "rejected").length,
+    revenue: rows.filter(r => r.status === "active").reduce((s, r) => s + Number(r.amount || 0), 0),
+    currency: rows.find(r => r.status === "active")?.currency ?? "BDT",
+  };
 
   return (
     <div className="space-y-4">
@@ -84,9 +93,30 @@ export default function SuperPayments() {
           <p className="text-xs sm:text-sm text-muted-foreground">Approve to extend the tenant's subscription.</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant={filter === "pending" ? "default" : "outline"} onClick={() => setFilter("pending")}>Pending</Button>
           <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>All</Button>
+          <Button size="sm" variant={filter === "pending" ? "default" : "outline"} onClick={() => setFilter("pending")}>Pending</Button>
+          <Button size="sm" variant={filter === "active" ? "default" : "outline"} onClick={() => setFilter("active")}>Active</Button>
+          <Button size="sm" variant={filter === "rejected" ? "default" : "outline"} onClick={() => setFilter("rejected")}>Rejected</Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><Wallet className="h-5 w-5" /></div>
+          <div><div className="text-xs text-muted-foreground">Total revenue</div><div className="text-lg font-semibold">{stats.currency} {stats.revenue.toLocaleString()}</div></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-green-500/10 text-green-600 flex items-center justify-center"><CheckCircle2 className="h-5 w-5" /></div>
+          <div><div className="text-xs text-muted-foreground">Active</div><div className="text-lg font-semibold">{stats.active}</div></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center"><Clock className="h-5 w-5" /></div>
+          <div><div className="text-xs text-muted-foreground">Pending</div><div className="text-lg font-semibold">{stats.pending}</div></div>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center"><XCircle className="h-5 w-5" /></div>
+          <div><div className="text-xs text-muted-foreground">Rejected</div><div className="text-lg font-semibold">{stats.rejected}</div></div>
+        </CardContent></Card>
       </div>
 
       {loading ? (
@@ -105,6 +135,7 @@ export default function SuperPayments() {
                     <TableHead>Method</TableHead>
                     <TableHead>Reference</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -129,6 +160,7 @@ export default function SuperPayments() {
                       <TableCell>
                         <Badge variant="outline" className={statusVariants[r.status] ?? ""}>{r.status}</Badge>
                       </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         {r.status === "pending" ? (
                           <div className="flex justify-end gap-2">
@@ -142,7 +174,7 @@ export default function SuperPayments() {
                     </TableRow>
                   ))}
                   {visible.length === 0 && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground">No payment submissions.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground">No payment submissions.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
