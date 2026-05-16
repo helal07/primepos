@@ -9,6 +9,7 @@ import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { Save } from "lucide-react";
 import { ThemePicker } from "@/components/settings/ThemePicker";
 import PaymentGateways from "./PaymentGateways";
+import Sitemap from "./Sitemap";
 
 function GatewayCard({ settingsKey, title, fields }: {
   settingsKey: string; title: string;
@@ -55,6 +56,7 @@ export default function AdminSettings() {
           <TabsTrigger value="sms">SMS Gateways</TabsTrigger>
           <TabsTrigger value="email">Email Gateway</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="sitemap">Sitemap</TabsTrigger>
         </TabsList>
 
         <TabsContent value="payment" className="mt-4 space-y-4">
@@ -89,6 +91,10 @@ export default function AdminSettings() {
           <div className="rounded-xl border border-border bg-card p-5">
             <ThemePicker />
           </div>
+        </TabsContent>
+
+        <TabsContent value="sitemap" className="mt-4">
+          <Sitemap />
         </TabsContent>
       </Tabs>
     </div>
