@@ -122,17 +122,31 @@ Deno.serve(async (req) => {
         .eq("owner_user_id", newUserId)
         .neq("id", tenant_id);
 
-      // Optional role assignment (defaults to Staff via handle_new_user trigger)
+      // Always clear roles auto-assigned by handle_new_user (Tenant Manager is
+      // assigned to every signup). Staff invites must start with no role unless
+      // the inviter explicitly picked one — Ultimate POS flow.
+      await adminClient.from("user_roles").delete().eq("user_id", newUserId);
+
       if (role_name) {
-        const { data: role } = await adminClient
+        // Match the role inside the target tenant; fall back to a system role with that name.
+        const { data: tenantRole } = await adminClient
           .from("roles")
           .select("id")
           .eq("name", role_name)
+          .eq("tenant_id", tenant_id)
           .maybeSingle();
-        if (role?.id) {
-          // Replace existing roles with the requested one for this user
-          await adminClient.from("user_roles").delete().eq("user_id", newUserId);
-          await adminClient.from("user_roles").insert({ user_id: newUserId, role_id: role.id });
+        let roleId = tenantRole?.id;
+        if (!roleId) {
+          const { data: sysRole } = await adminClient
+            .from("roles")
+            .select("id")
+            .eq("name", role_name)
+            .is("tenant_id", null)
+            .maybeSingle();
+          roleId = sysRole?.id;
+        }
+        if (roleId) {
+          await adminClient.from("user_roles").insert({ user_id: newUserId, role_id: roleId, tenant_id });
         }
       }
     }
