@@ -101,9 +101,11 @@ export default function Sales({
         title={title}
         description={description}
         actions={
-          <Button onClick={() => navigate(addPath)}>
-            <Plus className="h-4 w-4 mr-1" /> {addLabel}
-          </Button>
+          <Can module="sales" action="create">
+            <Button onClick={() => navigate(addPath)}>
+              <Plus className="h-4 w-4 mr-1" /> {addLabel}
+            </Button>
+          </Can>
         }
       />
       <Card>
