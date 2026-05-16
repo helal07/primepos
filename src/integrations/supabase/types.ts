@@ -3872,6 +3872,53 @@ export type Database = {
           },
         ]
       }
+      tenant_notifications: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          message: string
+          read_at: string | null
+          sent_by: string | null
+          status: string
+          subject: string | null
+          tenant_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          tenant_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          sent_by?: string | null
+          status?: string
+          subject?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_payments: {
         Row: {
           amount: number
