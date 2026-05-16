@@ -143,6 +143,97 @@ export function useSavePermissions() {
   });
 }
 
+// ============================================================
+// Granular Ultimate POS-style permission catalog & grants
+// ============================================================
+
+export interface CatalogEntry {
+  key: string;
+  module: string;
+  group_label: string;
+  label: string;
+  description: string | null;
+  sort_order: number;
+}
+
+export const MODULE_LABELS: Record<string, string> = {
+  sell: "Sell",
+  purchase: "Purchase",
+  product: "Product",
+  stock: "Stock",
+  customer: "Customer",
+  supplier: "Supplier",
+  expense: "Expense",
+  account: "Accounting",
+  hrm: "HRM",
+  warranty: "Warranty",
+  exchange: "Exchange",
+  installment: "Installment",
+  cms: "Website (CMS)",
+  report: "Reports",
+  settings: "Settings",
+};
+
+export function usePermissionCatalog() {
+  return useQuery({
+    queryKey: ["permission_catalog"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("permission_catalog" as any)
+        .select("*")
+        .order("module")
+        .order("sort_order");
+      if (error) throw error;
+      return data as unknown as CatalogEntry[];
+    },
+  });
+}
+
+export function useRoleGrants(roleId: string | null) {
+  return useQuery({
+    queryKey: ["role_permission_grants", roleId],
+    enabled: !!roleId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("role_permission_grants" as any)
+        .select("permission_key")
+        .eq("role_id", roleId!);
+      if (error) throw error;
+      return new Set<string>(((data ?? []) as any[]).map((r) => r.permission_key));
+    },
+  });
+}
+
+export function useSaveRoleGrants() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ roleId, keys }: { roleId: string; keys: string[] }) => {
+      const { error: delErr } = await supabase
+        .from("role_permission_grants" as any)
+        .delete()
+        .eq("role_id", roleId);
+      if (delErr) throw delErr;
+      if (keys.length > 0) {
+        const rows = keys.map((k) => ({ role_id: roleId, permission_key: k }));
+        const { error: insErr } = await supabase
+          .from("role_permission_grants" as any)
+          .insert(rows);
+        if (insErr) throw insErr;
+      }
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["role_permission_grants", vars.roleId] });
+      qc.invalidateQueries({ queryKey: ["my_permissions"] });
+      toast({ title: "Permissions saved" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" });
+    },
+  });
+}
+
 export function useUpdateUserRole() {
   const qc = useQueryClient();
   const { toast } = useToast();
