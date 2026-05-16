@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, Settings, User, MonitorSmartphone } from "lucide-react";
+import { LogOut, Search, Settings, User, MonitorSmartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationBell } from "./NotificationBell";
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
@@ -44,12 +45,7 @@ export function AppHeader() {
           <MonitorSmartphone className="h-4 w-4" />
           <span className="hidden sm:inline">POS</span>
         </Button>
-        <Button variant="ghost" size="icon" className="relative h-10 w-10 md:h-9 md:w-9 rounded-full">
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
-            3
-          </span>
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
