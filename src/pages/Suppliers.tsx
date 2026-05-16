@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Search, ChevronDown, Eye, Power, BookOpen, ShoppingBag, FileText, CreditCard, Filter, Printer, FileSpreadsheet } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Can } from "@/components/Can";
 
 const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", notes: "", is_active: true };
 
@@ -92,9 +93,11 @@ export default function Suppliers() {
   return (
     <div className="space-y-6">
       <PageHeader title="Suppliers" description="Manage your Suppliers" actions={
-        <Button onClick={() => { resetForm(); setOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Add Supplier
-        </Button>
+        <Can module="suppliers" action="create">
+          <Button onClick={() => { resetForm(); setOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Add Supplier
+          </Button>
+        </Can>
       } />
 
       <Card>
