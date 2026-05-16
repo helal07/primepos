@@ -43,7 +43,11 @@ export function useRoles() {
     queryFn: async () => {
       const { data, error } = await supabase.from("roles").select("*").order("is_system", { ascending: false }).order("name");
       if (error) throw error;
-      return data as Role[];
+      // Hide global system roles other than the locked "Tenant Manager" admin role.
+      // Tenant Managers create their own roles per Ultimate POS flow.
+      return (data as Role[]).filter(
+        (r) => !r.is_system || r.name === "Tenant Manager"
+      );
     },
   });
 }
@@ -64,26 +68,27 @@ export function useUsersWithRoles() {
   return useQuery({
     queryKey: ["users_with_roles"],
     queryFn: async () => {
-      // Fetch user_roles with role name
-      const { data: userRoles, error: urError } = await supabase
-        .from("user_roles")
-        .select("user_id, role_id, roles(name)");
-      if (urError) throw urError;
-
-      // Fetch all profiles
+      // Profiles are tenant-scoped via RLS, so this returns only tenant users.
       const { data: profiles, error: pError } = await supabase
         .from("profiles")
         .select("user_id, display_name, avatar_url");
       if (pError) throw pError;
 
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) ?? []);
+      const { data: userRoles, error: urError } = await supabase
+        .from("user_roles")
+        .select("user_id, role_id, roles(name)");
+      if (urError) throw urError;
 
-      return (userRoles as any[]).map((d) => ({
-        user_id: d.user_id,
-        role_id: d.role_id,
-        role_name: (d.roles as any)?.name ?? "Unknown",
-        display_name: profileMap.get(d.user_id)?.display_name ?? null,
-        avatar_url: profileMap.get(d.user_id)?.avatar_url ?? null,
+      const roleMap = new Map(
+        (userRoles as any[]).map((ur) => [ur.user_id, { role_id: ur.role_id, role_name: (ur.roles as any)?.name }])
+      );
+
+      return (profiles ?? []).map((p) => ({
+        user_id: p.user_id,
+        role_id: roleMap.get(p.user_id)?.role_id ?? "",
+        role_name: roleMap.get(p.user_id)?.role_name ?? "No role",
+        display_name: p.display_name ?? null,
+        avatar_url: p.avatar_url ?? null,
       }));
     },
   });

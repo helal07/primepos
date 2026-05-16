@@ -30,9 +30,9 @@ export default function UsersPage() {
   const qc = useQueryClient();
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ display_name: "", email: "", password: "", role_name: "Staff" });
+  const [form, setForm] = useState({ display_name: "", email: "", password: "", role_name: "" });
 
-  const resetForm = () => setForm({ display_name: "", email: "", password: "", role_name: "Staff" });
+  const resetForm = () => setForm({ display_name: "", email: "", password: "", role_name: "" });
 
   const handleAdd = async () => {
     if (!form.email || !form.password) {
@@ -50,7 +50,7 @@ export default function UsersPage() {
           email: form.email,
           password: form.password,
           display_name: form.display_name || form.email,
-          role_name: form.role_name,
+          role_name: form.role_name || null,
         },
       });
       if (error) throw error;
@@ -107,14 +107,20 @@ export default function UsersPage() {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={form.role_name} onValueChange={(v) => setForm({ ...form, role_name: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={form.role_name || "__none"} onValueChange={(v) => setForm({ ...form, role_name: v === "__none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="No role (assign later)" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none">No role (assign later)</SelectItem>
                   {roles?.filter(r => r.name !== "Superadmin").map((r) => (
                     <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {(!roles || roles.filter(r => !r.is_system).length === 0) && (
+                <p className="text-xs text-muted-foreground">
+                  Tip: Create custom roles under Roles & Permissions before assigning them.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
