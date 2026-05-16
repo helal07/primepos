@@ -138,7 +138,7 @@ const SuperadminRoutes = () => (
             <Route path="packages" element={<PackageManagement />} />
             <Route path="cms" element={<LandingCms />} />
             <Route path="cms/pages" element={<CmsPages />} />
-            <Route path="sitemap" element={<Sitemap />} />
+            <Route path="sitemap" element={<Navigate to="/superadmin/settings" replace />} />
             <Route path="sms/providers" element={<SmsProviders />} />
             <Route path="sms/plans" element={<SmsPlans />} />
             <Route path="sms/purchases" element={<SmsPurchases />} />
