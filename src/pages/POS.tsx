@@ -1130,3 +1130,91 @@ export default function POS() {
     </div>
   );
 }
+
+function CustomerPicker({
+  customers,
+  value,
+  onChange,
+  onAddNew,
+}: {
+  customers: any[];
+  value: string;
+  onChange: (id: string) => void;
+  onAddNew: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = value ? customers.find((c) => c.id === value) : null;
+  return (
+    <div className="flex items-center gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="flex-1 md:flex-none md:w-[240px] h-10 md:h-9 justify-between text-sm font-normal"
+          >
+            <span className="truncate">
+              {selected ? selected.name : "Walk-in Customer"}
+            </span>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[280px] p-0" align="start">
+          <Command
+            filter={(itemValue, search) => {
+              if (itemValue === "walk-in") return 1;
+              const s = search.toLowerCase();
+              return itemValue.toLowerCase().includes(s) ? 1 : 0;
+            }}
+          >
+            <CommandInput placeholder="Search by name, phone, email..." />
+            <CommandList>
+              <CommandEmpty>No customer found.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value="walk-in"
+                  onSelect={() => { onChange(""); setOpen(false); }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", !value ? "opacity-100" : "opacity-0")} />
+                  Walk-in Customer
+                </CommandItem>
+                {customers.map((c) => {
+                  const bal = Number(c.balance) || 0;
+                  const searchKey = [c.name, c.phone, c.email].filter(Boolean).join(" ");
+                  return (
+                    <CommandItem
+                      key={c.id}
+                      value={searchKey}
+                      onSelect={() => { onChange(c.id); setOpen(false); }}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", value === c.id ? "opacity-100" : "opacity-0")} />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate">{c.name}</div>
+                        {c.phone && <div className="text-[11px] text-muted-foreground truncate">{c.phone}</div>}
+                      </div>
+                      {bal > 0 ? (
+                        <Badge variant="destructive" className="ml-2 text-[10px]">৳{bal.toFixed(0)}</Badge>
+                      ) : bal < 0 ? (
+                        <Badge className="ml-2 text-[10px] bg-emerald-600">+৳{Math.abs(bal).toFixed(0)}</Badge>
+                      ) : null}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-10 w-10 md:h-9 md:w-9 shrink-0"
+        onClick={onAddNew}
+        title="Add new customer"
+      >
+        <UserPlus className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
