@@ -24,6 +24,8 @@ function BusinessTab() {
     company_name: "", phone: "", email: "", currency: "BDT", address: "",
     website: "", tax_number: "", logo_url: "",
   });
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (settings?.business) setForm((f) => ({ ...f, ...settings.business }));
@@ -31,12 +33,62 @@ function BusinessTab() {
 
   const handleSave = () => saveSetting.mutate({ key: "business", value: form });
 
+  const handleLogoUpload = async (raw: File) => {
+    setUploadingLogo(true);
+    try {
+      const file = await compressImage(raw, { maxWidth: 600, maxHeight: 600, quality: 0.9 });
+      const ext = file.name.split(".").pop() || "png";
+      const path = `business-logo/logo-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data } = supabase.storage.from("branding").getPublicUrl(path);
+      setForm((f) => ({ ...f, logo_url: data.publicUrl }));
+      toast.success("Logo uploaded — click Save Changes to apply");
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   if (isLoading) return <Skeleton className="h-64 w-full" />;
 
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Business Profile</CardTitle></CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>Business Logo (appears on invoices)</Label>
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-md border bg-muted/40 flex items-center justify-center overflow-hidden">
+              {form.logo_url ? (
+                <img src={form.logo_url} alt="Logo" className="h-full w-full object-contain" />
+              ) : (
+                <span className="text-xs text-muted-foreground">No logo</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <input
+                ref={logoFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ""; }}
+              />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={uploadingLogo} onClick={() => logoFileRef.current?.click()}>
+                  {uploadingLogo ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />}
+                  {form.logo_url ? "Replace Logo" : "Upload Logo"}
+                </Button>
+                {form.logo_url && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm((f) => ({ ...f, logo_url: "" }))}>Remove</Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">PNG or JPG, square works best. Auto-compressed to ~600px.</p>
+            </div>
+          </div>
+        </div>
+        <Separator />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2"><Label>Company Name</Label><Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} placeholder="Prime POS" /></div>
           <div className="space-y-2"><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+880 1700 000000" /></div>
