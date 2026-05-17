@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import { computeSaleTotals } from "@/lib/saleTotals";
 
 interface SaleInvoiceProps {
   sale: any;
   items: any[];
   settings: Record<string, any>;
   onPrint: () => void;
+  payments?: any[];
 }
 
 const numberToWords = (num: number): string => {
@@ -60,7 +62,7 @@ function mergeItems(items: any[]) {
   return Array.from(map.values());
 }
 
-export function SaleInvoice({ sale, items, settings, onPrint }: SaleInvoiceProps) {
+export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: SaleInvoiceProps) {
   const businessName = settings?.business_name || "Business Name";
   const businessAddress = settings?.business_address || "";
   const businessPhone = settings?.business_phone || "";
@@ -69,17 +71,7 @@ export function SaleInvoice({ sale, items, settings, onPrint }: SaleInvoiceProps
   const terms = settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
-  const total = Number(sale.total_amount) || 0;
-  // Sales schema doesn't have a paid_amount column — derive it.
-  const paid =
-    sale.paid_amount != null
-      ? Number(sale.paid_amount)
-      : sale.payment_status === "paid"
-      ? total
-      : sale.payment_status === "partial"
-      ? Math.max(0, total - (Number(sale.due_amount) || 0))
-      : 0;
-  const balance = Math.max(0, total - paid);
+  const { total, paid, balance } = computeSaleTotals(sale, payments);
 
   const merged = mergeItems(items);
   const totalQty = merged.reduce((s, r) => s + Number(r.quantity || 0), 0);
@@ -223,9 +215,19 @@ export function SaleInvoice({ sale, items, settings, onPrint }: SaleInvoiceProps
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
                 <span>Received</span><span>৳ {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold" }}>
-                <span>Balance</span><span>৳ {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
+              {balance > 0 ? (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold", color: "#dc2626" }}>
+                  <span>Balance Due</span><span>৳ {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              ) : balance < 0 ? (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold", color: "#059669" }}>
+                  <span>Advance</span><span>৳ {Math.abs(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold", color: "#059669" }}>
+                  <span>Paid in full</span><span>৳ 0.00</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

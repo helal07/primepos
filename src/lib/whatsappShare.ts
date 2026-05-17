@@ -2,6 +2,8 @@
 // This requires NO API credentials — it opens the user's WhatsApp app/web
 // with the phone number and message body prefilled.
 
+import { computeSaleTotals } from "@/lib/saleTotals";
+
 export function buildWhatsappUrl(phone: string, text: string): string {
   const digits = (phone || "").replace(/\D/g, "");
   // Use api.whatsapp.com/send — universal: opens the app on mobile, web on desktop.
@@ -21,9 +23,8 @@ export function buildSaleWhatsappMessage({ sale, payments, settings }: SaleShare
   const branch = settings?.branch || settings?.address || "";
   const customerName = sale?.customers?.name || "Customer";
 
-  const total = Number(sale?.total_amount || 0);
-  const paid = (payments || []).reduce((s, p: any) => s + Number(p.amount || 0), 0);
-  const due = Math.max(0, total - paid);
+  const { total, paid, balance } = computeSaleTotals(sale, payments);
+  const due = Math.max(0, balance);
 
   const fmt = (n: number) => new Intl.NumberFormat("en-IN").format(n);
 
