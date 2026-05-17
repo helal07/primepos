@@ -645,23 +645,6 @@ export default function POS() {
               );
             })()}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("h-8 gap-1 text-xs whitespace-nowrap", "bg-primary/10 text-primary border-primary/20")}>
-                    <CalendarIcon className="h-3 w-3" />
-                    {dateStr} {timeStr}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={saleDate}
-                    onSelect={(d) => d && setSaleDate(d)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
               {priceGroups && priceGroups.filter(g => g.is_active).length > 0 ? (
                 <div className="flex items-center gap-1">
                   <Select
