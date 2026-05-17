@@ -589,21 +589,30 @@ export default function POS() {
                   />
                 </PopoverContent>
               </Popover>
-              {priceGroups && priceGroups.filter(g => g.is_active).length > 0 && (
-                <Select
-                  value={activePriceGroupId ?? "default"}
-                  onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
-                >
-                  <SelectTrigger className="h-8 w-full sm:w-[160px] text-xs">
-                    <SelectValue placeholder="Default Pricing" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default Pricing</SelectItem>
-                    {priceGroups.filter(g => g.is_active).map((g) => (
-                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {priceGroups && priceGroups.filter(g => g.is_active).length > 0 ? (
+                <div className="flex items-center gap-1">
+                  <Select
+                    value={activePriceGroupId ?? "default"}
+                    onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
+                  >
+                    <SelectTrigger className="h-8 w-full sm:w-[160px] text-xs">
+                      <SelectValue placeholder="Default Pricing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default Pricing</SelectItem>
+                      {priceGroups.filter(g => g.is_active).map((g) => (
+                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {customerDefaultGroupId && activePriceGroupId === customerDefaultGroupId && (
+                    <Badge variant="outline" className="text-[10px] h-6">Auto</Badge>
+                  )}
+                </div>
+              ) : (
+                <Badge variant="outline" className="h-8 px-2 text-xs font-normal text-muted-foreground">
+                  Default Pricing
+                </Badge>
               )}
             </div>
           </div>
