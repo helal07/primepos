@@ -27,6 +27,7 @@ import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
   ScanBarcode, FileText, Clock, UserPlus,
   AlertCircle, Check, ChevronsUpDown,
+  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
 import { useProductStockMap } from "@/hooks/useWarehouses";
+import { useWarehouses, useDefaultWarehouse } from "@/hooks/useWarehouses";
 import { resolvePrice } from "@/lib/priceGroup";
 import { printInvoiceArea } from "@/lib/printInvoice";
 
@@ -94,6 +96,12 @@ export default function POS() {
   const { data: customerGroups } = useCustomerGroups();
   const { data: groupPriceMap } = useProductGroupPricesMap();
   const { data: stockMap } = useProductStockMap();
+  const { data: warehouses } = useWarehouses();
+  const defaultWarehouse = useDefaultWarehouse();
+  const [warehouseId, setWarehouseId] = useState<string>("");
+  useEffect(() => {
+    if (!warehouseId && defaultWarehouse?.id) setWarehouseId(defaultWarehouse.id);
+  }, [defaultWarehouse, warehouseId]);
   const getStock = useCallback(
     (p: any) => {
       const ws = stockMap?.get(p.id);
@@ -395,6 +403,7 @@ export default function POS() {
     const result = await createSale.mutateAsync({
       customer_id: customerId || null, status: "completed", subtotal,
       sale_date: format(saleDate, "yyyy-MM-dd"),
+      warehouse_id: warehouseId || null,
       discount_type: discountType, discount_value: discountValue,
       discount_amount: discountAmount, tax_amount: taxAmount, shipping_cost: shippingCost,
       total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
@@ -467,6 +476,70 @@ export default function POS() {
 
   return (
     <div className="h-[calc(100vh-4rem)] -m-4 flex flex-col bg-background">
+      {/* TOP TOOLBAR — Ultimate POS style */}
+      <div className="shrink-0 border-b bg-gradient-to-r from-card via-card to-muted/40 px-3 py-2 flex items-center gap-2 overflow-x-auto">
+        {/* Location / Warehouse */}
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
+            <MapPin className="h-3.5 w-3.5 text-primary" /> Location:
+          </label>
+          <Select value={warehouseId || ""} onValueChange={setWarehouseId}>
+            <SelectTrigger className="h-9 w-[180px] text-sm bg-background">
+              <SelectValue placeholder="Select location" />
+            </SelectTrigger>
+            <SelectContent>
+              {(warehouses ?? []).map((w: any) => (
+                <SelectItem key={w.id} value={w.id}>
+                  {w.name}{w.code ? ` (${w.code})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Date pill */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" className="h-9 gap-1.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {dateStr} {timeStr}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={saleDate} onSelect={(d) => d && setSaleDate(d)} initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
+
+        {/* Quick action icons */}
+        <div className="flex items-center gap-1.5 mx-auto shrink-0">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-primary hover:bg-primary/10" title="Recent transactions" onClick={() => navigate("/sales")}>
+            <History className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-destructive hover:bg-destructive/10" title="Cancel sale" onClick={handleCancel} disabled={cart.length === 0}>
+            <X className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-emerald-600 hover:bg-emerald-500/10" title="Quick cash" onClick={handleQuickCash} disabled={cart.length === 0 || createSale.isPending}>
+            <Wallet className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-foreground/70 hover:bg-accent" title="Calculator" onClick={() => window.open("calculator://", "_blank")}>
+            <Calculator className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-amber-600 hover:bg-amber-500/10" title="New sale / reset" onClick={handleNewSale}>
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-primary hover:bg-primary/10" title="Multi-payment" onClick={openPaymentDialog} disabled={cart.length === 0}>
+            <CreditCard className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-foreground/70 hover:bg-accent" title="Hold / suspend" onClick={handleCancel} disabled={cart.length === 0}>
+            <Pause className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Add expense */}
+        <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold shrink-0" onClick={() => navigate("/expenses/add")}>
+          <Minus className="h-3.5 w-3.5" /> Add Expense
+        </Button>
+      </div>
+
       {/* Main Content: Left Cart + Right Products */}
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT — Cart Area */}
@@ -572,23 +645,6 @@ export default function POS() {
               );
             })()}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("h-8 gap-1 text-xs whitespace-nowrap", "bg-primary/10 text-primary border-primary/20")}>
-                    <CalendarIcon className="h-3 w-3" />
-                    {dateStr} {timeStr}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={saleDate}
-                    onSelect={(d) => d && setSaleDate(d)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
               {priceGroups && priceGroups.filter(g => g.is_active).length > 0 ? (
                 <div className="flex items-center gap-1">
                   <Select
