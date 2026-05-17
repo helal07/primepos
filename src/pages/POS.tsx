@@ -43,6 +43,7 @@ import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
 import { useProductStockMap } from "@/hooks/useWarehouses";
 import { resolvePrice } from "@/lib/priceGroup";
+import { printInvoiceArea } from "@/lib/printInvoice";
 
 interface CartItem extends SaleItem {
   serial_tracking?: boolean;
