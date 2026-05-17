@@ -41,6 +41,7 @@ export interface SaleFormData {
   pay_term_number?: number | null;
   pay_term_unit?: string | null;
   order_no?: string | null;
+  warehouse_id?: string | null;
   attach_document_url?: string | null;
   shipping_details?: string | null;
   shipping_address?: string | null;
