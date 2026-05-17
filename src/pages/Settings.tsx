@@ -82,12 +82,46 @@ function InvoiceTab() {
   });
   const headerFileRef = useRef<HTMLInputElement>(null);
   const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [presets, setPresets] = useState<Array<{ name: string; settings: Record<string, any> }>>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [newPresetName, setNewPresetName] = useState<string>("");
 
   useEffect(() => {
     if (settings?.invoice) setForm((f) => ({ ...f, ...settings.invoice }));
+    if (Array.isArray(settings?.invoice_presets)) setPresets(settings.invoice_presets);
   }, [settings]);
 
   const handleSave = () => saveSetting.mutate({ key: "invoice", value: form });
+
+  const persistPresets = (next: Array<{ name: string; settings: Record<string, any> }>) => {
+    setPresets(next);
+    saveSetting.mutate({ key: "invoice_presets", value: next });
+  };
+
+  const handleSaveAsPreset = () => {
+    const name = newPresetName.trim();
+    if (!name) { toast.error("Enter a preset name"); return; }
+    const next = [...presets.filter((p) => p.name !== name), { name, settings: { ...form } }];
+    persistPresets(next);
+    setNewPresetName("");
+    setSelectedPreset(name);
+    toast.success(`Preset "${name}" saved`);
+  };
+
+  const handleApplyPreset = (name: string) => {
+    setSelectedPreset(name);
+    const p = presets.find((x) => x.name === name);
+    if (!p) return;
+    setForm((f) => ({ ...f, ...p.settings }));
+    toast.success(`Loaded "${name}"`);
+  };
+
+  const handleDeletePreset = () => {
+    if (!selectedPreset) return;
+    persistPresets(presets.filter((p) => p.name !== selectedPreset));
+    setSelectedPreset("");
+    toast.success("Preset deleted");
+  };
 
   const handleHeaderUpload = async (file: File) => {
     setUploadingHeader(true);
