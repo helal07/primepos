@@ -530,28 +530,47 @@ export default function POS() {
               </Button>
             </div>
             {/* Customer row */}
-            <div className="flex items-center gap-2">
-              <Select value={customerSelectValue} onValueChange={(v) => setCustomerId(v === "walk-in" ? "" : v)}>
-                <SelectTrigger className="flex-1 md:flex-none md:w-[180px] h-10 md:h-9 text-sm">
-                  <SelectValue placeholder="Walk-in Customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                  {(customers ?? []).map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 md:h-9 md:w-9 shrink-0"
-                onClick={() => setShowAddCustomer(true)}
-                title="Add new customer"
-              >
-                <UserPlus className="h-4 w-4" />
-              </Button>
-            </div>
+            <CustomerPicker
+              customers={(customers ?? []) as any[]}
+              value={customerId}
+              onChange={setCustomerId}
+              onAddNew={() => setShowAddCustomer(true)}
+            />
+            {/* Selected customer summary: due / advance / group */}
+            {customerId && (() => {
+              const c: any = (customers ?? []).find((x: any) => x.id === customerId);
+              if (!c) return null;
+              const bal = Number(c.balance) || 0;
+              const limit = Number(c.credit_limit) || 0;
+              const grp = c.customer_group_id
+                ? (customerGroups ?? []).find((g: any) => g.id === c.customer_group_id)
+                : null;
+              return (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs">
+                  <span className="font-medium text-foreground">{c.name}</span>
+                  {grp && (
+                    <Badge variant="secondary" className="text-[10px]">Group: {grp.name}</Badge>
+                  )}
+                  {bal > 0 ? (
+                    <span className="inline-flex items-center gap-1 font-semibold text-destructive">
+                      <AlertCircle className="h-3 w-3" />
+                      Due: ৳ {bal.toLocaleString("en", { minimumFractionDigits: 2 })}
+                    </span>
+                  ) : bal < 0 ? (
+                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
+                      Advance: ৳ {Math.abs(bal).toLocaleString("en", { minimumFractionDigits: 2 })}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">No outstanding balance</span>
+                  )}
+                  {limit > 0 && (
+                    <span className="text-muted-foreground">
+                      Credit limit: ৳ {limit.toLocaleString("en", { minimumFractionDigits: 2 })}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Popover>
                 <PopoverTrigger asChild>
