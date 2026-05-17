@@ -13,6 +13,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { buildSaleWhatsappUrl } from "@/lib/whatsappShare";
 import { useToast } from "@/hooks/use-toast";
+import { computeSaleTotals } from "@/lib/saleTotals";
 
 const statusColors: Record<string, string> = {
   completed: "bg-green-100 text-green-800",
@@ -44,6 +45,8 @@ export default function SaleView() {
       </div>
     );
   }
+
+  const totals = computeSaleTotals(sale, payments ?? []);
 
   return (
     <div className="space-y-4">
@@ -183,6 +186,14 @@ export default function SaleView() {
               <div className="flex justify-between w-64"><span className="text-muted-foreground">Shipping</span><span>+৳{Number(sale.shipping_cost).toLocaleString()}</span></div>
             )}
             <div className="flex justify-between w-64 border-t pt-1 font-bold text-base"><span>Grand Total</span><span>৳{Number(sale.total_amount).toLocaleString()}</span></div>
+            <div className="flex justify-between w-64 pt-1"><span className="text-muted-foreground">Paid</span><span>৳{totals.paid.toLocaleString()}</span></div>
+            {totals.balance > 0 ? (
+              <div className="flex justify-between w-64 font-semibold text-destructive"><span>Balance Due</span><span>৳{totals.balance.toLocaleString()}</span></div>
+            ) : totals.balance < 0 ? (
+              <div className="flex justify-between w-64 font-semibold text-emerald-600"><span>Advance</span><span>৳{Math.abs(totals.balance).toLocaleString()}</span></div>
+            ) : (
+              <div className="flex justify-between w-64 font-semibold text-emerald-600"><span>Paid in full</span><span>৳0</span></div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -190,7 +201,7 @@ export default function SaleView() {
       {/* Invoice Dialog */}
       <Dialog open={showInvoice} onOpenChange={setShowInvoice}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-          <SaleInvoice sale={sale} items={items ?? []} settings={settings ?? {}} onPrint={() => {
+          <SaleInvoice sale={sale} items={items ?? []} payments={payments ?? []} settings={settings ?? {}} onPrint={() => {
             const printArea = document.getElementById("invoice-print-area");
             if (printArea) {
               const w = window.open("", "_blank");
