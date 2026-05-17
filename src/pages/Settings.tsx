@@ -82,12 +82,46 @@ function InvoiceTab() {
   });
   const headerFileRef = useRef<HTMLInputElement>(null);
   const [uploadingHeader, setUploadingHeader] = useState(false);
+  const [presets, setPresets] = useState<Array<{ name: string; settings: Record<string, any> }>>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [newPresetName, setNewPresetName] = useState<string>("");
 
   useEffect(() => {
     if (settings?.invoice) setForm((f) => ({ ...f, ...settings.invoice }));
+    if (Array.isArray(settings?.invoice_presets)) setPresets(settings.invoice_presets);
   }, [settings]);
 
   const handleSave = () => saveSetting.mutate({ key: "invoice", value: form });
+
+  const persistPresets = (next: Array<{ name: string; settings: Record<string, any> }>) => {
+    setPresets(next);
+    saveSetting.mutate({ key: "invoice_presets", value: next });
+  };
+
+  const handleSaveAsPreset = () => {
+    const name = newPresetName.trim();
+    if (!name) { toast.error("Enter a preset name"); return; }
+    const next = [...presets.filter((p) => p.name !== name), { name, settings: { ...form } }];
+    persistPresets(next);
+    setNewPresetName("");
+    setSelectedPreset(name);
+    toast.success(`Preset "${name}" saved`);
+  };
+
+  const handleApplyPreset = (name: string) => {
+    setSelectedPreset(name);
+    const p = presets.find((x) => x.name === name);
+    if (!p) return;
+    setForm((f) => ({ ...f, ...p.settings }));
+    toast.success(`Loaded "${name}"`);
+  };
+
+  const handleDeletePreset = () => {
+    if (!selectedPreset) return;
+    persistPresets(presets.filter((p) => p.name !== selectedPreset));
+    setSelectedPreset("");
+    toast.success("Preset deleted");
+  };
 
   const handleHeaderUpload = async (file: File) => {
     setUploadingHeader(true);
@@ -152,6 +186,27 @@ function InvoiceTab() {
         <Separator />
         <div className="space-y-3">
           <div className="text-sm font-semibold">Invoice Template</div>
+          <div className="rounded-md border bg-muted/40 p-3 space-y-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Template Presets</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="min-w-[200px] flex-1">
+                <Select value={selectedPreset} onValueChange={handleApplyPreset}>
+                  <SelectTrigger><SelectValue placeholder={presets.length ? "Load a preset..." : "No presets saved"} /></SelectTrigger>
+                  <SelectContent>
+                    {presets.map((p) => (
+                      <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="button" variant="outline" size="sm" disabled={!selectedPreset} onClick={handleDeletePreset}>Delete</Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input placeholder="New preset name (e.g. Main Branch)" value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} />
+              <Button type="button" size="sm" onClick={handleSaveAsPreset}>Save as Preset</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Presets capture the full template (layout, colors, fonts, header image, field toggles). Save the current configuration, then switch between named layouts instantly.</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2"><Label>Template Layout</Label>
               <Select value={form.template} onValueChange={(v) => setForm({ ...form, template: v })}>
