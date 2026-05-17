@@ -12,6 +12,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem,
+} from "@/components/ui/command";
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -23,6 +26,7 @@ import {
 import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
   ScanBarcode, FileText, Clock, UserPlus,
+  AlertCircle, Check, ChevronsUpDown,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
