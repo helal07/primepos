@@ -2814,6 +2814,7 @@ export type Database = {
           discount_amount: number
           discount_type: string | null
           discount_value: number
+          due_amount: number
           exchange_purchase_id: string | null
           id: string
           invoice_number: string
@@ -2850,6 +2851,7 @@ export type Database = {
           discount_amount?: number
           discount_type?: string | null
           discount_value?: number
+          due_amount?: number
           exchange_purchase_id?: string | null
           id?: string
           invoice_number?: string
@@ -2886,6 +2888,7 @@ export type Database = {
           discount_amount?: number
           discount_type?: string | null
           discount_value?: number
+          due_amount?: number
           exchange_purchase_id?: string | null
           id?: string
           invoice_number?: string
@@ -4703,6 +4706,10 @@ export type Database = {
           p_tenant_slug: string
         }
         Returns: Json
+      }
+      recalc_sale_payment_status: {
+        Args: { _sale_id: string }
+        Returns: undefined
       }
       restore_tenant_from_backup: { Args: { p_payload: Json }; Returns: Json }
       superadmin_delete_tenant: {
