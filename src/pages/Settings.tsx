@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,17 @@ function InvoiceTab() {
     prefix: "INV-", next_number: "001001", footer_text: "Thank you for your business!",
     show_logo: true, show_tax: true, show_discount: true, show_shipping: true,
     terms: "", notes_label: "Notes", paper_size: "a4",
+    // Template options
+    template: "classic", header_position: "top",
+    logo_size: "md", logo_shape: "square",
+    font_family: "inter", heading_size: "md",
+    accent_color: "#8b7cf6",
+    header_image_url: "",
+    show_business_address: true, show_business_phone: true,
+    show_business_email: true, show_business_website: true, show_business_tax: true,
   });
+  const headerFileRef = useRef<HTMLInputElement>(null);
+  const [uploadingHeader, setUploadingHeader] = useState(false);
 
   useEffect(() => {
     if (settings?.invoice) setForm((f) => ({ ...f, ...settings.invoice }));
@@ -79,7 +89,43 @@ function InvoiceTab() {
 
   const handleSave = () => saveSetting.mutate({ key: "invoice", value: form });
 
+  const handleHeaderUpload = async (file: File) => {
+    setUploadingHeader(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `invoice-header/invoice-header-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data } = supabase.storage.from("branding").getPublicUrl(path);
+      setForm((f) => ({ ...f, header_image_url: data.publicUrl }));
+      toast.success("Header image uploaded");
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploadingHeader(false);
+    }
+  };
+
   if (isLoading) return <Skeleton className="h-64 w-full" />;
+
+  const fontMap: Record<string, string> = {
+    inter: "Inter, sans-serif", roboto: "Roboto, sans-serif",
+    lato: "Lato, sans-serif", poppins: "Poppins, sans-serif",
+    serif: "Georgia, serif", mono: "ui-monospace, monospace",
+  };
+  const logoSizePx: Record<string, number> = { sm: 50, md: 70, lg: 100 };
+  const logoRadius: Record<string, string> = { square: "4px", rounded: "12px", circle: "50%" };
+  const headingPx: Record<string, number> = { sm: 18, md: 22, lg: 28 };
+  const hexToRgba = (hex: string, a: number) => {
+    const m = hex.replace("#", "");
+    const r = parseInt(m.substring(0, 2), 16); const g = parseInt(m.substring(2, 4), 16); const b = parseInt(m.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${a})`;
+  };
+  const accent = form.accent_color || "#8b7cf6";
+  const band = hexToRgba(accent, 0.15);
+  const logoSize = logoSizePx[form.logo_size] || 70;
+  const headingSize = headingPx[form.heading_size] || 22;
+  const fontFam = fontMap[form.font_family] || fontMap.inter;
 
   return (
     <Card>
@@ -102,13 +148,166 @@ function InvoiceTab() {
         </div>
         <div className="space-y-2"><Label>Footer Text</Label><Input value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} /></div>
         <div className="space-y-2"><Label>Terms & Conditions</Label><Textarea value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} rows={3} /></div>
+
         <Separator />
+        <div className="space-y-3">
+          <div className="text-sm font-semibold">Invoice Template</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2"><Label>Template Layout</Label>
+              <Select value={form.template} onValueChange={(v) => setForm({ ...form, template: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="classic">Classic (Logo Left)</SelectItem>
+                  <SelectItem value="centered">Centered</SelectItem>
+                  <SelectItem value="modern">Modern (Logo Right)</SelectItem>
+                  <SelectItem value="compact">Compact</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Header Position</Label>
+              <Select value={form.header_position} onValueChange={(v) => setForm({ ...form, header_position: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="top">Top (Plain)</SelectItem>
+                  <SelectItem value="top-band">Top Color Band</SelectItem>
+                  <SelectItem value="boxed">Boxed / Bordered</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Accent Color</Label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={accent} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="h-9 w-12 rounded border" />
+                <Input value={accent} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2"><Label>Logo Size</Label>
+              <Select value={form.logo_size} onValueChange={(v) => setForm({ ...form, logo_size: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Small (50px)</SelectItem>
+                  <SelectItem value="md">Medium (70px)</SelectItem>
+                  <SelectItem value="lg">Large (100px)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Logo Shape</Label>
+              <Select value={form.logo_shape} onValueChange={(v) => setForm({ ...form, logo_shape: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="square">Square</SelectItem>
+                  <SelectItem value="rounded">Rounded</SelectItem>
+                  <SelectItem value="circle">Circle</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Font Family</Label>
+              <Select value={form.font_family} onValueChange={(v) => setForm({ ...form, font_family: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="inter">Inter</SelectItem>
+                  <SelectItem value="roboto">Roboto</SelectItem>
+                  <SelectItem value="lato">Lato</SelectItem>
+                  <SelectItem value="poppins">Poppins</SelectItem>
+                  <SelectItem value="serif">Serif (Georgia)</SelectItem>
+                  <SelectItem value="mono">Monospace</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Heading Size</Label>
+              <Select value={form.heading_size} onValueChange={(v) => setForm({ ...form, heading_size: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sm">Small (18px)</SelectItem>
+                  <SelectItem value="md">Medium (22px)</SelectItem>
+                  <SelectItem value="lg">Large (28px)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Custom Header Image (optional)</Label>
+            <p className="text-xs text-muted-foreground">Upload a full-width banner image (JPEG recommended, ~1600×300px). When set, it replaces the auto-generated header. Different business locations can upload their own.</p>
+            <div className="flex items-center gap-2">
+              <Input value={form.header_image_url} onChange={(e) => setForm({ ...form, header_image_url: e.target.value })} placeholder="https://..." />
+              <input ref={headerFileRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleHeaderUpload(f); e.target.value = ""; }} />
+              <Button type="button" variant="outline" size="sm" disabled={uploadingHeader} onClick={() => headerFileRef.current?.click()}>
+                {uploadingHeader ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-1" />} Upload
+              </Button>
+              {form.header_image_url && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, header_image_url: "" })}>Clear</Button>
+              )}
+            </div>
+            {form.header_image_url && (
+              <img src={form.header_image_url} alt="Header preview" className="mt-2 max-h-24 rounded border" />
+            )}
+          </div>
+        </div>
+
+        <Separator />
+        <div className="text-sm font-semibold">Show / Hide Fields</div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="flex items-center gap-2"><Switch checked={form.show_logo} onCheckedChange={(v) => setForm({ ...form, show_logo: v })} /><Label>Show Logo</Label></div>
           <div className="flex items-center gap-2"><Switch checked={form.show_tax} onCheckedChange={(v) => setForm({ ...form, show_tax: v })} /><Label>Show Tax</Label></div>
           <div className="flex items-center gap-2"><Switch checked={form.show_discount} onCheckedChange={(v) => setForm({ ...form, show_discount: v })} /><Label>Show Discount</Label></div>
           <div className="flex items-center gap-2"><Switch checked={form.show_shipping} onCheckedChange={(v) => setForm({ ...form, show_shipping: v })} /><Label>Show Shipping</Label></div>
+          <div className="flex items-center gap-2"><Switch checked={form.show_business_address} onCheckedChange={(v) => setForm({ ...form, show_business_address: v })} /><Label>Address</Label></div>
+          <div className="flex items-center gap-2"><Switch checked={form.show_business_phone} onCheckedChange={(v) => setForm({ ...form, show_business_phone: v })} /><Label>Phone</Label></div>
+          <div className="flex items-center gap-2"><Switch checked={form.show_business_email} onCheckedChange={(v) => setForm({ ...form, show_business_email: v })} /><Label>Email</Label></div>
+          <div className="flex items-center gap-2"><Switch checked={form.show_business_website} onCheckedChange={(v) => setForm({ ...form, show_business_website: v })} /><Label>Website</Label></div>
+          <div className="flex items-center gap-2"><Switch checked={form.show_business_tax} onCheckedChange={(v) => setForm({ ...form, show_business_tax: v })} /><Label>TIN/VAT</Label></div>
         </div>
+
+        <Separator />
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Live Preview</Label>
+          <div className="rounded-lg border bg-white p-4" style={{ fontFamily: fontFam }}>
+            {form.header_image_url ? (
+              <img src={form.header_image_url} alt="" className="w-full max-h-32 object-contain" />
+            ) : (
+              <div style={{
+                background: form.header_position === "top-band" ? accent : "transparent",
+                color: form.header_position === "top-band" ? "#fff" : "#1f2937",
+                border: form.header_position === "boxed" ? `1px solid ${accent}` : "none",
+                padding: form.header_position === "top" ? "0" : "12px",
+                borderRadius: form.header_position === "boxed" ? "8px" : "0",
+                display: "grid",
+                gridTemplateColumns: form.template === "centered" ? "1fr"
+                  : form.template === "modern" ? `1fr ${logoSize + 10}px`
+                  : form.template === "compact" ? `${logoSize + 10}px 1fr`
+                  : `${logoSize + 10}px 1fr`,
+                gap: "12px", alignItems: "center",
+                textAlign: form.template === "centered" ? "center" : (form.template === "modern" ? "left" : "left"),
+              }}>
+                {form.template === "modern" ? (
+                  <>
+                    <div>
+                      <div style={{ fontWeight: "bold", fontSize: headingSize }}>{(settings?.business as any)?.company_name || "Your Business"}</div>
+                      <div style={{ fontSize: 11, opacity: 0.85 }}>Sample address · Phone · email@example.com</div>
+                    </div>
+                    <div style={{ width: logoSize, height: logoSize, background: band, borderRadius: logoRadius[form.logo_shape], display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontSize: 10, fontWeight: "bold" }}>LOGO</div>
+                  </>
+                ) : form.template === "centered" ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: logoSize, height: logoSize, background: band, borderRadius: logoRadius[form.logo_shape], display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontSize: 10, fontWeight: "bold" }}>LOGO</div>
+                    <div style={{ fontWeight: "bold", fontSize: headingSize }}>{(settings?.business as any)?.company_name || "Your Business"}</div>
+                    <div style={{ fontSize: 11, opacity: 0.85 }}>Sample address · Phone · email@example.com</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ width: logoSize, height: logoSize, background: band, borderRadius: logoRadius[form.logo_shape], display: "flex", alignItems: "center", justifyContent: "center", color: accent, fontSize: 10, fontWeight: "bold" }}>LOGO</div>
+                    <div style={{ textAlign: form.template === "compact" ? "left" : "right" }}>
+                      <div style={{ fontWeight: "bold", fontSize: headingSize }}>{(settings?.business as any)?.company_name || "Your Business"}</div>
+                      <div style={{ fontSize: 11, opacity: 0.85 }}>Sample address · Phone · email@example.com</div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <div style={{ background: band, color: accent, textAlign: "center", padding: "4px 0", fontStyle: "italic", fontWeight: 600, marginTop: 8, fontSize: 11 }}>Invoice</div>
+          </div>
+        </div>
+
         <Separator />
         <Button onClick={handleSave} disabled={saveSetting.isPending}>{saveSetting.isPending ? "Saving..." : "Save Changes"}</Button>
       </CardContent>

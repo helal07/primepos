@@ -65,6 +65,7 @@ function mergeItems(items: any[]) {
 export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: SaleInvoiceProps) {
   const business = settings?.business || {};
   const branding = settings?.cms_branding || {};
+  const tpl = settings?.invoice || {};
   const businessName =
     business.company_name || business.business_name ||
     settings?.business_name || branding.brand_name || "Business Name";
@@ -76,7 +77,7 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
   const businessLogo =
     business.logo_url || settings?.business_logo || settings?.logo_url ||
     branding.logo_url || "";
-  const terms = settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
+  const terms = tpl.terms || settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
   const { total, paid, balance } = computeSaleTotals(sale, payments);
@@ -84,42 +85,129 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
   const merged = mergeItems(items);
   const totalQty = merged.reduce((s, r) => s + Number(r.quantity || 0), 0);
 
-  const ACCENT = "#8b7cf6"; // soft purple, matches reference
-  const BAND_BG = "#efeaff";
+  // Template options with safe defaults
+  const template = tpl.template || "classic";
+  const headerPosition = tpl.header_position || "top";
+  const logoSizePx: Record<string, number> = { sm: 50, md: 70, lg: 100 };
+  const logoRadiusMap: Record<string, string> = { square: "4px", rounded: "12px", circle: "50%" };
+  const headingPxMap: Record<string, number> = { sm: 18, md: 22, lg: 28 };
+  const fontMap: Record<string, string> = {
+    inter: "Inter, sans-serif", roboto: "Roboto, sans-serif",
+    lato: "Lato, sans-serif", poppins: "Poppins, sans-serif",
+    serif: "Georgia, serif", mono: "ui-monospace, monospace",
+  };
+  const logoSize = logoSizePx[tpl.logo_size as string] || 70;
+  const logoRadius = logoRadiusMap[tpl.logo_shape as string] || "4px";
+  const headingSize = headingPxMap[tpl.heading_size as string] || 22;
+  const fontFamily = fontMap[tpl.font_family as string] || fontMap.inter;
+  const ACCENT = tpl.accent_color || "#8b7cf6";
+  const hexToRgba = (hex: string, a: number) => {
+    const m = String(hex).replace("#", "");
+    if (m.length < 6) return `rgba(139,124,246,${a})`;
+    const r = parseInt(m.substring(0, 2), 16); const g = parseInt(m.substring(2, 4), 16); const b = parseInt(m.substring(4, 6), 16);
+    return `rgba(${r},${g},${b},${a})`;
+  };
+  const BAND_BG = hexToRgba(ACCENT, 0.15);
+  const showLogo = tpl.show_logo !== false;
+  const showAddress = tpl.show_business_address !== false;
+  const showPhone = tpl.show_business_phone !== false;
+  const showEmail = tpl.show_business_email !== false;
+  const showWebsite = tpl.show_business_website !== false;
+  const showTaxId = tpl.show_business_tax !== false;
+  const headerImageUrl = tpl.header_image_url || "";
+
+  const LogoBox = () => showLogo ? (
+    businessLogo ? (
+      <img src={businessLogo} alt={businessName} style={{ maxWidth: `${logoSize}px`, maxHeight: `${logoSize}px`, objectFit: "contain", borderRadius: logoRadius }} />
+    ) : (
+      <div style={{ width: `${logoSize}px`, height: `${logoSize}px`, border: `2px solid ${ACCENT}`, borderRadius: logoRadius, display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT, fontWeight: "bold", fontSize: "11px" }}>
+        LOGO
+      </div>
+    )
+  ) : null;
+
+  const headerTextColor = headerPosition === "top-band" ? "#fff" : "#1f2937";
+  const subTextColor = headerPosition === "top-band" ? "rgba(255,255,255,0.9)" : "#4b5563";
+
+  const BusinessInfo = ({ align }: { align: "left" | "right" | "center" }) => (
+    <div style={{ textAlign: align }}>
+      <h1 style={{ fontSize: `${headingSize}px`, fontWeight: "bold", margin: 0, color: headerTextColor }}>{businessName}</h1>
+      {showAddress && businessAddress && <p style={{ fontSize: "12px", color: subTextColor, margin: "2px 0" }}>{businessAddress}</p>}
+      {(showPhone && businessPhone) || (showEmail && businessEmail) ? (
+        <p style={{ fontSize: "12px", color: subTextColor, margin: "2px 0" }}>
+          {showPhone && businessPhone && <>Phone: {businessPhone}</>}
+          {showPhone && businessPhone && showEmail && businessEmail && " · "}
+          {showEmail && businessEmail && <>Email: {businessEmail}</>}
+        </p>
+      ) : null}
+      {showWebsite && businessWebsite && (
+        <p style={{ fontSize: "12px", color: subTextColor, margin: "2px 0" }}>{businessWebsite}</p>
+      )}
+      {showTaxId && businessTax && (
+        <p style={{ fontSize: "12px", color: subTextColor, margin: "2px 0" }}>TIN/VAT: {businessTax}</p>
+      )}
+    </div>
+  );
+
+  const renderHeaderInner = () => {
+    if (headerImageUrl) {
+      return <img src={headerImageUrl} alt={businessName} style={{ width: "100%", maxHeight: "180px", objectFit: "contain", display: "block" }} />;
+    }
+    if (template === "centered") {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+          <LogoBox />
+          <BusinessInfo align="center" />
+        </div>
+      );
+    }
+    if (template === "modern") {
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: `1fr ${logoSize + 10}px`, gap: "16px", alignItems: "center" }}>
+          <BusinessInfo align="left" />
+          <div style={{ display: "flex", justifyContent: "flex-end" }}><LogoBox /></div>
+        </div>
+      );
+    }
+    if (template === "compact") {
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <LogoBox />
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: `${headingSize}px`, fontWeight: "bold", margin: 0, color: headerTextColor }}>{businessName}</h1>
+            <p style={{ fontSize: "11px", color: subTextColor, margin: "2px 0" }}>
+              {[showAddress && businessAddress, showPhone && businessPhone, showEmail && businessEmail, showWebsite && businessWebsite, showTaxId && businessTax && `TIN/VAT: ${businessTax}`].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    // classic (default)
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: `${logoSize + 10}px 1fr`, gap: "16px", alignItems: "center" }}>
+        <LogoBox />
+        <BusinessInfo align="right" />
+      </div>
+    );
+  };
+
+  const headerWrapStyle: React.CSSProperties =
+    headerPosition === "top-band"
+      ? { background: ACCENT, color: "#fff", padding: "14px 16px", marginBottom: "8px" }
+      : headerPosition === "boxed"
+      ? { border: `1px solid ${ACCENT}`, borderRadius: "8px", padding: "14px", marginBottom: "8px" }
+      : { marginBottom: "8px" };
 
   return (
-    <div className="p-6">
+    <div className="p-6" style={{ fontFamily }}>
       <div className="flex justify-end mb-4 no-print">
         <Button onClick={onPrint}><Printer className="h-4 w-4 mr-2" /> Print</Button>
       </div>
 
       <div id="invoice-print-area">
-        {/* Header: logo left, business right */}
-        <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: "16px", alignItems: "center", marginBottom: "8px" }}>
-          <div>
-            {businessLogo ? (
-              <img src={businessLogo} alt={businessName} style={{ maxWidth: "70px", maxHeight: "70px", objectFit: "contain" }} />
-            ) : (
-              <div style={{ width: "70px", height: "70px", border: `2px solid ${ACCENT}`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: ACCENT, fontWeight: "bold", fontSize: "11px" }}>
-                LOGO
-              </div>
-            )}
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <h1 style={{ fontSize: "22px", fontWeight: "bold", margin: 0, color: "#1f2937" }}>{businessName}</h1>
-            {businessAddress && <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>{businessAddress}</p>}
-            <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>
-              {businessPhone && <>Phone no.: {businessPhone}</>}
-              {businessPhone && businessEmail && " "}
-              {businessEmail && <>Email: {businessEmail}</>}
-            </p>
-            {businessWebsite && (
-              <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>{businessWebsite}</p>
-            )}
-            {businessTax && (
-              <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>TIN/VAT: {businessTax}</p>
-            )}
-          </div>
+        {/* Header */}
+        <div style={headerWrapStyle}>
+          {renderHeaderInner()}
         </div>
 
         {/* Invoice band */}
