@@ -23,22 +23,35 @@ export function useSaveSetting() {
 
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { data: existing } = await supabase
+      // Resolve current tenant so the row is scoped per tenant
+      let tenantId: string | null = null;
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("tenant_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        tenantId = (profile?.tenant_id as string) ?? null;
+      }
+
+      const lookup = supabase
         .from("business_settings")
         .select("id")
-        .eq("key", key)
-        .maybeSingle();
+        .eq("key", key);
+      const { data: existing } = await (
+        tenantId ? lookup.eq("tenant_id", tenantId) : lookup.is("tenant_id", null)
+      ).maybeSingle();
 
       if (existing) {
         const { error } = await supabase
           .from("business_settings")
           .update({ value, updated_by: user?.id })
-          .eq("key", key);
+          .eq("id", existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("business_settings")
-          .insert({ key, value, updated_by: user?.id });
+          .insert({ key, value, updated_by: user?.id, tenant_id: tenantId });
         if (error) throw error;
       }
     },
