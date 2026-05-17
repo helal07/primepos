@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { printInvoiceArea } from "@/lib/printInvoice";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -202,33 +203,7 @@ export default function SaleView() {
       <Dialog open={showInvoice} onOpenChange={setShowInvoice}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
           <SaleInvoice sale={sale} items={items ?? []} payments={payments ?? []} settings={settings ?? {}} onPrint={() => {
-            const printArea = document.getElementById("invoice-print-area");
-            if (printArea) {
-              const w = window.open("", "_blank");
-              if (w) {
-                w.document.write(`<html><head><title>Invoice ${sale.invoice_number}</title><style>
-                  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
-                  table { width: 100%; border-collapse: collapse; }
-                  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-                  th { background: #f9fafb; font-weight: 600; }
-                  .text-right { text-align: right; }
-                  .text-center { text-align: center; }
-                  .font-bold { font-weight: bold; }
-                  .border-t { border-top: 2px solid #333; }
-                  .text-sm { font-size: 13px; }
-                  .text-xs { font-size: 11px; }
-                  .mb-4 { margin-bottom: 16px; }
-                  .mt-4 { margin-top: 16px; }
-                  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-                  h1 { font-size: 24px; margin: 0; }
-                  h2 { font-size: 14px; margin: 0 0 4px; color: #666; }
-                </style></head><body>`);
-                w.document.write(printArea.innerHTML);
-                w.document.write("</body></html>");
-                w.document.close();
-                w.print();
-              }
-            }
+            printInvoiceArea({ title: `Invoice ${sale.invoice_number}`, settings: settings ?? {} });
           }} />
         </DialogContent>
       </Dialog>

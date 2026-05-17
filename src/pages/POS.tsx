@@ -43,6 +43,7 @@ import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
 import { useProductStockMap } from "@/hooks/useWarehouses";
 import { resolvePrice } from "@/lib/priceGroup";
+import { printInvoiceArea } from "@/lib/printInvoice";
 
 interface CartItem extends SaleItem {
   serial_tracking?: boolean;
@@ -989,13 +990,7 @@ export default function POS() {
               items={lastSaleItems}
               settings={settings || {}}
               onPrint={() => {
-                const printArea = document.getElementById("invoice-print-area");
-                if (!printArea) return;
-                const w = window.open("", "_blank");
-                if (!w) return;
-                w.document.write(`<html><head><title>Invoice ${lastInvoice}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:left}th{border-bottom:2px solid #d1d5db;font-size:12px;background:#f3f4f6}td{border-bottom:1px solid #e5e7eb;font-size:12px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}</style></head><body>${printArea.innerHTML}</body></html>`);
-                w.document.close();
-                w.print();
+                printInvoiceArea({ title: `Invoice ${lastInvoice}`, settings: settings || {} });
               }}
             />
           ) : (
