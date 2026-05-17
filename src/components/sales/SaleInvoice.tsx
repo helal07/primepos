@@ -63,11 +63,19 @@ function mergeItems(items: any[]) {
 }
 
 export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: SaleInvoiceProps) {
-  const businessName = settings?.business_name || "Business Name";
-  const businessAddress = settings?.business_address || "";
-  const businessPhone = settings?.business_phone || "";
-  const businessEmail = settings?.business_email || "";
-  const businessLogo = settings?.business_logo || settings?.logo_url || "";
+  const business = settings?.business || {};
+  const branding = settings?.cms_branding || {};
+  const businessName =
+    business.company_name || business.business_name ||
+    settings?.business_name || branding.brand_name || "Business Name";
+  const businessAddress = business.address || settings?.business_address || "";
+  const businessPhone = business.phone || settings?.business_phone || "";
+  const businessEmail = business.email || settings?.business_email || "";
+  const businessWebsite = business.website || "";
+  const businessTax = business.tax_number || "";
+  const businessLogo =
+    business.logo_url || settings?.business_logo || settings?.logo_url ||
+    branding.logo_url || "";
   const terms = settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
@@ -105,6 +113,12 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
               {businessPhone && businessEmail && " "}
               {businessEmail && <>Email: {businessEmail}</>}
             </p>
+            {businessWebsite && (
+              <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>{businessWebsite}</p>
+            )}
+            {businessTax && (
+              <p style={{ fontSize: "12px", color: "#4b5563", margin: "2px 0" }}>TIN/VAT: {businessTax}</p>
+            )}
           </div>
         </div>
 
