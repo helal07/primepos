@@ -14,7 +14,7 @@ import { useSettings, useSaveSetting } from "@/hooks/useSettings";
 import { ThemePicker } from "@/components/settings/ThemePicker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, Loader2, Smartphone } from "lucide-react";
+import { Upload, Loader2, Smartphone, Building2, Receipt, Percent, Bell, Palette, Package, Users, ShoppingCart, ShoppingBag, CreditCard, LayoutDashboard, Settings as SettingsIcon, Hash, Mail, MessageSquare, Tag } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 
 function BusinessTab() {
@@ -605,27 +605,94 @@ function PwaTab() {
   );
 }
 
+function ComingSoon({ title }: { title: string }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">
+          Settings for this section will appear here.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+const SETTINGS_SECTIONS = [
+  { value: "business", label: "Business", icon: Building2 },
+  { value: "tax", label: "Tax", icon: Percent },
+  { value: "product", label: "Product", icon: Package },
+  { value: "contact", label: "Contact", icon: Users },
+  { value: "sale", label: "Sale", icon: ShoppingCart },
+  { value: "pos", label: "POS", icon: CreditCard },
+  { value: "purchases", label: "Purchases", icon: ShoppingBag },
+  { value: "payment", label: "Payment", icon: CreditCard },
+  { value: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { value: "system", label: "System", icon: SettingsIcon },
+  { value: "prefixes", label: "Prefixes", icon: Hash },
+  { value: "email", label: "Email Settings", icon: Mail },
+  { value: "sms", label: "SMS Settings", icon: MessageSquare },
+  { value: "invoice", label: "Invoice", icon: Receipt },
+  { value: "notifications", label: "Notifications", icon: Bell },
+  { value: "appearance", label: "Appearance", icon: Palette },
+  { value: "pwa", label: "Mobile App", icon: Smartphone },
+  { value: "custom_labels", label: "Custom Labels", icon: Tag },
+];
+
 export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" description="Configure your business settings" />
-      <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="business">Business</TabsTrigger>
-          <TabsTrigger value="invoice">Invoice</TabsTrigger>
-          <TabsTrigger value="tax">Tax</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
-          <TabsTrigger value="pwa">Mobile App</TabsTrigger>
+      <Tabs
+        defaultValue="business"
+        orientation="vertical"
+        className="flex flex-col md:flex-row gap-6 items-start"
+      >
+        <TabsList
+          className="
+            w-full md:w-64 md:flex-col md:h-auto md:items-stretch
+            flex md:gap-1 gap-1 p-2 bg-card border rounded-xl
+            overflow-x-auto md:overflow-visible
+          "
+        >
+          {SETTINGS_SECTIONS.map(({ value, label, icon: Icon }) => (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className="
+                shrink-0 md:w-full justify-start gap-2 rounded-lg px-3 py-2 text-sm
+                data-[state=active]:bg-primary data-[state=active]:text-primary-foreground
+                data-[state=active]:shadow-sm
+              "
+            >
+              <Icon className="h-4 w-4" />
+              <span>{label}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="business"><BusinessTab /></TabsContent>
-        <TabsContent value="invoice"><InvoiceTab /></TabsContent>
-        <TabsContent value="tax"><TaxTab /></TabsContent>
-        <TabsContent value="notifications"><NotificationsTab /></TabsContent>
-        <TabsContent value="appearance">
-          <Card><CardContent className="pt-6"><ThemePicker /></CardContent></Card>
-        </TabsContent>
-        <TabsContent value="pwa"><PwaTab /></TabsContent>
+
+        <div className="flex-1 w-full min-w-0">
+          <TabsContent value="business" className="mt-0"><BusinessTab /></TabsContent>
+          <TabsContent value="tax" className="mt-0"><TaxTab /></TabsContent>
+          <TabsContent value="product" className="mt-0"><ComingSoon title="Product Settings" /></TabsContent>
+          <TabsContent value="contact" className="mt-0"><ComingSoon title="Contact Settings" /></TabsContent>
+          <TabsContent value="sale" className="mt-0"><ComingSoon title="Sale Settings" /></TabsContent>
+          <TabsContent value="pos" className="mt-0"><ComingSoon title="POS Settings" /></TabsContent>
+          <TabsContent value="purchases" className="mt-0"><ComingSoon title="Purchases Settings" /></TabsContent>
+          <TabsContent value="payment" className="mt-0"><ComingSoon title="Payment Settings" /></TabsContent>
+          <TabsContent value="dashboard" className="mt-0"><ComingSoon title="Dashboard Settings" /></TabsContent>
+          <TabsContent value="system" className="mt-0"><ComingSoon title="System Settings" /></TabsContent>
+          <TabsContent value="prefixes" className="mt-0"><ComingSoon title="Prefixes" /></TabsContent>
+          <TabsContent value="email" className="mt-0"><ComingSoon title="Email Settings" /></TabsContent>
+          <TabsContent value="sms" className="mt-0"><ComingSoon title="SMS Settings" /></TabsContent>
+          <TabsContent value="invoice" className="mt-0"><InvoiceTab /></TabsContent>
+          <TabsContent value="notifications" className="mt-0"><NotificationsTab /></TabsContent>
+          <TabsContent value="appearance" className="mt-0">
+            <Card><CardContent className="pt-6"><ThemePicker /></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="pwa" className="mt-0"><PwaTab /></TabsContent>
+          <TabsContent value="custom_labels" className="mt-0"><ComingSoon title="Custom Labels" /></TabsContent>
+        </div>
       </Tabs>
     </div>
   );

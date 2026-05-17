@@ -1,55 +1,64 @@
-## Add Invoice Template Options (Settings → Invoice)
+## Redesign Settings page — Ultimate POS style
 
-Extend the existing **Invoice** tab in `src/pages/Settings.tsx` with a new "Invoice Template" section, and make `SaleInvoice.tsx` honor those choices. All options persist under the existing `invoice` settings key (no DB migration).
+Refactor `src/pages/Settings.tsx` so the layout mirrors the Ultimate POS Business Settings screen the user uploaded: a **vertical section list on the left** with a clean white/blue active state, and the matching form fields on the right. Keep all current functionality — only the layout/IA changes.
 
-### New settings (added to `InvoiceTab` form, key `invoice`)
+### New layout
 
-- **Template** (`template`): `classic` (logo left / business right — current), `centered` (logo + business stacked center), `modern` (business left / logo right), `compact` (single-row header, small logo)
-- **Header position** (`header_position`): `top` (default), `top-band` (full-width purple band with white text), `boxed` (bordered card)
-- **Header Uploading Option by Business Owner** : Diffirent Business location can have diffirent Header a recomendad size will be shown to upload jpeg file.
-- **Logo size** (`logo_size`): `sm` (50px) · `md` (70px, current) · `lg` (100px)
-- **Logo shape** (`logo_shape`): `square` · `rounded` · `circle`
-- **Typography font** (`font_family`): `inter` (default) · `roboto` · `lato` · `poppins` · `serif` (Georgia) · `mono`
-- **Heading size** (`heading_size`): `sm` · `md` (current 22px) · `lg` (28px)
-- **Accent color** (`accent_color`): color picker, default `#8b7cf6` (drives band + table header)
-- **Show fields toggles** (extend existing): `show_business_address`, `show_business_phone`, `show_business_email`, `show_business_website`, `show_business_tax`
-- **Live preview**: small inline card under the form showing a mini header rendered with current selections (no new component file — inline JSX)
+```text
+┌──────────────────────┬────────────────────────────────────────┐
+│ Business    (active) │  <fields for the selected section>     │
+│ Tax                  │                                        │
+│ Product              │                                        │
+│ Contact              │                                        │
+│ Sale                 │                                        │
+│ POS                  │                                        │
+│ Purchases            │                                        │
+│ Payment              │                                        │
+│ Dashboard            │                                        │
+│ System               │                                        │
+│ Prefixes             │                                        │
+│ Email Settings       │                                        │
+│ SMS Settings         │                                        │
+│ Invoice              │                                        │
+│ Notifications        │                                        │
+│ Appearance           │                                        │
+│ Mobile App (PWA)     │                                        │
+│ Custom Labels        │                                        │
+└──────────────────────┴────────────────────────────────────────┘
+```
+
+- Left rail: ~240px, rounded buttons, active item filled with primary gradient + white text (matching the reference screenshot's blue active pill), inactive items neutral.
+- Right panel: card with the active section's form. Reuse existing tab components (BusinessTab, InvoiceTab, TaxTab, NotificationsTab, PwaTab, Appearance/ThemePicker) as-is.
+- Mobile (<md): collapse left rail into a horizontal scrollable tab strip (current shadcn Tabs look) so it stays usable on phones.
+- Implementation: use shadcn `Tabs` with `orientation="vertical"` + custom `TabsList` styles, so all current section content keeps working without rewrites.
+
+### New sections (placeholders for parity with Ultimate POS)
+
+Add empty section shells (using `PlaceholderPage`/simple "Coming soon" card) so the IA matches the reference. No business logic:
+
+- Product, Contact, Sale, POS, Purchases, Payment, Dashboard, System, Prefixes, Email Settings, SMS Settings, Custom Labels
+
+These render a small card titled with the section name and a muted "Settings for this section will appear here." line. Future requests can fill them in.
 
 ### Files to change
 
-1. `**src/pages/Settings.tsx**` — `InvoiceTab`
-  - Extend `form` state defaults with the keys above.
-  - Add a new "Invoice Template" section (above existing toggles) with: template radio cards (4 thumbnails as small SVG/ASCII previews), Select inputs for header position, logo size/shape, font, heading size, and an `<input type="color">` for accent.
-  - Add the new show/hide switches in the existing toggles grid.
-  - Add a live mini-preview block.
-  - Save continues to write `{ key: "invoice", value: form }`.
-2. `**src/components/sales/SaleInvoice.tsx**`
-  - Read `const tpl = settings?.invoice || {}` and pull all new keys with fallbacks matching today's behavior.
-  - Replace the hardcoded `ACCENT`/`BAND_BG` with values derived from `tpl.accent_color` (BAND_BG = accent + low alpha).
-  - Wrap the print area in a `<div style={{ fontFamily: <mapped> }}>`.
-  - Render header via a small `renderHeader()` switch on `tpl.template`:
-    - `classic` → current grid (logo left, info right-aligned)
-    - `centered` → flex column, items centered
-    - `modern` → info left, logo right
-    - `compact` → single row, small logo + inline name + contact line
-  - Apply `header_position`:
-    - `top` → as-is
-    - `top-band` → wrap header in a full-width band using accent color, white text
-    - `boxed` → wrap in a bordered, padded box
-  - Apply `logo_size` (px) and `logo_shape` (`borderRadius`).
-  - Apply `heading_size` to the business name `<h1>` font-size.
-  - Respect `show_business_*` toggles when rendering each line.
-  - Continue honoring existing `show_logo`, `show_tax`, `show_discount`, `show_shipping`, `footer_text`, `terms`.
+1. **`src/pages/Settings.tsx`**
+   - Replace the horizontal `TabsList` with a 2-column grid: left vertical nav, right content card.
+   - Reorder/rename tabs to match Ultimate POS ordering (Business first, Invoice grouped with sale-related settings).
+   - Add the placeholder sections listed above (inline tiny components, no new files).
+   - Keep all existing tab components and their save logic intact.
+   - Wrap the page in `PageHeader` (already used) — no change to header.
 
 ### Out of scope
 
-- No DB/schema changes (uses existing `business_settings.invoice` JSON).
-- No changes to totals math, payments table, items table, or other invoice sections.
-- No changes to purchase/exchange invoices — only `SaleInvoice.tsx`.
-- No new files; all UI lives in the two files above.
+- No changes to data, RLS, or save mutations.
+- No changes to invoice template logic or `SaleInvoice.tsx`.
+- No new files; everything stays in `Settings.tsx`.
+- No icons added to the left rail unless trivial (can add lucide icons matching each section if cheap — Building2, Receipt, Package, Users, ShoppingCart, etc.).
 
 ### Technical notes
 
-- Font map: `{ inter: "Inter, sans-serif", roboto: "Roboto, sans-serif", lato: "Lato, sans-serif", poppins: "Poppins, sans-serif", serif: "Georgia, serif", mono: "ui-monospace, monospace" }`. Fonts already loaded via index.css for Inter; others fall back gracefully.
-- Accent helper: convert hex → `rgba(r,g,b,0.15)` for the band background.
-- Defaults preserve current invoice look exactly when no template settings are saved.
+- Use `Tabs orientation="vertical"` with `className="flex flex-col md:flex-row gap-6"`.
+- Left rail: `<TabsList className="md:flex-col md:h-auto md:w-60 md:items-stretch bg-card border rounded-xl p-2 gap-1">` and each `TabsTrigger` styled `justify-start data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg`.
+- Right panel: `<div className="flex-1 rounded-xl border bg-card p-6">{TabsContent...}</div>`.
+- On mobile, override to horizontal scrollable list via responsive classes.
