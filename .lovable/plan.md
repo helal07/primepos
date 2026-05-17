@@ -1,64 +1,48 @@
-## Redesign Settings page — Ultimate POS style
+# POS — Searchable Customer + Due Balance + Customer Group
 
-Refactor `src/pages/Settings.tsx` so the layout mirrors the Ultimate POS Business Settings screen the user uploaded: a **vertical section list on the left** with a clean white/blue active state, and the matching form fields on the right. Keep all current functionality — only the layout/IA changes.
+Three focused improvements to the customer row on the POS screen (`src/pages/POS.tsx`). All work stays in the frontend.
 
-### New layout
+## 1. Searchable customer selector (Ultimate POS style)
+
+Replace the current plain `<Select>` for customers with a searchable Combobox built from existing `Popover` + `cmdk` `Command` primitives (already in the project at `src/components/ui/popover.tsx` and `src/components/ui/command.tsx`).
+
+Behavior:
+- Trigger button shows the selected customer name or "Walk-in Customer".
+- Opens a popover with a search input that filters by **name, phone, and email** (case-insensitive).
+- First row is always "Walk-in Customer" to allow clearing.
+- Each row shows customer name on the left and, on the right, phone number plus a small balance chip when the customer has a non-zero balance (red for due, green for advance).
+- Clicking a row sets `customerId` and closes the popover.
+- Keyboard navigation works (arrow keys + Enter) because `cmdk` handles it.
+
+## 2. Auto-show due balance when a customer is selected
+
+Right under the customer row (only when a real customer, not walk-in, is selected), show an inline summary strip:
 
 ```text
-┌──────────────────────┬────────────────────────────────────────┐
-│ Business    (active) │  <fields for the selected section>     │
-│ Tax                  │                                        │
-│ Product              │                                        │
-│ Contact              │                                        │
-│ Sale                 │                                        │
-│ POS                  │                                        │
-│ Purchases            │                                        │
-│ Payment              │                                        │
-│ Dashboard            │                                        │
-│ System               │                                        │
-│ Prefixes             │                                        │
-│ Email Settings       │                                        │
-│ SMS Settings         │                                        │
-│ Invoice              │                                        │
-│ Notifications        │                                        │
-│ Appearance           │                                        │
-│ Mobile App (PWA)     │                                        │
-│ Custom Labels        │                                        │
-└──────────────────────┴────────────────────────────────────────┘
+[ Customer Name ]  Group: Wholesale   Due: ৳ 1,250.00   Credit limit: ৳ 5,000.00
 ```
 
-- Left rail: ~240px, rounded buttons, active item filled with primary gradient + white text (matching the reference screenshot's blue active pill), inactive items neutral.
-- Right panel: card with the active section's form. Reuse existing tab components (BusinessTab, InvoiceTab, TaxTab, NotificationsTab, PwaTab, Appearance/ThemePicker) as-is.
-- Mobile (<md): collapse left rail into a horizontal scrollable tab strip (current shadcn Tabs look) so it stays usable on phones.
-- Implementation: use shadcn `Tabs` with `orientation="vertical"` + custom `TabsList` styles, so all current section content keeps working without rewrites.
+- Pulled directly from the already-fetched `customers` list (`balance`, `credit_limit`, `customer_group_id`); no new queries.
+- Balance > 0 → render red "Due: ৳ X" with `AlertCircle` icon.
+- Balance < 0 → render green "Advance: ৳ X".
+- Balance = 0 → show muted "No outstanding balance".
+- If `credit_limit` is set, show it next to the due amount.
+- Group name comes from the already-loaded `customerGroups`.
 
-### New sections (placeholders for parity with Ultimate POS)
+This matches Ultimate POS, which surfaces the prior dues immediately on customer selection so the cashier can collect.
 
-Add empty section shells (using `PlaceholderPage`/simple "Coming soon" card) so the IA matches the reference. No business logic:
+## 3. Make customer group visible
 
-- Product, Contact, Sale, POS, Purchases, Payment, Dashboard, System, Prefixes, Email Settings, SMS Settings, Custom Labels
+Today `customerDefaultGroupId` silently switches `activePriceGroupId` whenever a customer with a group is picked, but the user never sees which group is applied.
 
-These render a small card titled with the section name and a muted "Settings for this section will appear here." line. Future requests can fill them in.
+- Always render the existing price group `<Select>` (currently hidden when there are no active price groups). When none exist, show a disabled badge "Default Pricing" instead, so the control is discoverable.
+- When the selected customer has a `customer_group_id`, label the active option with a small "(from customer group)" hint and an "Auto" badge next to the price group selector to indicate it was auto-applied. The cashier can still override manually.
+- The customer's group name also appears in the summary strip from step 2.
 
-### Files to change
+## Technical notes
 
-1. **`src/pages/Settings.tsx`**
-   - Replace the horizontal `TabsList` with a 2-column grid: left vertical nav, right content card.
-   - Reorder/rename tabs to match Ultimate POS ordering (Business first, Invoice grouped with sale-related settings).
-   - Add the placeholder sections listed above (inline tiny components, no new files).
-   - Keep all existing tab components and their save logic intact.
-   - Wrap the page in `PageHeader` (already used) — no change to header.
-
-### Out of scope
-
-- No changes to data, RLS, or save mutations.
-- No changes to invoice template logic or `SaleInvoice.tsx`.
-- No new files; everything stays in `Settings.tsx`.
-- No icons added to the left rail unless trivial (can add lucide icons matching each section if cheap — Building2, Receipt, Package, Users, ShoppingCart, etc.).
-
-### Technical notes
-
-- Use `Tabs orientation="vertical"` with `className="flex flex-col md:flex-row gap-6"`.
-- Left rail: `<TabsList className="md:flex-col md:h-auto md:w-60 md:items-stretch bg-card border rounded-xl p-2 gap-1">` and each `TabsTrigger` styled `justify-start data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg`.
-- Right panel: `<div className="flex-1 rounded-xl border bg-card p-6">{TabsContent...}</div>`.
-- On mobile, override to horizontal scrollable list via responsive classes.
+- File touched: `src/pages/POS.tsx` only.
+- Add imports: `Command`, `CommandInput`, `CommandList`, `CommandEmpty`, `CommandGroup`, `CommandItem` from `@/components/ui/command`; `AlertCircle`, `Check`, `ChevronsUpDown` from `lucide-react` (Popover is already used in the file).
+- Reuse existing `customers` and `customerGroups` data — no new hooks, no schema changes.
+- Keep current `setCustomerId("")` for walk-in semantics so the rest of the file (credit checks, save handlers) continues to work unchanged.
+- Preserve mobile-first sizing (`h-10 md:h-9`, full-width on small screens) consistent with the rest of the POS toolbar.
