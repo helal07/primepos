@@ -282,7 +282,7 @@ class RestRegistry
             'installment_sales' => [
                 'model'        => Models\InstallmentSale::class,
                 'module'       => 'installments',
-                'filters'      => ['customer_id', 'product_id', 'installment_customer_id', 'status', 'invoice_no'],
+                'filters'      => ['customer_id', 'product_id', 'installment_customer_id', 'status', 'invoice_no', 'sale_date'],
                 'sort'         => ['created_at', 'invoice_no'],
                 'default_sort' => '-created_at',
                 'search'       => ['invoice_no'],
@@ -301,7 +301,7 @@ class RestRegistry
             'installment_collections' => [
                 'model'        => Models\InstallmentCollection::class,
                 'module'       => 'installments',
-                'filters'      => ['installment_sale_id', 'schedule_id'],
+                'filters'      => ['installment_sale_id', 'schedule_id', 'collected_at'],
                 'sort'         => ['collected_at', 'created_at'],
                 'default_sort' => '-collected_at',
                 'with'         => ['schedule'],
@@ -553,8 +553,8 @@ class RestRegistry
             'exchange_purchases' => [
                 'model'        => Models\ExchangePurchase::class,
                 'module'       => 'purchases',
-                'filters'      => ['customer_id', 'linked_product_id', 'status'],
-                'sort'         => ['created_at'],
+                'filters'      => ['customer_id', 'linked_product_id', 'status', 'purchase_date', 'updated_at', 'imei', 'linked_sale_id'],
+                'sort'         => ['created_at', 'purchase_date'],
                 'default_sort' => '-created_at',
                 'with'         => [],
                 'max_per_page' => 500,
