@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
+        $middleware->alias([
+            'tenant.active' => \App\Http\Middleware\EnsureTenantActive::class,
+            'module'        => \App\Http\Middleware\EnsureModuleEnabled::class,
+            'role'          => \App\Http\Middleware\EnsureRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
