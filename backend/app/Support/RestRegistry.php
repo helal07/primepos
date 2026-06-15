@@ -46,7 +46,7 @@ class RestRegistry
             'categories' => [
                 'model'   => Models\Category::class,
                 'module'  => 'inventory',
-                'filters' => ['parent_id', 'is_active'],
+                'filters' => ['parent_id', 'is_active', 'name'],
                 'sort'    => ['name', 'created_at'],
                 'default_sort' => 'name',
                 'search'  => ['name'],
@@ -54,7 +54,7 @@ class RestRegistry
             'brands' => [
                 'model'   => Models\Brand::class,
                 'module'  => 'inventory',
-                'filters' => ['is_active'],
+                'filters' => ['is_active', 'name'],
                 'sort'    => ['name', 'created_at'],
                 'default_sort' => 'name',
                 'search'  => ['name'],
@@ -62,7 +62,7 @@ class RestRegistry
             'units' => [
                 'model'   => Models\Unit::class,
                 'module'  => 'inventory',
-                'filters' => ['is_active'],
+                'filters' => ['is_active', 'name'],
                 'sort'    => ['name', 'created_at'],
                 'default_sort' => 'name',
                 'search'  => ['name', 'short_name'],
