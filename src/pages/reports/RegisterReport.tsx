@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,11 +15,10 @@ export default function RegisterReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_register", date, paymentMethod, locationId],
     queryFn: async () => {
-      let q = supabase.from("sales").select("id, invoice_number, total_amount, payment_method, payment_status, created_at").eq("sale_date", date).order("created_at");
-      if (paymentMethod !== "all") q = q.eq("payment_method", paymentMethod);
-      if (locationId) q = q.eq("warehouse_id", locationId);
-      const { data: sales } = await q;
-      const items = sales ?? [];
+      const filter: Record<string, any> = { sale_date: date };
+      if (paymentMethod !== "all") filter.payment_method = paymentMethod;
+      if (locationId) filter.warehouse_id = locationId;
+      const items = await rest.all<any>("sales", { filter, sort: "created_at", perPage: 1000 });
       const methodTotals: Record<string, number> = {};
       items.forEach((s: any) => {
         const m = s.payment_method || "Other";

@@ -1,13 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
 import ReportToolbar from "@/components/reports/ReportToolbar";
 
 export default function ItemsReport() {
@@ -18,17 +17,24 @@ export default function ItemsReport() {
     queryKey: ["report_items", locationId],
     queryFn: async () => {
       if (locationId) {
-        const { data } = await supabase
-          .from("warehouse_stock")
-          .select("quantity, products!inner(id, name, sku, barcode, purchase_price, selling_price, alert_quantity, is_active, categories(name), brands(name))")
-          .eq("warehouse_id", locationId);
-        return (data ?? []).map((r: any) => ({
-          ...r.products,
-          stock_quantity: Number(r.quantity),
+        const stock = await rest.all<any>("warehouse_stock", {
+          filter: { warehouse_id: locationId },
+          with: ["product"],
+          perPage: 2000,
+        });
+        return stock.map((r: any) => ({
+          ...(r.product ?? {}),
+          // Backend Product model doesn't auto-include nested category/brand here;
+          // legacy ItemsReport renders "-" when these are missing.
+          categories: r.product?.category ?? null,
+          brands: r.product?.brand ?? null,
+          stock_quantity: Number(r.quantity ?? 0),
         }));
       }
-      const { data } = await supabase.from("products").select("id, name, sku, barcode, stock_quantity, purchase_price, selling_price, alert_quantity, is_active, categories(name), brands(name)").order("name");
-      return data ?? [];
+      const rows = await rest.all<any>("products", {
+        with: ["category", "brand"], sort: "name", perPage: 2000,
+      });
+      return rows.map((p: any) => ({ ...p, categories: p.category ?? null, brands: p.brand ?? null }));
     },
   });
 
