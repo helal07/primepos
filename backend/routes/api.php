@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TenantBackupController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\RestController;
 
 Route::get('/health', fn () => ['status' => 'ok', 'time' => now()->toIso8601String()]);
 
@@ -81,4 +82,12 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::post   ('/files/upload',              [FileController::class, 'upload']);
     Route::get    ('/files/sign',                [FileController::class, 'sign']);
     Route::delete ('/files/{bucket}/{path}',     [FileController::class, 'destroy'])->where('path', '.*');
+
+    // Generic REST resources (RestRegistry whitelist)
+    Route::get   ('/rest/{resource}',         [RestController::class, 'index']);
+    Route::post  ('/rest/{resource}',         [RestController::class, 'store']);
+    Route::get   ('/rest/{resource}/{id}',    [RestController::class, 'show']);
+    Route::patch ('/rest/{resource}/{id}',    [RestController::class, 'update']);
+    Route::put   ('/rest/{resource}/{id}',    [RestController::class, 'update']);
+    Route::delete('/rest/{resource}/{id}',    [RestController::class, 'destroy']);
 });
