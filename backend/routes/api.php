@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TenantBackupController;
+use App\Http\Controllers\Api\FileController;
 
 Route::get('/health', fn () => ['status' => 'ok', 'time' => now()->toIso8601String()]);
 
@@ -41,6 +42,16 @@ Route::get('/tenant-backups/{backup}/download', [TenantBackupController::class, 
     ->middleware('signed')
     ->name('tenant.backups.download');
 
+/*
+|--------------------------------------------------------------------------
+| Files — public bucket redirect + signed-URL streaming (no auth required
+| when the signature is valid; auth + policy enforced otherwise)
+|--------------------------------------------------------------------------
+*/
+Route::get('/files/{bucket}/{path}', [FileController::class, 'download'])
+    ->where('path', '.*')
+    ->name('files.download');
+
 Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::get('/user', fn (Request $r) => $r->user()->load('tenant'));
 
@@ -65,4 +76,8 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::post  ('/tenant-backups',                  [TenantBackupController::class, 'store']);
     Route::post  ('/tenant-backups/upload',           [TenantBackupController::class, 'upload']);
     Route::post  ('/tenant-backups/{backupId}/restore', [TenantBackupController::class, 'restore']);
+
+    // Files (upload/delete) — bucket-aware, FileAccessPolicy enforced
+    Route::post   ('/files/upload',              [FileController::class, 'upload']);
+    Route::delete ('/files/{bucket}/{path}',     [FileController::class, 'destroy'])->where('path', '.*');
 });
