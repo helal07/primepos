@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import Papa from "papaparse";
-import { supabase } from "@/integrations/supabase/client";
 import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -61,13 +60,18 @@ export default function ProductBulkImport() {
 
   const lookupId = async (table: "categories" | "brands" | "units", name: string) => {
     if (!name?.trim()) return null;
-    const { data } = await (supabase as any).from(table).select("id").ilike("name", name.trim()).limit(1).maybeSingle();
-    if (data?.id) return data.id;
+    const existing = await rest.all<{ id: string }>(table, {
+      filter: { name: name.trim() }, perPage: 1,
+    }).catch(() => [] as any[]);
+    if (existing[0]?.id) return existing[0].id;
     const insert: any = { name: name.trim() };
     if (table === "units") insert.short_name = name.trim().slice(0, 4);
-    const { data: created, error } = await (supabase as any).from(table).insert(insert).select("id").single();
-    if (error) return null;
-    return created.id;
+    try {
+      const created = await rest.create<{ id: string }>(table, insert);
+      return created.id;
+    } catch {
+      return null;
+    }
   };
 
   const runImport = async () => {
