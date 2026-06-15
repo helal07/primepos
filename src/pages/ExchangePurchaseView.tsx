@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,7 @@ export default function ExchangePurchaseView() {
     queryKey: ["exchange_purchase", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("exchange_purchases").select("*").eq("id", id!).maybeSingle();
-      if (error) throw error;
-      return data;
+      return await rest.get<any>("exchange_purchases", id!);
     },
   });
 

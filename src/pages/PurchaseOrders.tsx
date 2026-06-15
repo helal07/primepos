@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Search, Plus, ChevronDown, Pencil, Trash2, PackageCheck } from "lucide-react";
 import { usePurchaseOrders } from "@/hooks/usePurchases";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Can } from "@/components/Can";
@@ -28,8 +28,12 @@ export default function PurchaseOrders() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this purchase order?")) return;
-    const { error } = await supabase.from("purchase_orders").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await rest.remove("purchase_orders", id);
+    } catch (e: any) {
+      toast.error(e?.message || "Delete failed");
+      return;
+    }
     await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
     toast.success("Purchase order deleted");
   };
@@ -38,11 +42,9 @@ export default function PurchaseOrders() {
     if (status === "received") { toast.info("Already received"); return; }
     if (!confirm("Mark this purchase order as Received and add items to inventory?")) return;
     try {
-      const { data: items, error: itemsErr } = await supabase
-        .from("purchase_order_items")
-        .select("product_id, quantity")
-        .eq("purchase_order_id", id);
-      if (itemsErr) throw itemsErr;
+      const items = await rest.all<{ product_id: string; quantity: number }>("purchase_order_items", {
+        filter: { purchase_order_id: id }, perPage: 2000,
+      });
       if (!items || items.length === 0) {
         toast.error("No items to receive");
         return;

@@ -99,8 +99,7 @@ export default function ProductBulkImport() {
           product_type: r.product_type || "general",
           description: r.description || null,
         };
-        const { error } = await supabase.from("products").insert(payload);
-        if (error) throw error;
+        await rest.create("products", payload as any);
         out.push({ row: i + 2, status: "ok", message: "Imported", name: r.name });
       } catch (e: any) {
         out.push({ row: i + 2, status: "error", message: e.message || "Failed", name: r.name });

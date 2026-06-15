@@ -68,21 +68,24 @@ export default function PurchaseAdd() {
   const handleCreateSupplier = async () => {
     if (!newSupplier.name) return;
     setCreatingSupplier(true);
-    const { data, error } = await supabase.from("suppliers").insert({
-      name: newSupplier.name,
-      phone: newSupplier.phone || null,
-      email: newSupplier.email || null,
-      company: newSupplier.company || null,
-      address: newSupplier.address || null,
-      tax_number: newSupplier.tax_number || null,
-      notes: newSupplier.notes || null,
-      is_active: newSupplier.is_active,
-    }).select().single();
-    setCreatingSupplier(false);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    let data: any = null;
+    try {
+      data = await rest.create<any>("suppliers", {
+        name: newSupplier.name,
+        phone: newSupplier.phone || null,
+        email: newSupplier.email || null,
+        company: newSupplier.company || null,
+        address: newSupplier.address || null,
+        tax_number: newSupplier.tax_number || null,
+        notes: newSupplier.notes || null,
+        is_active: newSupplier.is_active,
+      });
+    } catch (e: any) {
+      setCreatingSupplier(false);
+      toast({ title: "Error", description: e?.message || "Create failed", variant: "destructive" });
       return;
     }
+    setCreatingSupplier(false);
     await qc.invalidateQueries({ queryKey: ["suppliers"] });
     if (data?.id) setSupplierId(data.id);
     toast({ title: "Supplier created" });
