@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
+import { api } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,11 +52,10 @@ export default function TenantBackup() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: profile } = await supabase
-        .from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle();
-      if (!profile?.tenant_id) { setIsOwner(false); return; }
-      const { data: t } = await supabase
-        .from("tenants").select("id,name,slug,owner_user_id").eq("id", profile.tenant_id).maybeSingle();
+      const tenantId = user.tenant_id;
+      if (!tenantId) { setIsOwner(false); return; }
+      const tlist = await rest.all<any>("tenants", { filter: { id: tenantId }, perPage: 1 }).catch(() => []);
+      const t = tlist[0] ?? null;
       setTenant(t);
       setIsOwner(!!t && t.owner_user_id === user.id);
     })();
@@ -65,10 +65,8 @@ export default function TenantBackup() {
     queryKey: ["tenant_backups"],
     enabled: !!isOwner,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenant_backups").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Backup[];
+      const rows = await rest.all<Backup>("tenant_backups", { sort: "-created_at", perPage: 200 });
+      return rows;
     },
   });
 
@@ -96,22 +94,18 @@ export default function TenantBackup() {
   async function downloadBackup() {
     setBusy("download");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tenant-backup-export`,
-        {
+      const blob = await api.post<Blob>("/api/tenant-backups", undefined, {
+        headers: { Accept: "application/octet-stream" },
+      }).catch(async () => {
+        // Fall back to JSON response (api wraps JSON); use raw fetch for blob
+        const r = await fetch(`${import.meta.env.VITE_API_URL}/api/tenant-backups`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${session?.access_token ?? ""}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-        },
-      );
-      if (!res.ok) {
-        const t = await res.text();
-        throw new Error(t || `Export failed (${res.status})`);
-      }
-      const blob = await res.blob();
+          credentials: "include",
+          headers: { "X-XSRF-TOKEN": decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? "") },
+        });
+        if (!r.ok) throw new Error(`Export failed (${r.status})`);
+        return await r.blob();
+      }) as Blob;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -174,25 +168,11 @@ export default function TenantBackup() {
     if (!pendingRestore) return;
     setBusy("restore");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       const body = pendingRestore.kind === "file"
         ? { payload: pendingRestore.payload }
         : { snapshot_path: pendingRestore.path };
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tenant-backup-restore`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.access_token ?? ""}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify(body),
-        },
-      );
-      const out = await res.json().catch(() => ({}));
-      if (!res.ok || out.error) throw new Error(out.error ?? "Restore failed");
-      toast.success(`Restore complete — ${out.result?.inserted_rows ?? 0} rows`);
+      const out = await api.post<any>("/api/tenant-backups/restore", body);
+      toast.success(`Restore complete — ${out?.result?.inserted_rows ?? 0} rows`);
       setPendingRestore(null);
       qc.invalidateQueries();
     } catch (e: any) {

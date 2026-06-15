@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { rest } from "@/lib/restResource";
+import { api } from "@/lib/apiClient";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,19 +30,19 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("display_name, phone, company, avatar_url, address, id_proof_url, id_proof_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const rows = await rest.all<any>("profiles", {
+        filter: { user_id: user.id },
+        perPage: 1,
+      }).catch(() => []);
+      const data = rows?.[0] ?? null;
       if (data) setProfile({
         display_name: data.display_name ?? "",
         phone: data.phone ?? "",
         company: data.company ?? "",
         avatar_url: data.avatar_url ?? "",
-        address: (data as any).address ?? "",
-        id_proof_url: (data as any).id_proof_url ?? "",
-        id_proof_name: (data as any).id_proof_name ?? "",
+        address: data.address ?? "",
+        id_proof_url: data.id_proof_url ?? "",
+        id_proof_name: data.id_proof_name ?? "",
       });
     })();
   }, [user]);
@@ -51,14 +52,23 @@ export default function ProfilePage() {
 
   const persistProfile = async (patch: Partial<typeof profile>) => {
     if (!user) return;
-    const { data: existing } = await supabase
-      .from("profiles").select("id").eq("user_id", user.id).maybeSingle();
     const next = { ...profile, ...patch };
     setProfile(next);
     const payload = { ...next, user_id: user.id };
-    return existing
-      ? supabase.from("profiles").update(payload).eq("user_id", user.id)
-      : supabase.from("profiles").insert(payload);
+    try {
+      const existing = await rest.all<{ id: string }>("profiles", {
+        filter: { user_id: user.id },
+        perPage: 1,
+      });
+      if (existing[0]) {
+        await rest.update("profiles", existing[0].id, payload);
+      } else {
+        await rest.create("profiles", payload);
+      }
+      return { error: null as any };
+    } catch (e: any) {
+      return { error: { message: e?.message ?? "Failed to save" } };
+    }
   };
 
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,19 +152,18 @@ export default function ProfilePage() {
     if (pw.next !== pw.confirm) return toast.error("Passwords do not match");
     if (!user?.email) return;
     setLoading(true);
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: user.email, password: pw.current,
-    });
-    if (signInErr) {
-      setLoading(false);
-      return toast.error("Current password is incorrect");
-    }
-    const { error } = await supabase.auth.updateUser({ password: pw.next });
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else {
+    try {
+      await api.post("/api/auth/password", {
+        current_password: pw.current,
+        new_password: pw.next,
+      });
       toast.success("Password changed");
       setPw({ current: "", next: "", confirm: "" });
+    } catch (e: any) {
+      const msg = e?.errors?.current_password?.[0] ?? e?.message ?? "Failed to change password";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
