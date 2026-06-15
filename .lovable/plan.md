@@ -1,80 +1,76 @@
-# Stage 8 — Frontend Rewiring (Supabase → Laravel REST)
+# Stage 9 — Replace `supabase.from(table)` with Laravel REST resources
 
-Goal: stop calling Supabase Storage and Supabase Edge Functions directly from the SPA. All file uploads/downloads go through Stage-7's `/api/files/*`, and all old "edge functions" go through the Laravel controllers built in Stages 5–6. Auth runs on Laravel Sanctum cookies.
+## Scope discovered
+- **58 tables** queried from the SPA, across **52 files** and **15 hooks**.
+- Hooks are already the chokepoint for ~95% of reads/writes, so converting hooks (not pages) collapses most of the surface area.
 
-## 1. New foundation files
+## Strategy: thin generic REST + module-by-module rollout
 
-**`src/lib/apiClient.ts`** — single Sanctum-aware HTTP client
-- Reads `VITE_API_URL` (Laravel base URL, e.g. `https://api.example.com`)
-- `withCredentials: true` so the `XSRF-TOKEN` + session cookie are sent
-- `getCsrf()` calls `/sanctum/csrf-cookie` once per session, caches result
-- Methods: `api.get/post/put/delete/upload(path, body|FormData, opts)`
-- Auto-injects `X-XSRF-TOKEN` header from cookie
-- Normalizes errors → throws `ApiError { status, message, errors? }`
+Instead of writing 58 bespoke Laravel controllers and 15 bespoke fetcher hooks, we ship a small generic layer first, then migrate one module at a time. Each substage stays self-contained and the app keeps working between substages (Supabase calls and Laravel calls coexist).
 
-**`src/lib/storage.ts`** — bucket helper that mirrors the old Supabase Storage surface
-- `uploadFile(bucket, file, { filename? })` → `POST /api/files/upload` (multipart), returns `{ bucket, path, url }`
-- `fileUrl(bucket, path)` → public buckets return `${API_URL}/storage/${bucket}/${path}`; private buckets return `${API_URL}/api/files/${bucket}/${path}` (server-signed when fetched authenticated; signature mints happen server-side via `StorageService::url()` exposed by a thin `GET /api/files/sign?bucket=&path=` endpoint added in this stage)
-- `deleteFile(bucket, path)` → `DELETE /api/files/${bucket}/${path}`
-- `signedUrl(bucket, path, ttlMinutes?)` → `GET /api/files/sign` (auth required, returns 10-min signed URL string)
+### Substage 9a — Foundation (this turn)
 
-**`src/lib/functions.ts`** — drop-in replacement for the 8 `supabase.functions.invoke(...)` call sites; each export is a typed thin wrapper:
+**Backend**
+- `App\Http\Controllers\Api\RestController` — generic `index/show/store/update/destroy` for any whitelisted model. Tenant scoping is automatic via the `BelongsToTenant` trait (Stage 4). Auth required via `auth:sanctum`.
+- `App\Support\RestRegistry` — single source of truth mapping `resource slug → [model, policy_key, allowed_filters, default_sort, search_columns, with_relations]`.
+- `App\Http\Middleware\RestAccess` — calls `has_perm($module.view|create|edit|delete)` (mirrors existing `has_perm` SQL function).
+- Routes: `GET/POST /api/rest/{resource}`, `GET/PATCH/DELETE /api/rest/{resource}/{id}`.
+- Query support: `?filter[col]=val`, `?filter[col][op]=val` (`eq|neq|in|like|gt|gte|lt|lte`), `?sort=-created_at,name`, `?page=1&per_page=25`, `?with=relation1,relation2`, `?q=foo` (full-text on `search_columns`).
+- Response envelope: `{ data, meta: { page, per_page, total } }` for lists; bare object for single resource.
 
-| Old edge function           | New REST call                                       |
-|-----------------------------|-----------------------------------------------------|
-| `tenant-signup`             | `POST /api/tenants/signup`                          |
-| `create-tenant-user`        | `POST /api/tenant-users`                            |
-| `delete-tenant-user`        | `DELETE /api/tenant-users/{userId}`                 |
-| `reset-tenant-password`     | `POST /api/tenant-users/{userId}/reset-password`    |
-| `payment-init`              | `POST /api/payments/init`                           |
-| `super-approve-payment`     | `POST /api/payments/{paymentId}/approve`            |
-| `send-tenant-notification`  | `POST /api/notifications/send`                      |
-| `track-event`               | `POST /api/track/event`                             |
+**Frontend**
+- `src/lib/restResource.ts` — typed helpers:
+  ```ts
+  rest.list<T>(resource, { filter, sort, page, perPage, with: [...], q })
+  rest.get<T>(resource, id, { with })
+  rest.create<T>(resource, body)
+  rest.update<T>(resource, id, patch)
+  rest.remove(resource, id)
+  ```
+  Returns plain arrays/objects; throws `ApiError` on failure (reuses Stage 8 `apiClient`).
+- `src/hooks/rest/useRest.ts` — `useRestList(resource, query)`, `useRestOne`, plus a `useRestMutations(resource)` factory that returns `{ create, update, remove }` with `useMutation` + automatic `queryClient.invalidateQueries(["rest", resource])`.
 
-## 2. Backend addition
+**Migration ergonomics**
+- A hook converts in roughly 10–30 lines of net diff because the existing React Query keys are preserved; only the fetcher swaps.
 
-Add `GET /api/files/sign?bucket=&path=` to `FileController` so the SPA can mint a 10-min signed download URL for private files without a round-trip per render (used by `InstallmentAgreement`, `MediaCapture` thumbnails, etc.). Returns `{ url, expires_at }`.
+### Substage 9b — Inventory module
+Hooks: `useInventory`, `useWarehouses`, `useImeiValidation`.
+Tables: `products`, `product_variations`, `product_group_prices`, `categories`, `brands`, `units`, `warehouses`, `warehouse_stock`.
 
-## 3. Call-site rewrites (16 files)
+### Substage 9c — Contacts & Sales
+Hooks: `useContacts`, `useSales`.
+Tables: `customers`, `suppliers`, `sales`, `sale_items`, `sale_payments`, `shipments`, `shipment_status_history`.
 
-Each edit is a near-mechanical swap, no behavioral change.
+### Substage 9d — Purchases & Stock movements
+Hooks: `usePurchases`.
+Tables: `purchases`, `purchase_items`, `purchase_payments`, `purchase_orders`, `purchase_order_items`, `stock_adjustments`, `stock_transfers`, `exchange_purchases`.
 
-**Storage (8 files)**
-- `src/components/admin/cms/BrandingEditor.tsx` — `uploadFile("branding", file)` then store `path`/`url`
-- `src/pages/Settings.tsx` — 4 branding uploads + 1 remove → `uploadFile` / `deleteFile`
-- `src/pages/Profile.tsx` — avatar `uploadFile("avatars", …)`, id-proof `uploadFile("user-documents", …)`, `deleteFile`, `signedUrl`
-- `src/pages/ProductAdd.tsx` — `uploadFile("product-images", …)`
-- `src/pages/InstallmentCustomerAdd.tsx` — `uploadFile("installment-docs", …)`
-- `src/pages/InstallmentAgreement.tsx` — `signedUrl("installment-docs", path)`
-- `src/pages/settings/TenantBackup.tsx` — backup signed-download → keep using `/api/tenant-backups/{id}/download` (already signed)
-- `src/components/exchange/MediaCapture.tsx` — `uploadFile` + `signedUrl("exchange-docs", path)`
+### Substage 9e — Accounting & Expenses
+Hooks: `useAccounting`, `useExpenses`.
+Tables: `accounts`, `transactions`, `journal_entries`, `journal_entry_lines`, `expenses`, `expense_categories`.
 
-**Edge functions → REST (8 files)**
-- `src/lib/tracking.ts` → `trackEvent()` from `lib/functions.ts`
-- `src/hooks/useRoles.ts` → `deleteTenantUser(userId)`
-- `src/pages/Register.tsx` → `tenantSignup(payload)`
-- `src/pages/Users.tsx` → `createTenantUser(payload)`
-- `src/pages/Subscription.tsx` → `paymentInit(payload)`
-- `src/pages/admin/TenantManagement.tsx` → 3× `resetTenantPassword(userId, …)` + 1× tenant-create wrapper
-- `src/pages/admin/SuperPayments.tsx` → `superApprovePayment(paymentId, …)`
-- `src/pages/admin/Notifications.tsx` → `sendTenantNotification(payload)`
+### Substage 9f — Installments
+Hooks: `useInstallments`.
+Tables: `installment_customers`, `installment_sales`, `installment_schedules`, `installment_collections`.
 
-## 4. Env
+### Substage 9g — HRM
+Hooks: `useHRM`.
+Tables: `employees`, `attendance`, `leave_requests`, `payroll`.
 
-Add to `.env.example`:
-```
-VITE_API_URL=http://localhost:8000
-```
-The existing `VITE_SUPABASE_*` vars stay because Supabase Auth + Postgres are still in use during the migration; only Storage and Edge Functions are being moved off in this stage.
+### Substage 9h — Settings, Roles, SaaS Admin, Landing
+Hooks: `useSettings`, `useRoles`, `useSaasAdmin`, `useWarrantyCms`, `useDashboard`.
+Tables: `business_settings`, `roles`, `role_permissions`, `profiles`, `tenants`, `tenant_payments`, `tenant_actions_log`, `tenant_notifications`, `saas_packages`, `sms_plans`, `sms_providers`, `sms_purchases`, `landing_features`, `landing_reviews`, `faq_entries`, `sitemap_entries`, `payment_gateways`, `payment_gateway_credentials`, `activity_log`, `sidebar_permission_audit`, `warranty_claims`.
 
-## 5. Out of scope (later stages)
-- Replacing `supabase.from(table)` SQL queries with Laravel REST resources (Stage 9).
-- Replacing `supabase.auth` with Sanctum login (Stage 10).
-- Removing Supabase client entirely.
+After 9h: page-level call sites (`supabase.from(...)` outside hooks) get cleaned up; then Supabase Auth is the only remaining Supabase usage (handled in Stage 10).
 
-## 6. Risk + validation
-- Each rewrite preserves the function's existing return shape so callers (toasts, query invalidation) don't change.
-- After the patch batch, run the Vite build to surface unresolved imports / type errors.
-- Manual smoke list to give the user: upload a product image, upload an avatar, generate an installment agreement link, run a tenant signup, trigger a payment init.
+## Risk + rollback
+- Each substage updates one hook file + adds 1 entry per table to `RestRegistry`. If a substage breaks a page, reverting that hook restores prior behavior.
+- During the migration, the same data is reachable through both Supabase RLS *and* Laravel REST + policies. Both paths must agree, which is the case since they both rely on `tenant_id` + role checks already enforced in DB.
 
-Reply **"go"** to apply, or tell me which mappings to adjust first (e.g. different REST paths, keep `track-event` async-only, etc.).
+## This turn (9a) deliverables
+1. `RestController`, `RestRegistry`, `RestAccess` middleware, routes.
+2. `src/lib/restResource.ts` + `src/hooks/rest/useRest.ts`.
+3. Register the **Inventory** resources in `RestRegistry` so 9b can start immediately.
+4. No hook changes yet — existing app keeps working.
+
+Replying "go" applies 9a as described. Tell me if any module ordering should change (e.g. POS-critical paths first), or if you want a different envelope/filter syntax.
