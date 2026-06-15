@@ -23,7 +23,7 @@ RUN composer install \
 # ---------------------------------------------------------------------------
 # Stage 3 — Runtime: Nginx + PHP-FPM 8.3 + mysql-client (for mysqldump)
 # ---------------------------------------------------------------------------
-FROM php:8.3-fpm-alpine AS runtime
+FROM php:8.4-fpm-alpine AS runtime
 
 RUN apk add --no-cache \
       nginx supervisor bash curl tzdata \
