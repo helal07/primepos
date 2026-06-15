@@ -586,7 +586,7 @@ class RestRegistry
             'activity_log' => [
                 'model'        => Models\ActivityLog::class,
                 'module'       => 'settings',
-                'filters'      => ['user_id', 'action', 'entity_type'],
+                'filters'      => ['user_id', 'action', 'entity_type', 'entity_id'],
                 'sort'         => ['created_at'],
                 'default_sort' => '-created_at',
                 'max_per_page' => 500,
