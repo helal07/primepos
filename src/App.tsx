@@ -68,8 +68,6 @@ const Attendance = lazy(() => import("./pages/Attendance"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const PayrollPage = lazy(() => import("./pages/Payroll"));
 const WarrantyClaims = lazy(() => import("./pages/WarrantyClaims"));
-const CmsPages = lazy(() => import("./pages/CmsPages"));
-const PublicCmsPage = lazy(() => import("./pages/PublicCmsPage"));
 const Exchange = lazy(() => import("./pages/Exchange"));
 const ExchangePurchases = lazy(() => import("./pages/ExchangePurchases"));
 const ExchangePurchaseAdd = lazy(() => import("./pages/ExchangePurchaseAdd"));
@@ -137,7 +135,6 @@ const SuperadminRoutes = () => (
             <Route path="tenants/:id" element={<TenantDetail />} />
             <Route path="packages" element={<PackageManagement />} />
             <Route path="cms" element={<LandingCms />} />
-            <Route path="cms/pages" element={<CmsPages />} />
             <Route path="sitemap" element={<Navigate to="/superadmin/settings" replace />} />
             <Route path="sms/providers" element={<SmsProviders />} />
             <Route path="sms/plans" element={<SmsPlans />} />
@@ -170,7 +167,6 @@ const App = () => (
           <TrackingInjector />
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/p/:slug" element={<Suspense fallback={<RouteFallback />}><PublicCmsPage /></Suspense>} />
             <Route path="/login" element={<Suspense fallback={<RouteFallback />}><Login /></Suspense>} />
             <Route path="/superadmin/login" element={<Suspense fallback={<RouteFallback />}><SuperadminLogin /></Suspense>} />
             <Route path="/register" element={<Suspense fallback={<RouteFallback />}><Register /></Suspense>} />
