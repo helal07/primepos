@@ -45,6 +45,13 @@ Tables: `customers`, `suppliers`, `sales`, `sale_items`, `sale_payments`, `shipm
 Hooks: `usePurchases`.
 Tables: `purchases`, `purchase_items`, `purchase_payments`, `purchase_orders`, `purchase_order_items`, `stock_adjustments`, `stock_transfers`, `exchange_purchases`.
 
+**Status (Stage 9d complete):**
+- Backend: added relations to `Purchase` (supplier, items, payments) and `PurchaseItem` (purchase, product, variation). Created `PurchaseOrder` + `PurchaseOrderItem` models with relations.
+- `RestRegistry` now exposes `purchases`, `purchase_items`, `purchase_payments`, `purchase_orders`, `purchase_order_items` (module = `purchases`).
+- Frontend: `usePurchases.ts` fully migrated off Supabase to `rest.*` (list/get/create/update/remove). Singular Laravel relations aliased to plural Supabase shape (`supplier→suppliers`, `product→products`, `variation→product_variations`, `product.brand→products.brands`) so existing UI keeps working.
+- `stock_adjustments` / `stock_transfers` were already migrated in 9b via `useInventory`/`useWarehouses`.
+- `exchange_purchases` deferred to a later substage (exchange module overhaul).
+
 ### Substage 9e — Accounting & Expenses
 Hooks: `useAccounting`, `useExpenses`.
 Tables: `accounts`, `transactions`, `journal_entries`, `journal_entry_lines`, `expenses`, `expense_categories`.

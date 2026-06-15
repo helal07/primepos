@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -37,16 +37,32 @@ export interface PurchaseFormData {
   items: PurchaseItem[];
 }
 
+/** Map Laravel singular relation names → legacy plural Supabase shape so UI components keep working. */
+function aliasPurchase<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.supplier && !out.suppliers) out.suppliers = out.supplier;
+  return out;
+}
+function aliasPurchaseItem<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.product && !out.products) out.products = out.product;
+  if (out.variation && !out.product_variations) out.product_variations = out.variation;
+  if (out.products?.brand && !out.products?.brands) out.products = { ...out.products, brands: out.products.brand };
+  return out;
+}
+
 export function usePurchases() {
   return useQuery({
     queryKey: ["purchases"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchases")
-        .select("*, suppliers(name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("purchases", {
+        with: ["supplier"],
+        sort: "-created_at",
+        perPage: 500,
+      });
+      return rows.map(aliasPurchase);
     },
   });
 }
@@ -56,13 +72,8 @@ export function usePurchase(id: string | null) {
     queryKey: ["purchase", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchases")
-        .select("*, suppliers(name, phone, address, email)")
-        .eq("id", id!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const row = await rest.get<any>("purchases", id!, { with: ["supplier"] });
+      return aliasPurchase(row);
     },
   });
 }
@@ -72,12 +83,12 @@ export function usePurchaseItems(purchaseId: string | null) {
     queryKey: ["purchase_items", purchaseId],
     enabled: !!purchaseId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchase_items")
-        .select("*, products(name), product_variations(name)")
-        .eq("purchase_id", purchaseId!);
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("purchase_items", {
+        filter: { purchase_id: purchaseId! },
+        with: ["product", "variation"],
+        perPage: 1000,
+      });
+      return rows.map(aliasPurchaseItem);
     },
   });
 }
@@ -87,13 +98,11 @@ export function usePurchasePayments(purchaseId: string | null) {
     queryKey: ["purchase_payments", purchaseId],
     enabled: !!purchaseId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchase_payments")
-        .select("*")
-        .eq("purchase_id", purchaseId!)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("purchase_payments", {
+        filter: { purchase_id: purchaseId! },
+        sort: "created_at",
+        perPage: 1000,
+      });
     },
   });
 }
@@ -102,12 +111,12 @@ export function usePurchaseOrders() {
   return useQuery({
     queryKey: ["purchase_orders"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchase_orders")
-        .select("*, suppliers(name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("purchase_orders", {
+        with: ["supplier"],
+        sort: "-created_at",
+        perPage: 500,
+      });
+      return rows.map(aliasPurchase);
     },
   });
 }
@@ -117,12 +126,12 @@ export function usePurchaseOrderItems(poId: string | null) {
     queryKey: ["purchase_order_items", poId],
     enabled: !!poId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchase_order_items")
-        .select("*, products(name, purchase_price, tax_percent, product_type, sku, brands(name))")
-        .eq("purchase_order_id", poId!);
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("purchase_order_items", {
+        filter: { purchase_order_id: poId! },
+        with: ["product", "product.brand", "variation"],
+        perPage: 1000,
+      });
+      return rows.map(aliasPurchaseItem);
     },
   });
 }
@@ -134,15 +143,9 @@ export function usePurchaseMutations() {
   const createPurchase = useMutation({
     mutationFn: async (formData: PurchaseFormData) => {
       const { items, ...purchaseData } = formData;
-      const { data: purchase, error } = await supabase
-        .from("purchases")
-        .insert({ ...purchaseData, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-
+      const purchase = await rest.create<any>("purchases", { ...purchaseData, created_by: user?.id });
       if (items.length > 0) {
-        const purchaseItems = items.map((item) => ({
+        await Promise.all(items.map((item) => rest.create("purchase_items", {
           purchase_id: purchase.id,
           product_id: item.product_id,
           variation_id: item.variation_id || null,
@@ -153,11 +156,7 @@ export function usePurchaseMutations() {
           tax_percent: item.tax_percent,
           total: item.total,
           serial_number: item.serial_number || null,
-        }));
-        const { error: itemsError } = await supabase
-          .from("purchase_items")
-          .insert(purchaseItems);
-        if (itemsError) throw itemsError;
+        })));
       }
       return purchase;
     },
@@ -170,11 +169,7 @@ export function usePurchaseMutations() {
 
   const updatePurchaseStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
-        .from("purchases")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
+      await rest.update("purchases", id, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
@@ -186,31 +181,16 @@ export function usePurchaseMutations() {
   const receivePurchase = useMutation({
     mutationFn: async ({ purchaseId, items }: { purchaseId: string; items: { id: string; received_quantity: number; product_id: string; quantity: number }[] }) => {
       for (const item of items) {
-        const { error: itemError } = await supabase
-          .from("purchase_items")
-          .update({ received_quantity: item.received_quantity })
-          .eq("id", item.id);
-        if (itemError) throw itemError;
-
-        // Update product stock
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.product_id)
-          .single();
+        await rest.update("purchase_items", item.id, { received_quantity: item.received_quantity });
+        const product = await rest.get<any>("products", item.product_id);
         if (product) {
-          await supabase
-            .from("products")
-            .update({ stock_quantity: product.stock_quantity + item.received_quantity })
-            .eq("id", item.product_id);
+          await rest.update("products", item.product_id, {
+            stock_quantity: (product.stock_quantity ?? 0) + item.received_quantity,
+          });
         }
       }
-      // Mark as received if all items fully received
       const allReceived = items.every((i) => i.received_quantity >= i.quantity);
-      await supabase
-        .from("purchases")
-        .update({ status: allReceived ? "received" : "partial" })
-        .eq("id", purchaseId);
+      await rest.update("purchases", purchaseId, { status: allReceived ? "received" : "partial" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
@@ -224,20 +204,12 @@ export function usePurchaseMutations() {
   const updatePurchase = useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData: PurchaseFormData }) => {
       const { items, ...purchaseData } = formData;
-      const { error: pError } = await supabase
-        .from("purchases")
-        .update(purchaseData)
-        .eq("id", id);
-      if (pError) throw pError;
-
-      const { error: delError } = await supabase
-        .from("purchase_items")
-        .delete()
-        .eq("purchase_id", id);
-      if (delError) throw delError;
-
+      await rest.update("purchases", id, purchaseData);
+      // Replace child items: delete existing, then insert fresh.
+      const existing = await rest.all<any>("purchase_items", { filter: { purchase_id: id }, perPage: 1000 });
+      await Promise.all(existing.map((row: any) => rest.remove("purchase_items", row.id)));
       if (items.length > 0) {
-        const purchaseItems = items.map((item) => ({
+        await Promise.all(items.map((item) => rest.create("purchase_items", {
           purchase_id: id,
           product_id: item.product_id,
           variation_id: item.variation_id || null,
@@ -248,11 +220,7 @@ export function usePurchaseMutations() {
           tax_percent: item.tax_percent,
           total: item.total,
           serial_number: item.serial_number || null,
-        }));
-        const { error: itemsError } = await supabase
-          .from("purchase_items")
-          .insert(purchaseItems);
-        if (itemsError) throw itemsError;
+        })));
       }
     },
     onSuccess: () => {
@@ -266,8 +234,7 @@ export function usePurchaseMutations() {
 
   const deletePurchase = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("purchases").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("purchases", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchases"] });
@@ -279,9 +246,12 @@ export function usePurchaseMutations() {
   const createPurchasePayments = useMutation({
     mutationFn: async ({ purchaseId, payments }: { purchaseId: string; payments: { amount: number; payment_method: string; payment_note: string }[] }) => {
       if (payments.length === 0) return;
-      const rows = payments.map(p => ({ purchase_id: purchaseId, amount: p.amount, payment_method: p.payment_method, payment_note: p.payment_note || null }));
-      const { error } = await supabase.from("purchase_payments").insert(rows);
-      if (error) throw error;
+      await Promise.all(payments.map(p => rest.create("purchase_payments", {
+        purchase_id: purchaseId,
+        amount: p.amount,
+        payment_method: p.payment_method,
+        payment_note: p.payment_note || null,
+      })));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchase_payments"] });
