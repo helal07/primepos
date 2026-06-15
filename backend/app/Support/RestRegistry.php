@@ -465,6 +465,14 @@ class RestRegistry
                 'default_sort' => 'sort_order',
                 'max_per_page' => 200,
             ],
+            'business_settings' => [
+                'model'        => Models\BusinessSetting::class,
+                'module'       => 'settings',
+                'filters'      => ['tenant_id', 'key'],
+                'sort'         => ['key', 'updated_at'],
+                'default_sort' => 'key',
+                'max_per_page' => 1000,
+            ],
         ];
     }
 
