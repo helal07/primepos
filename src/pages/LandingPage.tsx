@@ -11,7 +11,6 @@ import {
   useLandingFeatures,
   useLandingReviews,
   useLandingPricing,
-  usePublishedCmsPages,
 } from "@/hooks/useSaasAdmin";
 
 function setMeta(name: string, content: string, attr: "name" | "property" = "name") {
@@ -78,7 +77,6 @@ export default function LandingPage() {
   const { data: featuresList = [] } = useLandingFeatures();
   const { data: reviewsList = [] } = useLandingReviews();
   const { data: pricing = [] } = useLandingPricing();
-  const { data: cmsPages = [] } = usePublishedCmsPages();
 
   const { data: faqs = [] } = useQuery({
     queryKey: ["faq_entries_public"],
@@ -432,12 +430,9 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold mb-3 text-sm">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                {cmsPages.length === 0 && <li className="opacity-60">No pages yet</li>}
-                {cmsPages.slice(0, 6).map((p: any) => (
-                  <li key={p.id}>
-                    <Link to={`/p/${p.slug}`} className="hover:text-foreground transition-colors">{p.title}</Link>
-                  </li>
-                ))}
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                <li><a href="#modules" className="hover:text-foreground transition-colors">Modules</a></li>
+                <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
               </ul>
             </div>
             <div>
