@@ -78,9 +78,7 @@ export default function Subscription() {
   const load = async () => {
     setLoading(true);
     if (!user) { setLoading(false); return; }
-    // Profile/tenant lookup is still via Supabase auth-linked profile (Stage 10 will replace).
-    const { data: prof } = await supabase.from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle();
-    const tid = prof?.tenant_id;
+    const tid = user.tenant_id ?? null;
     const [t, pls, hist] = await Promise.all([
       tid ? rest.get<Tenant>("tenants", tid).catch(() => null) : Promise.resolve(null),
       rest.all<Pkg>("saas_packages", { filter: { is_active: true }, sort: "sort_order", perPage: 200 }),
