@@ -1,10 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useLandingCms } from "@/hooks/useSaasAdmin";
 import { trackEvent } from "@/lib/tracking";
 
-const PIXEL_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fb-pixel-proxy`;
+const PIXEL_PROXY_URL = `/api/fb-pixel-proxy`;
 
 /**
  * Reads global cms_tracking (tenant_id IS NULL) and injects
@@ -16,19 +15,8 @@ export function TrackingInjector() {
   const location = useLocation();
   const initialized = useRef(false);
 
-  const { data: tracking } = useQuery({
-    queryKey: ["business_settings", "cms_tracking"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("value")
-        .eq("key", "cms_tracking")
-        .is("tenant_id", null)
-        .maybeSingle();
-      return (data?.value as Record<string, string>) ?? null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: trackingRaw } = useLandingCms("cms_tracking");
+  const tracking = (trackingRaw as Record<string, string> | null) ?? null;
 
   useEffect(() => {
     if (!tracking) return;
