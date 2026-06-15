@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type PermAction = "view" | "create" | "edit" | "delete";
@@ -25,44 +25,18 @@ export function useMyPermissions() {
     enabled: !!user,
     staleTime: 60_000,
     queryFn: async (): Promise<PermResult> => {
-      const { data: tmFlag } = await supabase.rpc("is_tenant_manager_or_above", { _user_id: user!.id });
-      if (tmFlag) return { isAdmin: true, perms: {}, keys: new Set() };
-
-      // Get role ids for this user, then their permissions
-      const { data: ur } = await supabase
-        .from("user_roles")
-        .select("role_id")
-        .eq("user_id", user!.id);
-      const roleIds = (ur ?? []).map((r) => r.role_id);
-      if (roleIds.length === 0) return { isAdmin: false, perms: {}, keys: new Set() };
-
-      const { data: rps } = await supabase
-        .from("role_permissions")
-        .select("module,can_view,can_create,can_edit,can_delete")
-        .in("role_id", roleIds);
-
-      const merged: Record<string, PermRow> = {};
-      for (const row of (rps ?? []) as PermRow[]) {
-        const cur = merged[row.module] ?? {
-          module: row.module, can_view: false, can_create: false, can_edit: false, can_delete: false,
-        };
-        merged[row.module] = {
-          module: row.module,
-          can_view: cur.can_view || row.can_view,
-          can_create: cur.can_create || row.can_create,
-          can_edit: cur.can_edit || row.can_edit,
-          can_delete: cur.can_delete || row.can_delete,
-        };
-      }
-
-      // Granular Ultimate POS-style grants
-      const { data: grants } = await supabase
-        .from("role_permission_grants")
-        .select("permission_key")
-        .in("role_id", roleIds);
-      const keys = new Set<string>((grants ?? []).map((g: any) => g.permission_key));
-
-      return { isAdmin: false, perms: merged, keys };
+      const res = await api.get<{
+        isAdmin: boolean;
+        perms: Record<string, PermRow> | unknown[];
+        keys: string[];
+      }>("/api/me/permissions");
+      // Laravel encodes an empty associative array as []. Coerce back.
+      const perms = Array.isArray(res.perms) ? {} : (res.perms as Record<string, PermRow>);
+      return {
+        isAdmin: !!res.isAdmin,
+        perms,
+        keys: new Set<string>(res.keys ?? []),
+      };
     },
   });
 }
