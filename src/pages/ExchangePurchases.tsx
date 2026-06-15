@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,12 +20,7 @@ export default function ExchangePurchases() {
   const { data, isLoading } = useQuery({
     queryKey: ["exchange_purchases"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("exchange_purchases")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      return await rest.all<any>("exchange_purchases", { sort: "-created_at", perPage: 1000 });
     },
   });
 
