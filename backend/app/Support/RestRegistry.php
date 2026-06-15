@@ -267,6 +267,46 @@ class RestRegistry
                 'default_sort' => 'created_at',
                 'max_per_page' => 1000,
             ],
+
+            // ===== Installments (Stage 9f) =====
+            'installment_customers' => [
+                'model'        => Models\InstallmentCustomer::class,
+                'module'       => 'installments',
+                'filters'      => ['customer_id', 'is_active'],
+                'sort'         => ['created_at'],
+                'default_sort' => '-created_at',
+                'search'       => ['guarantor_name', 'guarantor_phone'],
+                'with'         => ['customer'],
+                'max_per_page' => 500,
+            ],
+            'installment_sales' => [
+                'model'        => Models\InstallmentSale::class,
+                'module'       => 'installments',
+                'filters'      => ['customer_id', 'product_id', 'installment_customer_id', 'status', 'invoice_no'],
+                'sort'         => ['created_at', 'invoice_no'],
+                'default_sort' => '-created_at',
+                'search'       => ['invoice_no'],
+                'with'         => ['customer', 'product', 'installmentCustomer', 'schedules'],
+                'max_per_page' => 500,
+            ],
+            'installment_schedules' => [
+                'model'        => Models\InstallmentSchedule::class,
+                'module'       => 'installments',
+                'filters'      => ['installment_sale_id', 'status', 'due_date'],
+                'sort'         => ['due_date', 'serial_no'],
+                'default_sort' => 'due_date',
+                'with'         => ['installmentSale', 'installmentSale.customer', 'installmentSale.product'],
+                'max_per_page' => 2000,
+            ],
+            'installment_collections' => [
+                'model'        => Models\InstallmentCollection::class,
+                'module'       => 'installments',
+                'filters'      => ['installment_sale_id', 'schedule_id'],
+                'sort'         => ['collected_at', 'created_at'],
+                'default_sort' => '-collected_at',
+                'with'         => ['schedule'],
+                'max_per_page' => 1000,
+            ],
         ];
     }
 
