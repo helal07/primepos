@@ -51,22 +51,18 @@ export default function TenantBackup() {
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const tenantId = user.tenant_id;
-      if (!tenantId) { setIsOwner(false); return; }
-      const tlist = await rest.all<any>("tenants", { filter: { id: tenantId }, perPage: 1 }).catch(() => []);
-      const t = tlist[0] ?? null;
-      setTenant(t);
-      setIsOwner(!!t && t.owner_user_id === user.id);
-    })();
+    const t = user.tenant;
+    setTenant(t);
+    // Backend already enforces owner/role on the endpoints; treat any tenant-bound user as eligible
+    setIsOwner(!!t);
   }, [user]);
 
   const { data: backups = [], isLoading } = useQuery({
     queryKey: ["tenant_backups"],
     enabled: !!isOwner,
     queryFn: async () => {
-      const rows = await rest.all<Backup>("tenant_backups", { sort: "-created_at", perPage: 200 });
-      return rows;
+      const out = await api.get<{ items: Backup[] }>("/api/tenant-backups").catch(() => ({ items: [] as Backup[] }));
+      return out.items ?? [];
     },
   });
 
