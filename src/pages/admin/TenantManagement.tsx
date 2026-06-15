@@ -150,12 +150,10 @@ export default function TenantManagement() {
     let ownerEmail = t.email ?? "";
     let ownerUserId = t.owner_user_id ?? "";
     if (ownerUserId) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("user_id, display_name")
-        .eq("user_id", ownerUserId)
-        .maybeSingle();
-      if (prof?.user_id) ownerUserId = prof.user_id;
+      const profs = await rest.all<{ user_id: string; display_name: string | null }>(
+        "profiles", { filter: { user_id: ownerUserId }, perPage: 1 }
+      ).catch(() => [] as any[]);
+      if (profs[0]?.user_id) ownerUserId = profs[0].user_id;
     }
 
     const next = {
