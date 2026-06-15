@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\TenantUserController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\TrackingController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\TenantBackupController;
 
 Route::get('/health', fn () => ['status' => 'ok', 'time' => now()->toIso8601String()]);
 
@@ -31,6 +32,15 @@ Route::any('/payments/callback/{gateway}', [PaymentController::class, 'callback'
 Route::post('/track/event',     [TrackingController::class, 'event']);
 Route::post('/track/fb-pixel',  [TrackingController::class, 'fbPixel']);
 
+/*
+|--------------------------------------------------------------------------
+| Signed-URL backup download (no auth — link is short-lived & signed)
+|--------------------------------------------------------------------------
+*/
+Route::get('/tenant-backups/{backup}/download', [TenantBackupController::class, 'download'])
+    ->middleware('signed')
+    ->name('tenant.backups.download');
+
 Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::get('/user', fn (Request $r) => $r->user()->load('tenant'));
 
@@ -49,4 +59,10 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     // Superadmin tenant create
     Route::post('/admin/tenants', [TenantController::class, 'adminCreate'])
         ->middleware('role:superadmin');
+
+    // Tenant backups (mysqldump-based)
+    Route::get   ('/tenant-backups',                  [TenantBackupController::class, 'index']);
+    Route::post  ('/tenant-backups',                  [TenantBackupController::class, 'store']);
+    Route::post  ('/tenant-backups/upload',           [TenantBackupController::class, 'upload']);
+    Route::post  ('/tenant-backups/{backupId}/restore', [TenantBackupController::class, 'restore']);
 });
