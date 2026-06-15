@@ -150,3 +150,29 @@ Foundation in place: `RestController`, `RestRegistry`, REST routes, `restResourc
 
 ## Next: Stage 9c — Contacts & Sales
 `useContacts`, `useSales` → `customers`, `suppliers`, `sales`, `sale_items`, `sale_payments`, `shipments`, `shipment_status_history`.
+
+## Stage 10 ✅ — Sanctum-only auth (Supabase Auth removed)
+
+**Backend**
+- `AuthController::changePassword` + `POST /api/auth/password` (auth:sanctum) — verifies current password, updates with `Hash::make`.
+- Existing `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/token` already in place from Stage 8.
+
+**Frontend**
+- `AuthContext` rewritten. `AuthProvider` now boots from `GET /api/auth/me` (cookie session) and exposes `{ user, loading, signIn, signOut, refresh }`. `AuthUser` is the Laravel payload `{ id, email, name, is_superadmin, tenant_id, tenant, roles }` — no more `@supabase/supabase-js` `User`/`Session`.
+- `Login.tsx`: posts via `signIn(email, password)`; redirects to `/superadmin` or `/dashboard` based on `user.is_superadmin`. Google OAuth button removed (Laravel Socialite migration deferred).
+- `SuperadminLogin.tsx`: uses `signIn` + checks `user.is_superadmin`; calls `signOut()` and shows "Access denied" when not super.
+- `ProtectedRoute.tsx`: no extra round-trip — reads `user.is_superadmin`, `user.tenant_id`, and `user.tenant.{status,subscription_end,name}` straight from the context. Auto-suspend on expiry is now a backend concern (cron / `AutoSuspendTenants`).
+- `SuperadminRoute.tsx`: trivial guard on `user.is_superadmin`.
+- `AppHeader.tsx` / `AdminLayout.tsx`: `user_metadata.display_name` → `user.name`.
+- `AppSidebar.tsx`: dropped `supabase.rpc("is_superadmin", …)`; uses `user.is_superadmin`.
+- `Profile.tsx`: profile read/write via `rest.*` on `profiles`; password change via `POST /api/auth/password`.
+- `Register.tsx`: package list via `rest.all("saas_packages")`; post-signup login via `signIn(...)`.
+- `useSettings.useSaveSetting`: `user.tenant_id` from context replaces the per-call `profiles` lookup.
+- `SalesOrderAdd.useDeliveryPeople`: tenant resolved from `/api/auth/me`; delivery people fetched via `rest.all("profiles", { filter: { tenant_id } })`.
+- `TenantBackup.tsx`: listing via `GET /api/tenant-backups`; export/restore via `api.post("/api/tenant-backups", ...)` and `api.post("/api/tenant-backups/restore", ...)`. Owner gating delegated to backend.
+
+**Deferred (not blocking auth swap):**
+- Laravel Socialite for Google sign-in.
+- `NotificationBell` realtime channel (Supabase Realtime → Laravel broadcast / polling).
+- `useSaasAdmin.useTenantMutations.remove` → still calls `superadmin_delete_tenant` RPC.
+- `src/integrations/supabase/{client,types,...}` and `src/integrations/lovable/index.ts` stay in the tree (auto-generated) — purely unused now for auth.

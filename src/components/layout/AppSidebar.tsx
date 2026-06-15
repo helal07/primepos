@@ -319,10 +319,7 @@ export function AppSidebar() {
   }, [activeGroupLabel]);
 
   useEffect(() => {
-    if (!user) return;
-    supabase.rpc("is_superadmin", { _user_id: user.id }).then(({ data }) => {
-      setIsSuperadmin(!!data);
-    });
+    setIsSuperadmin(!!user?.is_superadmin);
   }, [user]);
 
   const { data: enabledModules } = useEnabledModules();

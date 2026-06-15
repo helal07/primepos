@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { rest } from "@/lib/restResource";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ interface Pkg {
 export default function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<"trial" | "paid" | null>(null);
   const [packages, setPackages] = useState<Pkg[]>([]);
@@ -41,12 +43,10 @@ export default function Register() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("saas_packages")
-        .select("id,name,price,duration_days,is_trial")
-        .eq("is_active", true)
-        .order("sort_order");
-      const list = (data ?? []) as Pkg[];
+      const list = await rest.all<Pkg>("saas_packages", {
+        filter: { is_active: true },
+        sort: "sort_order",
+      }).catch(() => []);
       setPackages(list);
       if (list.length > 0) {
         // Default to trial plan if one exists, otherwise the first plan
@@ -89,11 +89,9 @@ export default function Register() {
       });
 
       // Always sign in so the user can either reach the dashboard or pay
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: form.contactEmail.trim().toLowerCase(),
-        password: form.password,
-      });
-      if (signInErr) {
+      try {
+        await signIn(form.contactEmail.trim().toLowerCase(), form.password);
+      } catch {
         toast({ title: "Account created", description: "Please sign in to continue." });
         navigate("/login");
         return;

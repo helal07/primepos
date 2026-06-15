@@ -35,18 +35,17 @@ function useDeliveryPeople() {
   return useQuery({
     queryKey: ["delivery_people", "current_tenant"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-      const { data: me } = await (supabase as any)
-        .from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle();
-      const tenantId = me?.tenant_id;
+      const { rest } = await import("@/lib/restResource");
+      const me = await import("@/lib/apiClient").then(m =>
+        m.api.get<{ user: { tenant_id?: string | null } }>("/api/auth/me").catch(() => null)
+      );
+      const tenantId = me?.user?.tenant_id;
       if (!tenantId) return [];
-      const { data, error } = await (supabase as any)
-        .from("profiles")
-        .select("user_id,display_name")
-        .eq("tenant_id", tenantId);
-      if (error) throw error;
-      return data as { user_id: string; display_name: string | null }[];
+      const rows = await rest.all<{ user_id: string; display_name: string | null }>(
+        "profiles",
+        { filter: { tenant_id: tenantId }, perPage: 500 }
+      );
+      return rows;
     },
   });
 }
