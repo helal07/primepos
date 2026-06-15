@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,49 +25,52 @@ export default function ProfitLossReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_profit_loss", from, to, hasInstallments, hasExchange, hasExpenses, locationId],
     queryFn: async () => {
-      let salesQ = supabase.from("sales").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("sale_date", from).lte("sale_date", to);
-      let purchasesQ = supabase.from("purchases").select("total_amount, discount_amount, shipping_cost, tax_amount, subtotal").gte("purchase_date", from).lte("purchase_date", to);
-      if (locationId) { salesQ = salesQ.eq("warehouse_id", locationId); purchasesQ = purchasesQ.eq("warehouse_id", locationId); }
-      const productsQ = locationId
-        ? supabase.from("warehouse_stock").select("quantity, products!inner(purchase_price, selling_price)").eq("warehouse_id", locationId)
-        : supabase.from("products").select("stock_quantity, purchase_price, selling_price");
-      const [salesRes, purchasesRes, productsRes, instSalesRes, instCollRes, exchPurchRes, exchSellRes, expensesRes] = await Promise.all([
-        salesQ,
-        purchasesQ,
-        productsQ,
+      const salesFilter: Record<string, any> = { sale_date: { gte: from, lte: to } };
+      const purchasesFilter: Record<string, any> = { purchase_date: { gte: from, lte: to } };
+      if (locationId) { salesFilter.warehouse_id = locationId; purchasesFilter.warehouse_id = locationId; }
+
+      const productsPromise = locationId
+        ? rest.all<any>("warehouse_stock", { filter: { warehouse_id: locationId }, with: ["product"], perPage: 5000 })
+        : rest.all<any>("products", { perPage: 5000 });
+
+      const [sales, purchases, productsRes, instSalesRaw, instColl, exchPurch, exchSold, expenses] = await Promise.all([
+        rest.all<any>("sales", { filter: salesFilter, perPage: 5000 }),
+        rest.all<any>("purchases", { filter: purchasesFilter, perPage: 5000 }),
+        productsPromise,
         hasInstallments
-          ? supabase.from("installment_sales").select("total_amount, price, down_payment, discount, shipping_cost, interest_percent, products(purchase_price)").gte("sale_date", from).lte("sale_date", to)
-          : Promise.resolve({ data: [] as any[] }),
+          ? rest.all<any>("installment_sales", { filter: { sale_date: { gte: from, lte: to } }, with: ["product"], perPage: 5000 })
+          : Promise.resolve([] as any[]),
         hasInstallments
-          ? supabase.from("installment_collections").select("amount, collected_at").gte("collected_at", from).lte("collected_at", to + "T23:59:59")
-          : Promise.resolve({ data: [] as any[] }),
+          ? rest.all<any>("installment_collections", { filter: { collected_at: { gte: from, lte: to + "T23:59:59" } }, perPage: 5000 })
+          : Promise.resolve([] as any[]),
         hasExchange
-          ? supabase.from("exchange_purchases").select("purchase_price, paid_amount, status, linked_sale_id, purchase_date").gte("purchase_date", from).lte("purchase_date", to)
-          : Promise.resolve({ data: [] as any[] }),
+          ? rest.all<any>("exchange_purchases", { filter: { purchase_date: { gte: from, lte: to } }, perPage: 5000 })
+          : Promise.resolve([] as any[]),
         hasExchange
-          ? supabase.from("exchange_purchases").select("purchase_price, status, linked_sale_id").eq("status", "sold").gte("updated_at", from + "T00:00:00").lte("updated_at", to + "T23:59:59")
-          : Promise.resolve({ data: [] as any[] }),
+          ? rest.all<any>("exchange_purchases", { filter: { status: "sold", updated_at: { gte: from + "T00:00:00", lte: to + "T23:59:59" } }, perPage: 5000 })
+          : Promise.resolve([] as any[]),
         hasExpenses
-          ? supabase.from("expenses" as any).select("total_amount").gte("expense_date", from).lte("expense_date", to + "T23:59:59")
-          : Promise.resolve({ data: [] as any[] }),
+          ? rest.all<any>("expenses", { filter: { expense_date: { gte: from, lte: to + "T23:59:59" } }, perPage: 5000 })
+          : Promise.resolve([] as any[]),
       ]);
 
       const productRows: any[] = locationId
-        ? (((productsRes as any).data ?? []) as any[]).map((r: any) => ({
-            stock_quantity: Number(r.quantity),
-            purchase_price: r.products?.purchase_price,
-            selling_price: r.products?.selling_price,
+        ? productsRes.map((r: any) => ({
+            stock_quantity: Number(r.quantity ?? 0),
+            purchase_price: r.product?.purchase_price,
+            selling_price: r.product?.selling_price,
           }))
-        : ((productsRes.data ?? []) as any[]);
+        : productsRes;
+      const instSales = instSalesRaw.map((s: any) => ({ ...s, products: s.product ?? null }));
       return computeProfitLoss({
-        sales: salesRes.data ?? [],
-        purchases: purchasesRes.data ?? [],
+        sales,
+        purchases,
         products: productRows,
-        instSales: (instSalesRes as any).data ?? [],
-        instColl: (instCollRes as any).data ?? [],
-        exchPurch: (exchPurchRes as any).data ?? [],
-        exchSold: (exchSellRes as any).data ?? [],
-        expenses: (expensesRes as any).data ?? [],
+        instSales,
+        instColl,
+        exchPurch,
+        exchSold,
+        expenses,
         hasInstallments,
         hasExchange,
       });

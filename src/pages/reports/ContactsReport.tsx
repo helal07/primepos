@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,11 +13,14 @@ export default function ContactsReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_contacts"],
     queryFn: async () => {
-      const [custRes, supRes] = await Promise.all([
-        supabase.from("customers").select("id, name, phone, email, balance, total_purchases, is_active").order("total_purchases", { ascending: false }),
-        supabase.from("suppliers").select("id, name, phone, email, balance, is_active").order("balance", { ascending: false }),
+      const [customers, suppliers] = await Promise.all([
+        rest.all<any>("customers", { sort: "-created_at", perPage: 2000 }),
+        rest.all<any>("suppliers", { sort: "-created_at", perPage: 2000 }),
       ]);
-      return { customers: custRes.data ?? [], suppliers: supRes.data ?? [] };
+      // Re-sort client-side to match legacy ordering (no `total_purchases`/`balance` in default sort allow-list)
+      customers.sort((a: any, b: any) => Number(b.total_purchases ?? 0) - Number(a.total_purchases ?? 0));
+      suppliers.sort((a: any, b: any) => Number(b.balance ?? 0) - Number(a.balance ?? 0));
+      return { customers, suppliers };
     },
   });
 

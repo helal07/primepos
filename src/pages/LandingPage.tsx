@@ -6,7 +6,7 @@ import * as Icons from "lucide-react";
 import { ArrowRight, CheckCircle2, Menu, X, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import {
   useLandingFeatures,
   useLandingReviews,
@@ -36,13 +36,13 @@ function useGlobalSetting<T = any>(key: string) {
   return useQuery({
     queryKey: ["business_settings", key, "global"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("value")
-        .eq("key", key)
-        .is("tenant_id", null)
-        .maybeSingle();
-      return (data?.value ?? null) as T | null;
+      // Public read via the unauthenticated landing CMS endpoint.
+      try {
+        const res = await api.get<{ value: any }>(`/api/public/landing/cms/${encodeURIComponent(key)}`);
+        return (res?.value ?? null) as T | null;
+      } catch {
+        return null;
+      }
     },
   });
 }
@@ -81,8 +81,12 @@ export default function LandingPage() {
   const { data: faqs = [] } = useQuery({
     queryKey: ["faq_entries_public"],
     queryFn: async () => {
-      const { data } = await supabase.from("faq_entries").select("*").eq("is_active", true).order("sort_order");
-      return data ?? [];
+      // Public read — use the unauthenticated public endpoint instead of Supabase.
+      try {
+        return await api.get<any[]>("/api/public/landing/faqs");
+      } catch {
+        return [];
+      }
     },
   });
 

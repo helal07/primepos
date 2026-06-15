@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,16 +79,19 @@ export default function Subscription() {
   const load = async () => {
     setLoading(true);
     if (!user) { setLoading(false); return; }
+    // Profile/tenant lookup is still via Supabase auth-linked profile (Stage 10 will replace).
     const { data: prof } = await supabase.from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle();
     const tid = prof?.tenant_id;
-    const [{ data: t }, { data: pls }, { data: hist }] = await Promise.all([
-      tid ? supabase.from("tenants").select("id,name,status,subscription_end").eq("id", tid).maybeSingle() : Promise.resolve({ data: null }),
-      supabase.from("saas_packages").select("id,name,price,duration_days,features").eq("is_active", true).order("sort_order"),
-      tid ? supabase.from("tenant_payments").select("*").eq("tenant_id", tid).order("created_at", { ascending: false }) : Promise.resolve({ data: [] }),
+    const [t, pls, hist] = await Promise.all([
+      tid ? rest.get<Tenant>("tenants", tid).catch(() => null) : Promise.resolve(null),
+      rest.all<Pkg>("saas_packages", { filter: { is_active: true }, sort: "sort_order", perPage: 200 }),
+      tid ? rest.all<PayRow>("tenant_payments", {
+        filter: { tenant_id: tid }, sort: "-created_at", perPage: 200,
+      }) : Promise.resolve([] as PayRow[]),
     ]);
-    setTenant((t as Tenant) ?? null);
-    setPackages((pls ?? []) as Pkg[]);
-    setHistory((hist ?? []) as PayRow[]);
+    setTenant(t ?? null);
+    setPackages(pls ?? []);
+    setHistory(hist ?? []);
     setLoading(false);
   };
 
@@ -143,20 +147,25 @@ export default function Subscription() {
       toast({ title: "Reference required", variant: "destructive" }); return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("tenant_payments").insert({
-      tenant_id: tenant.id,
-      package_id: selectedPlan.id,
-      amount: selectedPlan.price,
-      currency: "BDT",
-      payment_method: method,
-      payment_reference: reference.trim() || null,
-      payer_name: payerName.trim() || null,
-      payer_phone: payerPhone.trim() || null,
-      proof_url: proofUrl.trim() || null,
-      notes: notes.trim() || null,
-      status: "pending",
-      created_by: user?.id ?? null,
-    });
+    let error: any = null;
+    try {
+      await rest.create("tenant_payments", {
+        tenant_id: tenant.id,
+        package_id: selectedPlan.id,
+        amount: selectedPlan.price,
+        currency: "BDT",
+        payment_method: method,
+        payment_reference: reference.trim() || null,
+        payer_name: payerName.trim() || null,
+        payer_phone: payerPhone.trim() || null,
+        proof_url: proofUrl.trim() || null,
+        notes: notes.trim() || null,
+        status: "pending",
+        created_by: user?.id ?? null,
+      });
+    } catch (e: any) {
+      error = e;
+    }
     setSubmitting(false);
     if (error) { toast({ title: "Submit failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Payment submitted", description: "We'll verify and activate your plan shortly." });

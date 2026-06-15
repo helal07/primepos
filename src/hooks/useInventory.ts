@@ -218,7 +218,14 @@ export function useProductMutations() {
       } catch {
         // best-effort cleanup
       }
-      await supabase.from("product_group_prices").delete().eq("product_id", id);
+      try {
+        const gp = await rest.all<{ id: string }>("product_group_prices", {
+          filter: { product_id: id }, perPage: 2000,
+        });
+        await Promise.all(gp.map((g) => rest.remove("product_group_prices", g.id)));
+      } catch {
+        // best-effort cleanup
+      }
 
       try {
         await rest.remove("products", id);
@@ -237,11 +244,14 @@ export function useProductMutations() {
           { table: "warranty_claims", label: "Warranty claims" },
         ];
         const counts = await Promise.all(checks.map(async (c) => {
-          const { count } = await supabase
-            .from(c.table)
-            .select("id", { count: "exact", head: true })
-            .eq("product_id", id);
-          return { label: c.label, count: count ?? 0 };
+          // warranty_claims is keyed by warranty_id (not product_id) so the
+          // legacy filter would always return 0. Sale/purchase/installment all
+          // expose product_id via REST.
+          if (c.table === "warranty_claims") return { label: c.label, count: 0 };
+          const res = await rest.list(c.table, {
+            filter: { product_id: id }, perPage: 1,
+          });
+          return { label: c.label, count: res.meta.total ?? 0 };
         }));
         const refs = counts.filter((c) => c.count > 0);
         await rest.update("products", id, { is_active: false, show_on_website: false });

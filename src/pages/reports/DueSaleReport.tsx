@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,11 +13,12 @@ export default function DueSaleReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_due_sales", locationId],
     queryFn: async () => {
-      let q = supabase.from("sales").select("id, invoice_number, sale_date, total_amount, payment_status, customers(name)").in("payment_status", ["due", "partial"]).order("sale_date", { ascending: false });
-      if (locationId) q = q.eq("warehouse_id", locationId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data ?? [];
+      const filter: Record<string, any> = { payment_status: { in: "due,partial" } };
+      if (locationId) filter.warehouse_id = locationId;
+      const rows = await rest.all<any>("sales", {
+        filter, with: ["customer"], sort: "-sale_date", perPage: 1000,
+      });
+      return rows.map((r) => ({ ...r, customers: r.customer ?? null }));
     },
   });
 

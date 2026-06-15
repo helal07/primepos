@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BusinessSetting;
+use App\Models\FaqEntry;
 use App\Models\LandingFeature;
 use App\Models\LandingReview;
 use App\Models\SaasPackage;
@@ -26,6 +27,14 @@ class PublicController extends Controller
     public function landingReviews()
     {
         return LandingReview::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    public function landingFaqs()
+    {
+        return FaqEntry::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();

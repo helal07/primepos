@@ -44,6 +44,7 @@ Route::prefix('public')->group(function () {
     Route::get('/landing/reviews',  [\App\Http\Controllers\Api\PublicController::class, 'landingReviews']);
     Route::get('/landing/pricing',  [\App\Http\Controllers\Api\PublicController::class, 'landingPricing']);
     Route::get('/landing/cms/{key}',[\App\Http\Controllers\Api\PublicController::class, 'landingCms']);
+    Route::get('/landing/faqs',     [\App\Http\Controllers\Api\PublicController::class, 'landingFaqs']);
 });
 
 /*

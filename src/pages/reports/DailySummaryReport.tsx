@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,12 +19,15 @@ export default function DailySummaryReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_daily_summary", date, locationId],
     queryFn: async () => {
-      let sq = supabase.from("sales").select("id, total_amount, payment_method, payment_status, customer_id, customers(name)").eq("sale_date", date);
-      let pq = supabase.from("purchases").select("id, total_amount, payment_method, payment_status, supplier_id, suppliers(name)").eq("purchase_date", date);
-      if (locationId) { sq = sq.eq("warehouse_id", locationId); pq = pq.eq("warehouse_id", locationId); }
-      const [salesRes, purchasesRes] = await Promise.all([sq, pq]);
-      const sales = salesRes.data ?? [];
-      const purchases = purchasesRes.data ?? [];
+      const sFilter: Record<string, any> = { sale_date: date };
+      const pFilter: Record<string, any> = { purchase_date: date };
+      if (locationId) { sFilter.warehouse_id = locationId; pFilter.warehouse_id = locationId; }
+      const [salesRaw, purchasesRaw] = await Promise.all([
+        rest.all<any>("sales", { filter: sFilter, with: ["customer"], perPage: 1000 }),
+        rest.all<any>("purchases", { filter: pFilter, with: ["supplier"], perPage: 1000 }),
+      ]);
+      const sales = salesRaw.map((r: any) => ({ ...r, customers: r.customer ?? null }));
+      const purchases = purchasesRaw.map((r: any) => ({ ...r, suppliers: r.supplier ?? null }));
       const totalSales = sales.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
       const totalPurchases = purchases.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
       return { sales, purchases, totalSales, totalPurchases, netProfit: totalSales - totalPurchases };

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,14 +16,15 @@ export default function TaxReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_tax", from, to, locationId],
     queryFn: async () => {
-      let sq = supabase.from("sales").select("invoice_number, sale_date, subtotal, tax_amount, total_amount").gte("sale_date", from).lte("sale_date", to).order("sale_date");
-      let pq = supabase.from("purchases").select("reference_number, purchase_date, subtotal, tax_amount, total_amount").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date");
-      if (locationId) { sq = sq.eq("warehouse_id", locationId); pq = pq.eq("warehouse_id", locationId); }
-      const [salesRes, purchasesRes] = await Promise.all([sq, pq]);
-      const sales = salesRes.data ?? [];
-      const purchases = purchasesRes.data ?? [];
-      const totalSalesTax = sales.reduce((s, r) => s + Number(r.tax_amount), 0);
-      const totalPurchaseTax = purchases.reduce((s, r) => s + Number(r.tax_amount), 0);
+      const sFilter: Record<string, any> = { sale_date: { gte: from, lte: to } };
+      const pFilter: Record<string, any> = { purchase_date: { gte: from, lte: to } };
+      if (locationId) { sFilter.warehouse_id = locationId; pFilter.warehouse_id = locationId; }
+      const [sales, purchases] = await Promise.all([
+        rest.all<any>("sales", { filter: sFilter, sort: "sale_date", perPage: 2000 }),
+        rest.all<any>("purchases", { filter: pFilter, sort: "purchase_date", perPage: 2000 }),
+      ]);
+      const totalSalesTax = sales.reduce((s: number, r: any) => s + Number(r.tax_amount), 0);
+      const totalPurchaseTax = purchases.reduce((s: number, r: any) => s + Number(r.tax_amount), 0);
       return { sales, purchases, totalSalesTax, totalPurchaseTax, netTax: totalSalesTax - totalPurchaseTax };
     },
   });

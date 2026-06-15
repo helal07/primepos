@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,20 +22,16 @@ export default function SmsProviders() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["sms_providers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sms_providers").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("sms_providers", { sort: "-created_at", perPage: 200 });
     },
   });
 
   const save = useMutation({
     mutationFn: async () => {
       if (editId) {
-        const { error } = await supabase.from("sms_providers").update(form).eq("id", editId);
-        if (error) throw error;
+        await rest.update("sms_providers", editId, form);
       } else {
-        const { error } = await supabase.from("sms_providers").insert(form);
-        if (error) throw error;
+        await rest.create("sms_providers", form);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sms_providers"] }); setOpen(false); setEditId(null); toast({ title: "Saved" }); },
@@ -44,8 +40,7 @@ export default function SmsProviders() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("sms_providers").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("sms_providers", id);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sms_providers"] }); toast({ title: "Deleted" }); },
   });

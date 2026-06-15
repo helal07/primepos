@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Search, Plus, ChevronDown, Pencil, Trash2, PackageCheck } from "lucide-react";
 import { usePurchaseOrders } from "@/hooks/usePurchases";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Can } from "@/components/Can";
@@ -28,8 +28,12 @@ export default function PurchaseOrders() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this purchase order?")) return;
-    const { error } = await supabase.from("purchase_orders").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    try {
+      await rest.remove("purchase_orders", id);
+    } catch (e: any) {
+      toast.error(e?.message || "Delete failed");
+      return;
+    }
     await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
     toast.success("Purchase order deleted");
   };
@@ -38,11 +42,9 @@ export default function PurchaseOrders() {
     if (status === "received") { toast.info("Already received"); return; }
     if (!confirm("Mark this purchase order as Received and add items to inventory?")) return;
     try {
-      const { data: items, error: itemsErr } = await supabase
-        .from("purchase_order_items")
-        .select("product_id, quantity")
-        .eq("purchase_order_id", id);
-      if (itemsErr) throw itemsErr;
+      const items = await rest.all<{ product_id: string; quantity: number }>("purchase_order_items", {
+        filter: { purchase_order_id: id }, perPage: 2000,
+      });
       if (!items || items.length === 0) {
         toast.error("No items to receive");
         return;
@@ -53,23 +55,12 @@ export default function PurchaseOrders() {
         byProduct.set(it.product_id, (byProduct.get(it.product_id) || 0) + Number(it.quantity || 0));
       }
       for (const [productId, qty] of byProduct) {
-        const { data: product, error: pErr } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", productId)
-          .single();
-        if (pErr) throw pErr;
-        const { error: uErr } = await supabase
-          .from("products")
-          .update({ stock_quantity: Number(product?.stock_quantity || 0) + qty })
-          .eq("id", productId);
-        if (uErr) throw uErr;
+        const product = await rest.get<{ stock_quantity: number | string }>("products", productId);
+        await rest.update("products", productId, {
+          stock_quantity: Number(product?.stock_quantity || 0) + qty,
+        });
       }
-      const { error: sErr } = await supabase
-        .from("purchase_orders")
-        .update({ status: "received" })
-        .eq("id", id);
-      if (sErr) throw sErr;
+      await rest.update("purchase_orders", id, { status: "received" });
       await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
       await qc.invalidateQueries({ queryKey: ["products"] });
       toast.success("Purchase order received and inventory updated");

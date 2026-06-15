@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,11 +31,11 @@ export default function Sitemap() {
   useQuery({
     queryKey: ["cms_seo_base"],
     queryFn: async () => {
-      const { data } = await supabase.from("business_settings").select("value").eq("key", "cms_seo").maybeSingle();
-      const v = (data?.value as any) || {};
+      const rows = await rest.all<any>("business_settings", { filter: { key: "cms_seo" }, perPage: 1 });
+      const v = (rows[0]?.value as any) || {};
       const candidate = v.canonical_url || v.site_url || v.base_url;
       if (candidate) setBaseUrl(String(candidate).replace(/\/$/, ""));
-      return data ?? null;
+      return rows[0] ?? null;
     },
   });
 
@@ -50,12 +50,13 @@ export default function Sitemap() {
     setGenerating(true);
     try {
       // Persist canonical base to business_settings.cms_seo
-      const { data: existing } = await supabase.from("business_settings").select("value").eq("key", "cms_seo").maybeSingle();
+      const existingRows = await rest.all<any>("business_settings", { filter: { key: "cms_seo" }, perPage: 1 });
+      const existing = existingRows[0] ?? null;
       const merged = { ...((existing?.value as any) || {}), canonical_url: clean };
       if (existing) {
-        await supabase.from("business_settings").update({ value: merged }).eq("key", "cms_seo");
+        await rest.update("business_settings", existing.id, { value: merged });
       } else {
-        await supabase.from("business_settings").insert({ key: "cms_seo", value: merged });
+        await rest.create("business_settings", { key: "cms_seo", value: merged });
       }
       const res = await fetch(`${SITEMAP_URL}?base=${encodeURIComponent(clean)}&t=${Date.now()}`);
       const xml = await res.text();
@@ -81,9 +82,7 @@ export default function Sitemap() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["sitemap_entries"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sitemap_entries").select("*").order("path");
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("sitemap_entries", { sort: "path", perPage: 500 });
     },
   });
 
@@ -93,11 +92,9 @@ export default function Sitemap() {
       if (!path.startsWith("/")) throw new Error("Path must start with /, for example /about");
       const payload = { ...form, path, priority: Number(form.priority) };
       if (editId) {
-        const { error } = await supabase.from("sitemap_entries").update(payload).eq("id", editId);
-        if (error) throw error;
+        await rest.update("sitemap_entries", editId, payload);
       } else {
-        const { error } = await supabase.from("sitemap_entries").insert(payload);
-        if (error) throw error;
+        await rest.create("sitemap_entries", payload);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sitemap_entries"] }); setOpen(false); setEditId(null); toast({ title: "Saved" }); },
@@ -105,7 +102,7 @@ export default function Sitemap() {
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("sitemap_entries").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await rest.remove("sitemap_entries", id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sitemap_entries"] }); toast({ title: "Deleted" }); },
   });
 

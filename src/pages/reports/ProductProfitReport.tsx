@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useWarehouses } from "@/hooks/useWarehouses";
 
+async function fetchSaleIdsInRange(from: string, to: string, locationId: string): Promise<string[] | null> {
+  if (!locationId) return null;
+  const filter: Record<string, any> = { sale_date: { gte: from, lte: to }, warehouse_id: locationId };
+  const rows = await rest.all<{ id: string }>("sales", { filter, perPage: 5000 });
+  return rows.map((r) => r.id);
+}
+
 export default function ProductProfitReport() {
   const [from, setFrom] = useState(() => new Date(new Date().setDate(1)).toISOString().slice(0, 10));
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
@@ -20,20 +27,42 @@ export default function ProductProfitReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_product_profit", from, to, locationId],
     queryFn: async () => {
-      let q = supabase.from("sale_items").select("product_id, quantity, unit_price, total, products(name, purchase_price, category_id, brand_id, categories(name), brands(name)), sales!inner(warehouse_id)").gte("created_at", from).lte("created_at", to + "T23:59:59");
-      if (locationId) q = q.eq("sales.warehouse_id", locationId);
-      const { data: saleItems } = await q;
-      
+      const saleIds = await fetchSaleIdsInRange(from, to, locationId);
+      const filter: Record<string, any> = { created_at: { gte: from, lte: to + "T23:59:59" } };
+      if (saleIds !== null) {
+        if (!saleIds.length) return { products: [], categories: [], brands: [], totalProfit: 0 };
+        filter.sale_id = { in: saleIds.join(",") };
+      }
+      const saleItems = await rest.all<any>("sale_items", { filter, with: ["product"], perPage: 5000 });
+
+      // Hydrate category/brand by batching products by id (registry whitelists category+brand).
+      const productIds = Array.from(new Set(saleItems.map((i: any) => i.product_id).filter(Boolean)));
+      const productMeta: Record<string, { category?: string; brand?: string }> = {};
+      if (productIds.length) {
+        const chunk = 200;
+        for (let i = 0; i < productIds.length; i += chunk) {
+          const slice = productIds.slice(i, i + chunk);
+          const rows = await rest.all<any>("products", {
+            filter: { id: { in: slice.join(",") } },
+            with: ["category", "brand"],
+            perPage: chunk,
+          });
+          rows.forEach((p: any) => {
+            productMeta[p.id] = { category: p.category?.name, brand: p.brand?.name };
+          });
+        }
+      }
+
       const productMap: Record<string, { name: string; category: string; brand: string; revenue: number; cost: number; qty: number }> = {};
       const categoryMap: Record<string, { name: string; revenue: number; cost: number }> = {};
       const brandMap: Record<string, { name: string; revenue: number; cost: number }> = {};
 
-      (saleItems ?? []).forEach((item: any) => {
+      saleItems.forEach((item: any) => {
         const pid = item.product_id;
-        const pName = item.products?.name || "Unknown";
-        const pCost = Number(item.products?.purchase_price || 0);
-        const catName = item.products?.categories?.name || "Uncategorized";
-        const bName = item.products?.brands?.name || "No Brand";
+        const pName = item.product?.name || "Unknown";
+        const pCost = Number(item.product?.purchase_price || 0);
+        const catName = productMeta[pid]?.category || "Uncategorized";
+        const bName = productMeta[pid]?.brand || "No Brand";
         const revenue = Number(item.total);
         const cost = pCost * Number(item.quantity);
 

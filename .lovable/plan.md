@@ -95,6 +95,23 @@ Tables: `business_settings`, `roles`, `role_permissions`, `role_permission_grant
 
 Deferred to **Stage 9i**: `useDashboard` (heavy aggregates — needs a dedicated `/api/dashboard/stats` endpoint that does the SUM/COUNT in SQL instead of N REST round-trips), public landing reads (need an unauthenticated REST surface), and `useEnabledModules` / `usePermission` (still call SQL functions directly via Supabase).
 
+### Substage 9j — page-level Supabase sweep
+**Status (Stage 9j complete):**
+- Backend: added `BusinessSetting` (referenced in 9h), `WarrantyClaim`, `Warranty`, `TenantActionsLog`, `LandingFeature`, `LandingReview`, plus new `SmsPlan`, `SmsProvider`, `SmsPurchase`, `PaymentGatewayCredential`, `FaqEntry`, `Shipment`, `ShipmentStatusHistory`, `ProductGroupPrice` models. `SmsPurchase::plan()` uses `plan_id` to match the SPA payload.
+- `RestRegistry` now exposes `sms_plans`, `sms_providers`, `sms_purchases`, `payment_gateways`, `payment_gateway_credentials`, `sitemap_entries`, `faq_entries`, `shipments`, `shipment_status_history`, `exchange_purchases`, `tenant_payments`, `tenant_notifications`, `product_group_prices`, `activity_log`. `categories/brands/units` gained `name` filter; `sale_items` gained `created_at` filter+sort; `installment_sales/installment_collections/exchange_purchases` gained date/status filters needed by reports.
+- Backend additions: `PublicController::landingFaqs` (`/api/public/landing/faqs`).
+- Frontend migrated to REST: all 12 report pages under `src/pages/reports/`, `Reports.tsx`, `Shipments.tsx`, `ContactProfile.tsx`, `ExchangePurchaseAdd.tsx`, `ExchangePurchaseView.tsx`, `ExchangeAgreement.tsx`, `ProductBulkImport.tsx`, `PurchaseAdd.tsx`, `PurchaseOrders.tsx`, `PurchaseOrderAdd.tsx`, `Subscription.tsx`, `LandingPage.tsx` (incl. global business_settings reads), `useImeiValidation.ts`, `useInventory.ts` (product_group_prices cleanup + FK-existence counts), `NotificationBell.tsx` (queries via REST; realtime channel stays on Supabase), `QuickAddDialog.tsx`, and the admin pages `SmsPlans`, `SmsProviders`, `SmsPurchases`, `SuperPayments`, `TenantDetail`, `LandingCms`, `Sitemap`, `PaymentGateways`. Singular Eloquent relations are aliased to the legacy plural keys the existing components read (customer→customers, supplier→suppliers, plan→sms_plans, tenant→tenants, etc.).
+- For warehouse-scoped reports, sale_id-IN filtering is used because `sale_items` has no warehouse column; a small extra `sales` call resolves the IDs once.
+
+**Remaining Supabase data usage (intentional, scoped to Stage 10):**
+- `useSaasAdmin.useTenantMutations.remove` keeps calling the `superadmin_delete_tenant` RPC (multi-table cascade in one TX).
+- `ExchangePurchaseAdd.tsx` and `Subscription.tsx` perform a one-line `profiles.tenant_id` lookup keyed off the Supabase auth session.
+- Auth-only pages/components stay on Supabase: `Login`, `Profile`, `SuperadminLogin`, `SuperadminRoute`, `ProtectedRoute`, `AppSidebar` (its `is_superadmin` RPC + `sidebar_permission_audit` insert).
+- `NotificationBell` realtime channel (Supabase Realtime is not yet ported).
+- `useContacts.ts` only retains a `import type` from `supabase/types` for TypeScript shapes; no runtime call.
+
+These all fall to **Stage 10** (Sanctum-only auth + Realtime replacement).
+
 ### Substage 9i — Dashboard, public landing, me-endpoints
 Hooks: `useDashboard`, `useEnabledModules`, `usePermission`, public reads in `useSaasAdmin`.
 

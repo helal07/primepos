@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,12 +12,11 @@ export default function InstallmentReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_installment"],
     queryFn: async () => {
-      const [salesRes, collectionsRes] = await Promise.all([
-        supabase.from("installment_sales").select("id, invoice_no, sale_date, total_amount, down_payment, remaining_amount, status, customers(name)").order("sale_date", { ascending: false }),
-        supabase.from("installment_collections").select("id, amount, collected_at, payment_method"),
+      const [salesRaw, collections] = await Promise.all([
+        rest.all<any>("installment_sales", { with: ["customer"], sort: "-created_at", perPage: 2000 }),
+        rest.all<any>("installment_collections", { perPage: 5000 }),
       ]);
-      const sales = salesRes.data ?? [];
-      const collections = collectionsRes.data ?? [];
+      const sales = salesRaw.map((s: any) => ({ ...s, customers: s.customer ?? null }));
       const totalSold = sales.reduce((s, r: any) => s + Number(r.total_amount), 0);
       const totalCollected = collections.reduce((s, r: any) => s + Number(r.amount), 0);
       const totalRemaining = sales.reduce((s, r: any) => s + Number(r.remaining_amount), 0);

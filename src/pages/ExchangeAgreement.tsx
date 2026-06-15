@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer, Settings2, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
@@ -57,9 +57,7 @@ export default function ExchangeAgreement() {
     queryKey: ["exchange_purchase", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("exchange_purchases").select("*").eq("id", id!).maybeSingle();
-      if (error) throw error;
-      return data;
+      return await rest.get<any>("exchange_purchases", id!);
     },
   });
 

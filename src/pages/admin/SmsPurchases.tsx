@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,34 +21,35 @@ export default function SmsPurchases() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["sms_purchases"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sms_purchases")
-        .select("*, sms_plans(name), tenants(name)")
-        .order("purchased_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("sms_purchases", {
+        with: ["plan", "tenant"], sort: "-purchased_at", perPage: 500,
+      });
+      // Alias singular Eloquent relations to the legacy plural keys the table uses.
+      return rows.map((r: any) => ({
+        ...r,
+        sms_plans: r.plan ?? null,
+        tenants: r.tenant ?? null,
+      }));
     },
   });
 
   const { data: tenants = [] } = useQuery({
     queryKey: ["tenants_min"],
     queryFn: async () => {
-      const { data } = await supabase.from("tenants").select("id, name").order("name");
-      return data ?? [];
+      return await rest.all<any>("tenants", { sort: "name", perPage: 1000 });
     },
   });
 
   const { data: plans = [] } = useQuery({
     queryKey: ["sms_plans_active"],
     queryFn: async () => {
-      const { data } = await supabase.from("sms_plans").select("id, name, sms_count, price").eq("is_active", true);
-      return data ?? [];
+      return await rest.all<any>("sms_plans", { filter: { is_active: true }, perPage: 200 });
     },
   });
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("sms_purchases").insert({
+      await rest.create("sms_purchases", {
         tenant_id: form.tenant_id,
         plan_id: form.plan_id || null,
         sms_count: Number(form.sms_count),
@@ -57,7 +58,6 @@ export default function SmsPurchases() {
         payment_method: form.payment_method,
         reference_no: form.reference_no,
       });
-      if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sms_purchases"] }); setOpen(false); toast({ title: "Recorded" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),

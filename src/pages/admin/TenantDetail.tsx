@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,13 +14,9 @@ export default function TenantDetail() {
     queryKey: ["tenant_detail", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenants")
-        .select("*, saas_packages(name, price, enabled_modules)")
-        .eq("id", id!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const t = await rest.get<any>("tenants", id!, { with: ["package"] });
+      // Alias singular relation to legacy plural key the UI expects.
+      return { ...t, saas_packages: t?.package ?? null };
     },
   });
 
@@ -28,8 +24,10 @@ export default function TenantDetail() {
     queryKey: ["tenant_sms_purchases", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data } = await supabase.from("sms_purchases").select("*, sms_plans(name)").eq("tenant_id", id!).order("purchased_at", { ascending: false }).limit(10);
-      return data ?? [];
+      const rows = await rest.all<any>("sms_purchases", {
+        filter: { tenant_id: id! }, with: ["plan"], sort: "-purchased_at", perPage: 10,
+      });
+      return rows.map((r: any) => ({ ...r, sms_plans: r.plan ?? null }));
     },
   });
 

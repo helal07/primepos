@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,11 +43,13 @@ export default function PaymentGateways() {
 
   const load = async () => {
     setLoading(true);
-    const { data: gws } = await supabase.from("payment_gateways").select("*").order("sort_order");
-    const { data: credRows } = await supabase.from("payment_gateway_credentials").select("*");
-    setGateways((gws ?? []) as Gateway[]);
+    const [gws, credRows] = await Promise.all([
+      rest.all<Gateway>("payment_gateways", { sort: "sort_order", perPage: 200 }),
+      rest.all<any>("payment_gateway_credentials", { perPage: 500 }),
+    ]);
+    setGateways(gws ?? []);
     const map: Record<string, Record<string, string>> = {};
-    (credRows ?? []).forEach((r: any) => { map[r.gateway_id] = r.config ?? {}; });
+    credRows.forEach((r: any) => { map[r.gateway_id] = r.config ?? {}; });
     setCreds(map);
     setLoading(false);
   };
@@ -57,16 +59,18 @@ export default function PaymentGateways() {
   const save = async (gw: Gateway) => {
     setSavingId(gw.id);
     try {
-      await supabase.from("payment_gateways").update({
+      await rest.update("payment_gateways", gw.id, {
         active: gw.active, visible: gw.visible, mode: gw.mode, display_name: gw.display_name,
-      }).eq("id", gw.id);
+      });
       const config = creds[gw.id] ?? {};
-      const { data: existing } = await supabase.from("payment_gateway_credentials")
-        .select("gateway_id").eq("gateway_id", gw.id).maybeSingle();
+      const existingRows = await rest.all<{ id: string }>("payment_gateway_credentials", {
+        filter: { gateway_id: gw.id }, perPage: 1,
+      });
+      const existing = existingRows[0] ?? null;
       if (existing) {
-        await supabase.from("payment_gateway_credentials").update({ config }).eq("gateway_id", gw.id);
+        await rest.update("payment_gateway_credentials", existing.id, { config });
       } else {
-        await supabase.from("payment_gateway_credentials").insert({ gateway_id: gw.id, config });
+        await rest.create("payment_gateway_credentials", { gateway_id: gw.id, config });
       }
       toast({ title: `${gw.display_name} saved` });
     } catch (e: any) {

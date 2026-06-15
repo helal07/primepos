@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,16 +43,15 @@ export default function SuperPayments() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("tenant_payments").select("*").order("created_at", { ascending: false });
-    const list = (data ?? []) as Row[];
+    const list = await rest.all<Row>("tenant_payments", { sort: "-created_at", perPage: 500 });
     const tIds = Array.from(new Set(list.map(r => r.tenant_id)));
     const pIds = Array.from(new Set(list.map(r => r.package_id).filter(Boolean) as string[]));
-    const [{ data: tenants }, { data: pkgs }] = await Promise.all([
-      tIds.length ? supabase.from("tenants").select("id,name,email").in("id", tIds) : Promise.resolve({ data: [] as any[] }),
-      pIds.length ? supabase.from("saas_packages").select("id,name,duration_days").in("id", pIds) : Promise.resolve({ data: [] as any[] }),
+    const [tenants, pkgs] = await Promise.all([
+      tIds.length ? rest.all<any>("tenants", { filter: { id: { in: tIds.join(",") } }, perPage: 500 }) : Promise.resolve([] as any[]),
+      pIds.length ? rest.all<any>("saas_packages", { filter: { id: { in: pIds.join(",") } }, perPage: 200 }) : Promise.resolve([] as any[]),
     ]);
-    const tMap = new Map((tenants ?? []).map((t: any) => [t.id, t]));
-    const pMap = new Map((pkgs ?? []).map((p: any) => [p.id, p]));
+    const tMap = new Map(tenants.map((t: any) => [t.id, t]));
+    const pMap = new Map(pkgs.map((p: any) => [p.id, p]));
     list.forEach(r => { r.tenant = tMap.get(r.tenant_id); r.pkg = r.package_id ? pMap.get(r.package_id) : undefined; });
     setRows(list); setLoading(false);
   };

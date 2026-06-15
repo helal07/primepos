@@ -3,6 +3,7 @@ import { Bell, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -56,14 +57,11 @@ export function NotificationBell() {
     queryKey: ["my-notifications"],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenant_notifications")
-        .select("id,subject,message,created_at,read_at")
-        .eq("channel", "push")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      if (error) throw error;
-      return (data || []) as NotifRow[];
+      return await rest.all<NotifRow>("tenant_notifications", {
+        filter: { channel: "push" },
+        sort: "-created_at",
+        perPage: 30,
+      });
     },
   });
 
@@ -105,9 +103,17 @@ export function NotificationBell() {
 
   const markRead = useMutation({
     mutationFn: async (id?: string) => {
-      const q = supabase.from("tenant_notifications").update({ read_at: new Date().toISOString() }).is("read_at", null);
-      const { error } = id ? await q.eq("id", id) : await q.eq("channel", "push");
-      if (error) throw error;
+      const now = new Date().toISOString();
+      if (id) {
+        await rest.update("tenant_notifications", id, { read_at: now });
+        return;
+      }
+      // Bulk mark-all-read: list unread push rows, patch each (REST has no bulk update).
+      const unreadRows = await rest.all<{ id: string }>("tenant_notifications", {
+        filter: { channel: "push", read_at: { null: true } },
+        perPage: 200,
+      });
+      await Promise.all(unreadRows.map((r) => rest.update("tenant_notifications", r.id, { read_at: now })));
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-notifications"] }),
   });
