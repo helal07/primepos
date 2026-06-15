@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { useToast } from "@/hooks/use-toast";
 import { rest } from "@/lib/restResource";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 // Stage 9c — migrated from supabase.from() to /api/rest. Query keys preserved
 // so consumer pages continue to work without changes.
@@ -10,7 +10,7 @@ import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 export function useCustomers() {
   return useQuery({
     queryKey: ["customers"],
-    queryFn: () => rest.all("customers", { sort: "name", perPage: 500 }),
+    queryFn: () => rest.all<Tables<"customers">>("customers", { sort: "name", perPage: 500 }),
   });
 }
 
@@ -45,7 +45,7 @@ export function useCustomerMutations() {
 export function useSuppliers() {
   return useQuery({
     queryKey: ["suppliers"],
-    queryFn: () => rest.all("suppliers", { sort: "name", perPage: 500 }),
+    queryFn: () => rest.all<Tables<"suppliers">>("suppliers", { sort: "name", perPage: 500 }),
   });
 }
 

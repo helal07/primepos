@@ -9,14 +9,15 @@ import { toast } from "sonner";
 // to the Supabase plural shape (`customers`, `products`, `product_variations`)
 // so existing UI code keeps working unchanged.
 
-type AnyRec = Record<string, unknown> & { [k: string]: any };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRec = Record<string, any>;
 
-function aliasSale<T extends AnyRec>(row: T): T {
+function aliasSale(row: AnyRec): AnyRec {
   if (row && row.customer && !row.customers) row.customers = row.customer;
   return row;
 }
 
-function aliasSaleItem<T extends AnyRec>(row: T): T {
+function aliasSaleItem(row: AnyRec): AnyRec {
   if (row && row.product && !row.products) row.products = row.product;
   if (row && row.variation && !row.product_variations) row.product_variations = row.variation;
   return row;
