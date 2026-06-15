@@ -34,7 +34,7 @@ export interface UserWithRole {
 export const MODULE_LIST = [
   "dashboard", "products", "categories", "brands", "units",
   "sales", "pos", "purchases", "customers", "suppliers",
-  "accounting", "hrm", "warranty", "cms", "settings", "users", "roles",
+  "accounting", "hrm", "warranty", "settings", "users", "roles",
 ] as const;
 
 export function useRoles() {
