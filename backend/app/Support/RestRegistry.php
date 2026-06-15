@@ -578,7 +578,7 @@ class RestRegistry
             'product_group_prices' => [
                 'model'        => Models\ProductGroupPrice::class,
                 'module'       => 'inventory',
-                'filters'      => ['product_id', 'group_id'],
+                'filters'      => ['product_id', 'variation_id', 'group_id', 'selling_price_group_id'],
                 'sort'         => ['product_id'],
                 'default_sort' => 'product_id',
                 'max_per_page' => 2000,
