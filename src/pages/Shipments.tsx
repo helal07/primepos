@@ -49,25 +49,25 @@ export default function Shipments() {
   const { data: shipments, isLoading } = useQuery({
     queryKey: ["shipments"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shipments")
-        .select("*, sales(invoice_no, customer_id, customers(name, phone))")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      const rows = await rest.all<any>("shipments", {
+        with: ["customer"], sort: "-created_at", perPage: 1000,
+      });
+      // Legacy UI reads `sales.customers.name` from the join; mirror that shape
+      // using the direct `customer` relation on the shipment so the table renders.
+      return rows.map((r: any) => ({
+        ...r,
+        sales: r.customer ? { customers: r.customer } : null,
+      }));
     },
   });
 
   const { data: sales } = useQuery({
     queryKey: ["shipments-sales-options"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales")
-        .select("id, invoice_no, sale_date, total, customers(name, phone, address)")
-        .order("sale_date", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data ?? [];
+      const rows = await rest.all<any>("sales", {
+        with: ["customer"], sort: "-sale_date", perPage: 200,
+      });
+      return rows.map((s: any) => ({ ...s, customers: s.customer ?? null }));
     },
   });
 
@@ -75,13 +75,11 @@ export default function Shipments() {
     queryKey: ["shipment-history", historyId],
     enabled: !!historyId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shipment_status_history")
-        .select("*")
-        .eq("shipment_id", historyId!)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      return await rest.all<any>("shipment_status_history", {
+        filter: { shipment_id: historyId! },
+        sort: "-created_at",
+        perPage: 200,
+      });
     },
   });
 
