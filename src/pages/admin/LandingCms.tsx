@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest as restApi } from "@/lib/restResource";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,8 +56,8 @@ function FaqManager() {
   const { data = [] } = useQuery({
     queryKey: ["faq_entries_admin"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("faq_entries").select("*").order("sort_order");
-      if (error) throw error;
+      const data = await restApi.all<any>("faq_entries", { sort: "sort_order", perPage: 500 });
+      
       return data;
     },
   });
@@ -66,11 +66,11 @@ function FaqManager() {
     mutationFn: async (row: any) => {
       if (row.id) {
         const { id, created_at, updated_at, ...rest } = row;
-        const { error } = await supabase.from("faq_entries").update(rest).eq("id", id);
-        if (error) throw error;
+        await restApi.update("faq_entries", id, rest);
+        
       } else {
-        const { error } = await supabase.from("faq_entries").insert(row);
-        if (error) throw error;
+        await restApi.create("faq_entries", row);
+        
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["faq_entries_admin"] }); toast({ title: "Saved" }); },
@@ -78,7 +78,7 @@ function FaqManager() {
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("faq_entries").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await restApi.remove("faq_entries", id);  },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["faq_entries_admin"] }); toast({ title: "Deleted" }); },
   });
 
