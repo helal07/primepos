@@ -412,36 +412,3 @@ export function useLandingPricing() {
     },
   });
 }
-
-// ---------- Published CMS pages (footer auto-list / public route) ----------
-export function usePublishedCmsPages() {
-  return useQuery({
-    queryKey: ["cms_pages_published"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cms_pages")
-        .select("id,title,slug,content,meta_title,meta_description,featured_image,updated_at")
-        .eq("status", "published")
-        .order("updated_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-}
-
-export function usePublishedCmsPage(slug: string | undefined) {
-  return useQuery({
-    enabled: !!slug,
-    queryKey: ["cms_page_public", slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("cms_pages")
-        .select("*")
-        .eq("slug", slug!)
-        .eq("status", "published")
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-}
