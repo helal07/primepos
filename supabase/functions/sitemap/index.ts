@@ -49,9 +49,8 @@ Deno.serve(async (req) => {
     if (!baseUrl) baseUrl = DEFAULT_BASE_URL;
     baseUrl = baseUrl.replace(/\/$/, "");
 
-    const [entriesRes, pagesRes, faqRes] = await Promise.all([
+    const [entriesRes, faqRes] = await Promise.all([
       supabase.from("sitemap_entries").select("path, priority, changefreq, updated_at").eq("is_active", true).order("path"),
-      supabase.from("cms_pages").select("slug, updated_at").eq("status", "published").order("slug"),
       supabase.from("faq_entries").select("updated_at").eq("is_active", true).order("updated_at", { ascending: false }).limit(1),
     ]);
 
@@ -69,15 +68,6 @@ Deno.serve(async (req) => {
       const path = e.path.startsWith("/") ? e.path : `/${e.path}`;
       const lastmod = e.updated_at ? new Date(e.updated_at).toISOString().slice(0, 10) : today;
       urls.push(urlTag(`${baseUrl}${path}`, lastmod, e.changefreq ?? undefined, e.priority != null ? Number(e.priority).toFixed(1) : undefined));
-    }
-
-    // Published CMS pages → /p/:slug
-    const seen = new Set<string>();
-    for (const p of pagesRes.data ?? []) {
-      if (!p.slug || seen.has(p.slug)) continue;
-      seen.add(p.slug);
-      const lastmod = p.updated_at ? new Date(p.updated_at).toISOString().slice(0, 10) : today;
-      urls.push(urlTag(`${baseUrl}/p/${p.slug.replace(/^\/+/, "")}`, lastmod, "monthly", "0.6"));
     }
 
     const xml = [
