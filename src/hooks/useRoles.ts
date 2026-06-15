@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Role {
@@ -41,11 +41,10 @@ export function useRoles() {
   return useQuery({
     queryKey: ["roles"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("roles").select("*").order("is_system", { ascending: false }).order("name");
-      if (error) throw error;
+      const data = await rest.all<Role>("roles", { sort: "-is_system,name", perPage: 500 });
       // Hide global system roles other than the locked "Tenant Manager" admin role.
       // Tenant Managers create their own roles per Ultimate POS flow.
-      return (data as Role[]).filter(
+      return data.filter(
         (r) => !r.is_system || r.name === "Tenant Manager"
       );
     },
@@ -57,9 +56,10 @@ export function useRolePermissions(roleId: string | null) {
     queryKey: ["role_permissions", roleId],
     enabled: !!roleId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("role_permissions").select("*").eq("role_id", roleId!);
-      if (error) throw error;
-      return data as RolePermission[];
+      return await rest.all<RolePermission>("role_permissions", {
+        filter: { role_id: roleId! },
+        perPage: 2000,
+      });
     },
   });
 }
@@ -68,19 +68,14 @@ export function useUsersWithRoles() {
   return useQuery({
     queryKey: ["users_with_roles"],
     queryFn: async () => {
-      // Profiles are tenant-scoped via RLS, so this returns only tenant users.
-      const { data: profiles, error: pError } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url");
-      if (pError) throw pError;
-
-      const { data: userRoles, error: urError } = await supabase
-        .from("user_roles")
-        .select("user_id, role_id, roles(name)");
-      if (urError) throw urError;
+      // Profiles are tenant-scoped via BelongsToTenant, so this returns only tenant users.
+      const [profiles, userRoles] = await Promise.all([
+        rest.all<any>("profiles", { perPage: 1000 }),
+        rest.all<any>("user_roles", { with: ["role"], perPage: 1000 }),
+      ]);
 
       const roleMap = new Map(
-        (userRoles as any[]).map((ur) => [ur.user_id, { role_id: ur.role_id, role_name: (ur.roles as any)?.name }])
+        userRoles.map((ur: any) => [ur.user_id, { role_id: ur.role_id, role_name: ur.role?.name }])
       );
 
       return (profiles ?? []).map((p) => ({
@@ -100,11 +95,9 @@ export function useSaveRole() {
   return useMutation({
     mutationFn: async ({ id, name, description }: { id?: string; name: string; description: string }) => {
       if (id) {
-        const { error } = await supabase.from("roles").update({ name, description }).eq("id", id);
-        if (error) throw error;
+        await rest.update("roles", id, { name, description });
       } else {
-        const { error } = await supabase.from("roles").insert({ name, description });
-        if (error) throw error;
+        await rest.create("roles", { name, description });
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); toast({ title: "Role saved" }); },
@@ -117,8 +110,7 @@ export function useDeleteRole() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("roles").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("roles", id);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["roles"] }); toast({ title: "Role deleted" }); },
     onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },
@@ -130,13 +122,13 @@ export function useSavePermissions() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ roleId, permissions }: { roleId: string; permissions: Omit<RolePermission, "id">[] }) => {
-      // Delete existing then insert new
-      const { error: delErr } = await supabase.from("role_permissions").delete().eq("role_id", roleId);
-      if (delErr) throw delErr;
-      if (permissions.length > 0) {
-        const { error: insErr } = await supabase.from("role_permissions").insert(permissions);
-        if (insErr) throw insErr;
-      }
+      // REST has no bulk-delete: list existing rows for this role, delete each, then insert.
+      const existing = await rest.all<{ id: string }>("role_permissions", {
+        filter: { role_id: roleId },
+        perPage: 2000,
+      });
+      await Promise.all(existing.map((r) => rest.remove("role_permissions", r.id)));
+      await Promise.all(permissions.map((p) => rest.create("role_permissions", p as any)));
     },
     onSuccess: (_, vars) => { qc.invalidateQueries({ queryKey: ["role_permissions", vars.roleId] }); toast({ title: "Permissions saved" }); },
     onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },
@@ -179,13 +171,10 @@ export function usePermissionCatalog() {
     queryKey: ["permission_catalog"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("permission_catalog" as any)
-        .select("*")
-        .order("module")
-        .order("sort_order");
-      if (error) throw error;
-      return data as unknown as CatalogEntry[];
+      return await rest.all<CatalogEntry>("permission_catalog", {
+        sort: "module,sort_order",
+        perPage: 1000,
+      });
     },
   });
 }
@@ -195,12 +184,11 @@ export function useRoleGrants(roleId: string | null) {
     queryKey: ["role_permission_grants", roleId],
     enabled: !!roleId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("role_permission_grants" as any)
-        .select("permission_key")
-        .eq("role_id", roleId!);
-      if (error) throw error;
-      return new Set<string>(((data ?? []) as any[]).map((r) => r.permission_key));
+      const data = await rest.all<{ permission_key: string }>("role_permission_grants", {
+        filter: { role_id: roleId! },
+        perPage: 5000,
+      });
+      return new Set<string>(data.map((r) => r.permission_key));
     },
   });
 }
@@ -210,18 +198,14 @@ export function useSaveRoleGrants() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async ({ roleId, keys }: { roleId: string; keys: string[] }) => {
-      const { error: delErr } = await supabase
-        .from("role_permission_grants" as any)
-        .delete()
-        .eq("role_id", roleId);
-      if (delErr) throw delErr;
-      if (keys.length > 0) {
-        const rows = keys.map((k) => ({ role_id: roleId, permission_key: k }));
-        const { error: insErr } = await supabase
-          .from("role_permission_grants" as any)
-          .insert(rows);
-        if (insErr) throw insErr;
-      }
+      const existing = await rest.all<{ id: string }>("role_permission_grants", {
+        filter: { role_id: roleId },
+        perPage: 5000,
+      });
+      await Promise.all(existing.map((r) => rest.remove("role_permission_grants", r.id)));
+      await Promise.all(
+        keys.map((k) => rest.create("role_permission_grants", { role_id: roleId, permission_key: k })),
+      );
     },
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["role_permission_grants", vars.roleId] });
@@ -241,17 +225,18 @@ export function useUpdateUserRole() {
     mutationFn: async ({ userId, roleId }: { userId: string; roleId: string }) => {
       // Insert the new role FIRST (so the caller never temporarily loses
       // their Tenant Manager role mid-operation, which would trip RLS),
-      // then remove any other roles for this user.
-      const { error: insErr } = await supabase
-        .from("user_roles")
-        .upsert({ user_id: userId, role_id: roleId }, { onConflict: "user_id,role_id" });
-      if (insErr) throw insErr;
-      const { error: delErr } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userId)
-        .neq("role_id", roleId);
-      if (delErr) throw delErr;
+      // then remove any other roles for this user. REST has no upsert.
+      const existing = await rest.all<{ id: string; role_id: string }>("user_roles", {
+        filter: { user_id: userId },
+        perPage: 100,
+      });
+      const already = existing.find((r) => r.role_id === roleId);
+      if (!already) {
+        await rest.create("user_roles", { user_id: userId, role_id: roleId });
+      }
+      await Promise.all(
+        existing.filter((r) => r.role_id !== roleId).map((r) => rest.remove("user_roles", r.id)),
+      );
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users_with_roles"] }); toast({ title: "Role updated" }); },
     onError: (e: any) => { toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }); },

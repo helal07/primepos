@@ -1,19 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+const aliasClaim = (c: any) => {
+  if (!c) return c;
+  const out = { ...c };
+  if (c.customer && !c.customers) out.customers = c.customer;
+  if (c.product && !c.products) out.products = c.product;
+  return out;
+};
 
 export function useWarrantyClaims() {
   return useQuery({
     queryKey: ["warranty_claims"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warranty_claims")
-        .select("*, customers(name), products(name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("warranty_claims", {
+        with: ["customer", "product"],
+        sort: "-created_at",
+        perPage: 500,
+      });
+      return rows.map(aliasClaim);
     },
   });
 }
@@ -25,11 +33,10 @@ export function useWarrantyMutations() {
   const upsertClaim = useMutation({
     mutationFn: async (claim: any) => {
       if (claim.id) {
-        const { error } = await supabase.from("warranty_claims").update(claim).eq("id", claim.id);
-        if (error) throw error;
+        const { id, ...rest_ } = claim;
+        await rest.update("warranty_claims", id, rest_);
       } else {
-        const { error } = await supabase.from("warranty_claims").insert({ ...claim, created_by: user?.id });
-        if (error) throw error;
+        await rest.create("warranty_claims", { ...claim, created_by: user?.id });
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["warranty_claims"] }); toast.success("Claim saved"); },
@@ -38,8 +45,7 @@ export function useWarrantyMutations() {
 
   const deleteClaim = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("warranty_claims").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("warranty_claims", id);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["warranty_claims"] }); toast.success("Claim deleted"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
