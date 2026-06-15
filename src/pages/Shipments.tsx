@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -104,20 +104,18 @@ export default function Shipments() {
         delivered_at: form.status === "delivered" ? new Date().toISOString() : null,
       };
       if (editId) {
-        const { data: prev } = await supabase.from("shipments").select("status").eq("id", editId).maybeSingle();
-        const { error } = await supabase.from("shipments").update(payload).eq("id", editId);
-        if (error) throw error;
+        const prev = await rest.get<{ status: string }>("shipments", editId).catch(() => null);
+        await rest.update("shipments", editId, payload);
         if (prev?.status !== form.status) {
-          await supabase.from("shipment_status_history").insert({
+          await rest.create("shipment_status_history", {
             shipment_id: editId, status: form.status, changed_by: user?.id, note: "Status updated",
           });
         }
       } else {
         payload.created_by = user?.id;
-        const { data, error } = await supabase.from("shipments").insert(payload).select("id").single();
-        if (error) throw error;
-        await supabase.from("shipment_status_history").insert({
-          shipment_id: data.id, status: form.status, changed_by: user?.id, note: "Created",
+        const created = await rest.create<{ id: string }>("shipments", payload);
+        await rest.create("shipment_status_history", {
+          shipment_id: created.id, status: form.status, changed_by: user?.id, note: "Created",
         });
       }
     },
@@ -131,8 +129,7 @@ export default function Shipments() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("shipments").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("shipments", id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["shipments"] });
@@ -146,9 +143,8 @@ export default function Shipments() {
       const patch: any = { status };
       if (["shipped", "in_transit"].includes(status)) patch.shipped_at = new Date().toISOString();
       if (status === "delivered") patch.delivered_at = new Date().toISOString();
-      const { error } = await supabase.from("shipments").update(patch).eq("id", id);
-      if (error) throw error;
-      await supabase.from("shipment_status_history").insert({
+      await rest.update("shipments", id, patch);
+      await rest.create("shipment_status_history", {
         shipment_id: id, status, changed_by: user?.id, note: "Quick status change",
       });
     },
