@@ -45,16 +45,13 @@ export default function UsersPage() {
     }
     setSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-tenant-user", {
-        body: {
-          email: form.email,
-          password: form.password,
-          display_name: form.display_name || form.email,
-          role_name: form.role_name || null,
-        },
+      const { createTenantUser } = await import("@/lib/functions");
+      await createTenantUser({
+        email: form.email,
+        password: form.password,
+        display_name: form.display_name || form.email,
+        role_name: form.role_name || null,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "User created" });
       qc.invalidateQueries({ queryKey: ["users_with_roles"] });
       setAddOpen(false);
