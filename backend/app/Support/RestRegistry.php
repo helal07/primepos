@@ -81,7 +81,25 @@ class RestRegistry
                 'filters' => ['warehouse_id', 'product_id', 'variation_id'],
                 'sort'    => ['quantity', 'updated_at'],
                 'default_sort' => '-updated_at',
-                'with'    => ['product', 'warehouse'],
+                'with'    => ['product', 'variation', 'warehouse'],
+            ],
+            'stock_adjustments' => [
+                'model'   => Models\StockAdjustment::class,
+                'module'  => 'inventory',
+                'filters' => ['product_id', 'variation_id', 'warehouse_id', 'type'],
+                'sort'    => ['created_at'],
+                'default_sort' => '-created_at',
+                'with'    => ['product', 'variation'],
+                'max_per_page' => 500,
+            ],
+            'stock_transfers' => [
+                'model'   => Models\StockTransfer::class,
+                'module'  => 'inventory',
+                'filters' => ['product_id', 'variation_id', 'from_warehouse_id', 'to_warehouse_id', 'status'],
+                'sort'    => ['created_at'],
+                'default_sort' => '-created_at',
+                'with'    => ['product', 'variation'],
+                'max_per_page' => 500,
             ],
         ];
     }
