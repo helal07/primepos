@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { uploadFile, signedUrl } from "@/lib/storage";
 import { toast } from "sonner";
 import { compressIfImage } from "@/lib/compressImage";
 
@@ -26,11 +26,10 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
     try {
       const file = await compressIfImage(input, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `${tenantId}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from("exchange-docs").upload(path, file, { upsert: false });
-      if (error) throw error;
-      const { data } = await supabase.storage.from("exchange-docs").createSignedUrl(path, 60 * 60 * 24 * 365);
-      onChange(data?.signedUrl ?? path);
+      const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { path } = await uploadFile("exchange-docs", file, { filename });
+      const url = await signedUrl("exchange-docs", path, 60);
+      onChange(url || path);
     } catch (e: any) {
       toast.error(e.message || "Upload failed");
     } finally {
