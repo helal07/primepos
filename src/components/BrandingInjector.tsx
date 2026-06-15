@@ -1,25 +1,13 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useLandingCms } from "@/hooks/useSaasAdmin";
 
 /**
  * Reads global cms_branding (tenant_id IS NULL) and applies favicon,
  * theme color, and document title to <head> at runtime. Sitewide.
  */
 export function BrandingInjector() {
-  const { data: branding } = useQuery({
-    queryKey: ["business_settings", "cms_branding"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("value")
-        .eq("key", "cms_branding")
-        .is("tenant_id", null)
-        .maybeSingle();
-      return (data?.value as Record<string, string>) ?? null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: brandingRaw } = useLandingCms("cms_branding");
+  const branding = (brandingRaw as Record<string, string> | null) ?? null;
 
   useEffect(() => {
     if (!branding) return;
