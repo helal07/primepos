@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Save, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { uploadFile } from "@/lib/storage";
 import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { toast } from "sonner";
 import { toFriendlyError } from "@/lib/friendlyError";
@@ -29,11 +29,9 @@ function UploadField({
     setBusy(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `${prefix}/${prefix}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) throw error;
-      const { data } = supabase.storage.from("branding").getPublicUrl(path);
-      onChange(data.publicUrl);
+      const filename = `${prefix}/${prefix}-${Date.now()}.${ext}`;
+      const { url } = await uploadFile("branding", file, { filename });
+      onChange(url);
       toast.success(`${label} uploaded`);
     } catch (e: any) {
       toast.error(toFriendlyError(e));
