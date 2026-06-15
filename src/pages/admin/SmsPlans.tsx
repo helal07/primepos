@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,9 +23,7 @@ export default function SmsPlans() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["sms_plans"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sms_plans").select("*").order("price");
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("sms_plans", { sort: "price", perPage: 200 });
     },
   });
 
@@ -33,11 +31,9 @@ export default function SmsPlans() {
     mutationFn: async () => {
       const payload = { ...form, sms_count: Number(form.sms_count), price: Number(form.price), validity_days: form.validity_days ? Number(form.validity_days) : null };
       if (editId) {
-        const { error } = await supabase.from("sms_plans").update(payload).eq("id", editId);
-        if (error) throw error;
+        await rest.update("sms_plans", editId, payload);
       } else {
-        const { error } = await supabase.from("sms_plans").insert(payload);
-        if (error) throw error;
+        await rest.create("sms_plans", payload);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sms_plans"] }); setOpen(false); setEditId(null); toast({ title: "Saved" }); },
@@ -45,7 +41,7 @@ export default function SmsPlans() {
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("sms_plans").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await rest.remove("sms_plans", id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sms_plans"] }); toast({ title: "Deleted" }); },
   });
 
