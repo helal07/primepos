@@ -218,7 +218,14 @@ export function useProductMutations() {
       } catch {
         // best-effort cleanup
       }
-      await supabase.from("product_group_prices").delete().eq("product_id", id);
+      try {
+        const gp = await rest.all<{ id: string }>("product_group_prices", {
+          filter: { product_id: id }, perPage: 2000,
+        });
+        await Promise.all(gp.map((g) => rest.remove("product_group_prices", g.id)));
+      } catch {
+        // best-effort cleanup
+      }
 
       try {
         await rest.remove("products", id);
