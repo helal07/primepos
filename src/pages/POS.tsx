@@ -37,7 +37,7 @@ const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts, useCategories, useBrands } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
