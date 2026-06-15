@@ -133,11 +133,9 @@ export default function TenantBackup() {
     if (!b.storage_path) return;
     setBusy(b.id);
     try {
-      const { data, error } = await supabase.storage
-        .from("tenant-backups")
-        .createSignedUrl(b.storage_path, 60);
-      if (error || !data) throw error ?? new Error("Failed");
-      window.open(data.signedUrl, "_blank");
+      const { signedUrl } = await import("@/lib/storage");
+      const url = await signedUrl("tenant-backups", b.storage_path, 1);
+      window.open(url, "_blank");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to fetch snapshot");
     } finally {
