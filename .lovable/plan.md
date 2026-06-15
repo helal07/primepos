@@ -65,6 +65,11 @@ Tables: `accounts`, `transactions`, `journal_entries`, `journal_entry_lines`, `e
 Hooks: `useInstallments`.
 Tables: `installment_customers`, `installment_sales`, `installment_schedules`, `installment_collections`.
 
+**Status (Stage 9f complete):**
+- Backend: added relations to `InstallmentCustomer` (customer), `InstallmentSale` (customer, product, installmentCustomer, schedules), `InstallmentSchedule` (installmentSale), `InstallmentCollection` (schedule, installmentSale).
+- `RestRegistry` exposes `installment_customers`, `installment_sales`, `installment_schedules`, `installment_collections` (module=installments).
+- `useInstallments.ts` fully migrated to `rest.*`. Aliased `customer→customers`, `product→products`, `installmentCustomer→installment_customers`, `installmentSale→installment_sales`, `schedule→installment_schedules` so existing UI keeps working.
+
 ### Substage 9g — HRM
 Hooks: `useHRM`.
 Tables: `employees`, `attendance`, `leave_requests`, `payroll`.
