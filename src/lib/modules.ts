@@ -6,7 +6,6 @@ export type ModuleKey =
   | "contacts"
   | "accounting"
   | "hrm"
-  | "cms"
   | "warranty"
   | "installments"
   | "reports"
@@ -28,7 +27,6 @@ export const MODULE_CATALOG: ModuleDef[] = [
   { key: "contacts", label: "Contacts", description: "Customers and suppliers." },
   { key: "accounting", label: "Accounting", description: "Chart of accounts, journals, trial balance." },
   { key: "hrm", label: "HRM", description: "Employees, attendance, leave, payroll." },
-  { key: "cms", label: "CMS", description: "Website pages and content." },
   { key: "warranty", label: "Warranty", description: "Warranty claims management." },
   { key: "installments", label: "Installments", description: "Installment sales and collections." },
   { key: "reports", label: "Reports", description: "All business reports." },
