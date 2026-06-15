@@ -8,4 +8,14 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+
+    'sms' => [
+        'url' => env('SMS_GATEWAY_URL'),
+        'key' => env('SMS_GATEWAY_KEY'),
+    ],
+
+    'facebook' => [
+        'pixel_id'     => env('FB_PIXEL_ID'),
+        'access_token' => env('FB_CAPI_TOKEN'),
+    ],
 ];
