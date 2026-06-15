@@ -3,7 +3,7 @@
  * which fans out to Meta CAPI + GA4 Measurement Protocol.
  * Use alongside client-side fbq/gtag (with matching event_id) for dedupe.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { trackEventApi } from "@/lib/functions";
 
 function readCookie(name: string): string | undefined {
   const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
@@ -58,20 +58,18 @@ export async function trackEvent(
     }
     const ga4ClientId = getGa4ClientId(ga4Id);
 
-    await supabase.functions.invoke("track-event", {
-      body: {
-        event_name: eventName,
-        event_id: opts.event_id ?? `${eventName.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        event_source_url: url,
-        user_data: {
-          ...(opts.user_data ?? {}),
-          fbp,
-          fbc,
-          client_user_agent: ua,
-        },
-        custom_data: opts.custom_data,
-        ga4_client_id: ga4ClientId,
+    await trackEventApi({
+      event_name: eventName,
+      event_id: opts.event_id ?? `${eventName.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      event_source_url: url,
+      user_data: {
+        ...(opts.user_data ?? {}),
+        fbp,
+        fbc,
+        client_user_agent: ua,
       },
+      custom_data: opts.custom_data,
+      ga4_client_id: ga4ClientId,
     });
   } catch {
     // Tracking must never break the app
