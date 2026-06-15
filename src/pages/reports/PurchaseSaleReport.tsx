@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,19 +18,17 @@ export default function PurchaseSaleReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_purchase_sale", from, to, paymentMethod, paymentStatus, locationId],
     queryFn: async () => {
-      let sq = supabase.from("sales").select("id, invoice_number, sale_date, total_amount, payment_status, payment_method, customers(name)").gte("sale_date", from).lte("sale_date", to).order("sale_date", { ascending: false });
-      if (paymentMethod !== "all") sq = sq.eq("payment_method", paymentMethod);
-      if (paymentStatus !== "all") sq = sq.eq("payment_status", paymentStatus);
-      if (locationId) sq = sq.eq("warehouse_id", locationId);
-
-      let pq = supabase.from("purchases").select("id, reference_number, purchase_date, total_amount, payment_status, payment_method, suppliers(name)").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date", { ascending: false });
-      if (paymentMethod !== "all") pq = pq.eq("payment_method", paymentMethod);
-      if (paymentStatus !== "all") pq = pq.eq("payment_status", paymentStatus);
-      if (locationId) pq = pq.eq("warehouse_id", locationId);
-
-      const [salesRes, purchasesRes] = await Promise.all([sq, pq]);
-      const sales = salesRes.data ?? [];
-      const purchases = purchasesRes.data ?? [];
+      const baseS: Record<string, any> = { sale_date: { gte: from, lte: to } };
+      const baseP: Record<string, any> = { purchase_date: { gte: from, lte: to } };
+      if (paymentMethod !== "all") { baseS.payment_method = paymentMethod; baseP.payment_method = paymentMethod; }
+      if (paymentStatus !== "all") { baseS.payment_status = paymentStatus; baseP.payment_status = paymentStatus; }
+      if (locationId) { baseS.warehouse_id = locationId; baseP.warehouse_id = locationId; }
+      const [salesRaw, purchasesRaw] = await Promise.all([
+        rest.all<any>("sales", { filter: baseS, with: ["customer"], sort: "-sale_date", perPage: 2000 }),
+        rest.all<any>("purchases", { filter: baseP, with: ["supplier"], sort: "-purchase_date", perPage: 2000 }),
+      ]);
+      const sales = salesRaw.map((s: any) => ({ ...s, customers: s.customer ?? null }));
+      const purchases = purchasesRaw.map((p: any) => ({ ...p, suppliers: p.supplier ?? null }));
       return {
         sales, purchases,
         totalSales: sales.reduce((s, r: any) => s + Number(r.total_amount), 0),

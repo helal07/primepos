@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,8 +14,16 @@ export default function ExpenseReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_expenses", from, to],
     queryFn: async () => {
-      const { data } = await supabase.from("transactions").select("id, transaction_date, description, debit, credit, type, accounts(name)").eq("type", "expense").gte("transaction_date", from).lte("transaction_date", to).order("transaction_date", { ascending: false });
-      const items = data ?? [];
+      const rows = await rest.all<any>("transactions", {
+        filter: {
+          type: "expense",
+          transaction_date: { gte: from, lte: to },
+        },
+        with: ["account"],
+        sort: "-transaction_date",
+        perPage: 2000,
+      });
+      const items = rows.map((r: any) => ({ ...r, accounts: r.account ?? null }));
       const total = items.reduce((s, r: any) => s + Number(r.debit), 0);
       const byAccount: Record<string, number> = {};
       items.forEach((t: any) => {
