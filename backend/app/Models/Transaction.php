@@ -18,4 +18,9 @@ class Transaction extends Model
     protected $casts = [
         'transaction_date' => 'datetime',
     ];
+
+    public function account(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'account_id');
+    }
 }

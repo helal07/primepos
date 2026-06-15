@@ -56,6 +56,11 @@ Tables: `purchases`, `purchase_items`, `purchase_payments`, `purchase_orders`, `
 Hooks: `useAccounting`, `useExpenses`.
 Tables: `accounts`, `transactions`, `journal_entries`, `journal_entry_lines`, `expenses`, `expense_categories`.
 
+**Status (Stage 9e complete):**
+- Backend: created `JournalEntry` + `JournalEntryLine` models; added `account` relation to `Transaction`, `category/subCategory/warehouse` relations to `Expense`.
+- `RestRegistry` exposes `accounts` (module=accounting), `transactions`, `journal_entries`, `journal_entry_lines`, `expenses` (module=expenses), `expense_categories`, `expense_payments`.
+- `useAccounting.ts` and `useExpenses.ts` fully migrated to `rest.*`. Aliased `account→accounts`, `category→expense_categories`, `subCategory→sub`, `warehouse→warehouses` so existing pages keep working.
+
 ### Substage 9f — Installments
 Hooks: `useInstallments`.
 Tables: `installment_customers`, `installment_sales`, `installment_schedules`, `installment_collections`.
