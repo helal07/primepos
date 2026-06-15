@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { api } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -96,10 +96,7 @@ export function useTenantMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      // Keeps using the Supabase RPC: superadmin_delete_tenant cascades across
-      // many tables in a single transaction — not yet ported to a Laravel endpoint.
-      const { error } = await supabase.rpc("superadmin_delete_tenant", { _tenant_id: id } as any);
-      if (error) throw error;
+      await api.delete(`/api/admin/tenants/${id}`);
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Tenant deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),

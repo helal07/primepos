@@ -85,6 +85,8 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     // Superadmin tenant create
     Route::post('/admin/tenants', [TenantController::class, 'adminCreate'])
         ->middleware('role:superadmin');
+    Route::delete('/admin/tenants/{tenantId}', [TenantController::class, 'adminDelete'])
+        ->middleware('role:superadmin');
 
     // Tenant backups (mysqldump-based)
     Route::get   ('/tenant-backups',                  [TenantBackupController::class, 'index']);
