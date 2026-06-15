@@ -55,23 +55,12 @@ export default function PurchaseOrders() {
         byProduct.set(it.product_id, (byProduct.get(it.product_id) || 0) + Number(it.quantity || 0));
       }
       for (const [productId, qty] of byProduct) {
-        const { data: product, error: pErr } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", productId)
-          .single();
-        if (pErr) throw pErr;
-        const { error: uErr } = await supabase
-          .from("products")
-          .update({ stock_quantity: Number(product?.stock_quantity || 0) + qty })
-          .eq("id", productId);
-        if (uErr) throw uErr;
+        const product = await rest.get<{ stock_quantity: number | string }>("products", productId);
+        await rest.update("products", productId, {
+          stock_quantity: Number(product?.stock_quantity || 0) + qty,
+        });
       }
-      const { error: sErr } = await supabase
-        .from("purchase_orders")
-        .update({ status: "received" })
-        .eq("id", id);
-      if (sErr) throw sErr;
+      await rest.update("purchase_orders", id, { status: "received" });
       await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
       await qc.invalidateQueries({ queryKey: ["products"] });
       toast.success("Purchase order received and inventory updated");

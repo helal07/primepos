@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Papa from "papaparse";
 import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";

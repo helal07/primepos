@@ -36,13 +36,13 @@ function useGlobalSetting<T = any>(key: string) {
   return useQuery({
     queryKey: ["business_settings", key, "global"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("business_settings")
-        .select("value")
-        .eq("key", key)
-        .is("tenant_id", null)
-        .maybeSingle();
-      return (data?.value ?? null) as T | null;
+      // Public read via the unauthenticated landing CMS endpoint.
+      try {
+        const res = await api.get<{ value: any }>(`/api/public/landing/cms/${encodeURIComponent(key)}`);
+        return (res?.value ?? null) as T | null;
+      } catch {
+        return null;
+      }
     },
   });
 }
