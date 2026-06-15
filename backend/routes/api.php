@@ -79,5 +79,6 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
 
     // Files (upload/delete) — bucket-aware, FileAccessPolicy enforced
     Route::post   ('/files/upload',              [FileController::class, 'upload']);
+    Route::get    ('/files/sign',                [FileController::class, 'sign']);
     Route::delete ('/files/{bucket}/{path}',     [FileController::class, 'destroy'])->where('path', '.*');
 });
