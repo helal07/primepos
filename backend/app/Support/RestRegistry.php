@@ -591,6 +591,26 @@ class RestRegistry
                 'default_sort' => '-created_at',
                 'max_per_page' => 500,
             ],
+
+            // ===== Stage 12 — price/customer groups =====
+            'selling_price_groups' => [
+                'model'        => Models\SellingPriceGroup::class,
+                'module'       => 'inventory',
+                'filters'      => ['is_active'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name'],
+                'max_per_page' => 500,
+            ],
+            'customer_groups' => [
+                'model'        => Models\CustomerGroup::class,
+                'module'       => 'contacts',
+                'filters'      => ['is_active', 'selling_price_group_id'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name'],
+                'max_per_page' => 500,
+            ],
         ];
     }
 
