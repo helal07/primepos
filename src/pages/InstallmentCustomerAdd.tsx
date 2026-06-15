@@ -4,6 +4,7 @@ import { useCustomers } from "@/hooks/useContacts";
 import { useInstallmentCustomerMutations } from "@/hooks/useInstallments";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadFile as apiUploadFile } from "@/lib/storage";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,10 +45,9 @@ export default function InstallmentCustomerAdd() {
     const { compressIfImage } = await import("@/lib/compressImage");
     const file = await compressIfImage(input, { maxWidth: 1800, maxHeight: 1800, quality: 0.82 });
     const ext = file.name.split(".").pop();
-    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from("installment-docs").upload(path, file);
-    if (error) throw error;
-    // Store the path, not public URL — bucket is private, use signed URLs to display
+    const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { path } = await apiUploadFile("installment-docs", file, { filename });
+    // Store the path; bucket is private — UI fetches signed URLs to display
     return path;
   };
 

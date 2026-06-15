@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, Save, KeyRound, User as UserIcon, Upload, FileText, Loader2, X } from "lucide-react";
+import { uploadFile, deleteFile, signedUrl } from "@/lib/storage";
 import { toast } from "sonner";
 import { compressImage, compressIfImage } from "@/lib/compressImage";
 
@@ -68,11 +69,15 @@ export default function ProfilePage() {
     setUploadingAvatar(true);
     const file = await compressImage(original, { maxWidth: 512, maxHeight: 512, quality: 0.85 });
     const ext = file.name.split(".").pop();
-    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("avatars")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) { setUploadingAvatar(false); return toast.error(upErr.message); }
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const filename = `avatar-${Date.now()}.${ext}`;
+    let publicUrl: string;
+    try {
+      const r = await uploadFile("avatars", file, { filename });
+      publicUrl = r.url;
+    } catch (e: any) {
+      setUploadingAvatar(false);
+      return toast.error(e.message);
+    }
     const res = await persistProfile({ avatar_url: publicUrl });
     setUploadingAvatar(false);
     if (res?.error) toast.error(res.error.message);
@@ -87,11 +92,16 @@ export default function ProfilePage() {
     setUploadingDoc(true);
     const file = await compressIfImage(original, { maxWidth: 2000, maxHeight: 2000, quality: 0.82 });
     const ext = file.name.split(".").pop();
-    const path = `${user.id}/id-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("user-documents")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) { setUploadingDoc(false); return toast.error(upErr.message); }
-    const res = await persistProfile({ id_proof_url: path, id_proof_name: original.name });
+    const filename = `id-${Date.now()}.${ext}`;
+    let storedPath: string;
+    try {
+      const r = await uploadFile("user-documents", file, { filename });
+      storedPath = r.path;
+    } catch (e: any) {
+      setUploadingDoc(false);
+      return toast.error(e.message);
+    }
+    const res = await persistProfile({ id_proof_url: storedPath, id_proof_name: original.name });
     setUploadingDoc(false);
     if (res?.error) toast.error(res.error.message);
     else toast.success("Document uploaded");
@@ -100,7 +110,7 @@ export default function ProfilePage() {
 
   const removeDoc = async () => {
     if (!profile.id_proof_url) return;
-    await supabase.storage.from("user-documents").remove([profile.id_proof_url]);
+    try { await deleteFile("user-documents", profile.id_proof_url); } catch {}
     const res = await persistProfile({ id_proof_url: "", id_proof_name: "" });
     if (res?.error) toast.error(res.error.message);
     else toast.success("Document removed");
@@ -108,10 +118,12 @@ export default function ProfilePage() {
 
   const viewDoc = async () => {
     if (!profile.id_proof_url) return;
-    const { data, error } = await supabase.storage.from("user-documents")
-      .createSignedUrl(profile.id_proof_url, 60);
-    if (error || !data) return toast.error("Could not open document");
-    window.open(data.signedUrl, "_blank");
+    try {
+      const url = await signedUrl("user-documents", profile.id_proof_url, 1);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Could not open document");
+    }
   };
 
   const saveProfile = async (e: React.FormEvent) => {

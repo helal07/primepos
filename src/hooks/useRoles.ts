@@ -263,11 +263,8 @@ export function useDeleteUser() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: async (userId: string) => {
-      const { data, error } = await supabase.functions.invoke("delete-tenant-user", {
-        body: { user_id: userId },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const { deleteTenantUser } = await import("@/lib/functions");
+      await deleteTenantUser(userId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users_with_roles"] });

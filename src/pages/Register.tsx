@@ -76,20 +76,17 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("tenant-signup", {
-        body: {
-          businessName: form.businessName.trim(),
-          contactName: form.contactName.trim(),
-          contactEmail: form.contactEmail.trim().toLowerCase(),
-          contactPhone: form.contactPhone.trim(),
-          address: form.address.trim(),
-          password: form.password,
-          registrationChoice: choice,
-          packageId: packageId,
-        },
+      const { tenantSignup } = await import("@/lib/functions");
+      await tenantSignup({
+        businessName: form.businessName.trim(),
+        contactName: form.contactName.trim(),
+        contactEmail: form.contactEmail.trim().toLowerCase(),
+        contactPhone: form.contactPhone.trim(),
+        address: form.address.trim(),
+        password: form.password,
+        registrationChoice: choice,
+        packageId: packageId,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
 
       // Always sign in so the user can either reach the dashboard or pay
       const { error: signInErr } = await supabase.auth.signInWithPassword({

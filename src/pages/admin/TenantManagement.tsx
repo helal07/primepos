@@ -181,11 +181,9 @@ export default function TenantManagement() {
     setCredLoading(true);
     try {
       const newPassword = generatePassword();
-      const { data, error } = await supabase.functions.invoke("reset-tenant-password", {
-        body: { user_id: ownerUserId, new_password: newPassword },
-      });
-      if (error) throw error;
-      const authEmail = (data as any)?.email ?? "";
+      const { resetTenantPassword } = await import("@/lib/functions");
+      const data = await resetTenantPassword(ownerUserId, newPassword);
+      const authEmail = data?.email ?? "";
       setCredForm((p) => {
         const resolvedEmail = p.email || authEmail;
         const merged = {
@@ -210,10 +208,8 @@ export default function TenantManagement() {
     setCredLoading(true);
     try {
       const newPassword = generatePassword();
-      const { error } = await supabase.functions.invoke("reset-tenant-password", {
-        body: { user_id: credForm.ownerUserId, new_password: newPassword },
-      });
-      if (error) throw error;
+      const { resetTenantPassword } = await import("@/lib/functions");
+      await resetTenantPassword(credForm.ownerUserId, newPassword);
       setCredForm((p) => {
         const merged = { ...p, password: newPassword };
         merged.message = buildCredMessage(merged);
@@ -328,41 +324,34 @@ export default function TenantManagement() {
             : form.status === "active"
             ? "active"
             : "paid";
-        const { data: fnData, error: fnError } = await supabase.functions.invoke(
-          "admin-create-tenant",
-          {
-            body: {
-              admin_email: form.admin_email,
-              admin_password: form.admin_password,
-              admin_display_name: form.admin_display_name || form.name,
-              choice,
-              tenant: {
-                name: form.name,
-                company_name: form.company_name,
-                phone: form.phone,
-                email: form.email,
-                address: form.address,
-                domain: form.domain,
-                package_id: form.package_id || null,
-                subscription_type: form.subscription_type,
-                subscription_start: form.subscription_start,
-                subscription_end: form.subscription_end || null,
-                status: form.status,
-                notes: form.notes,
-              },
-              payment:
-                choice === "active" && form.payment_amount
-                  ? { method: form.payment_method, amount: Number(form.payment_amount) }
-                  : undefined,
+        try {
+          const { adminCreateTenant } = await import("@/lib/functions");
+          await adminCreateTenant({
+            admin_email: form.admin_email,
+            admin_password: form.admin_password,
+            admin_display_name: form.admin_display_name || form.name,
+            choice,
+            tenant: {
+              name: form.name,
+              company_name: form.company_name,
+              phone: form.phone,
+              email: form.email,
+              address: form.address,
+              domain: form.domain,
+              package_id: form.package_id || null,
+              subscription_type: form.subscription_type,
+              subscription_start: form.subscription_start,
+              subscription_end: form.subscription_end || null,
+              status: form.status,
+              notes: form.notes,
             },
-          },
-        );
-        if (fnError || (fnData as any)?.error) {
-          toast({
-            title: "Error creating tenant",
-            description: (fnData as any)?.error || fnError?.message,
-            variant: "destructive",
-          });
+            payment:
+              choice === "active" && form.payment_amount
+                ? { method: form.payment_method, amount: Number(form.payment_amount) }
+                : undefined,
+          } as any);
+        } catch (e: any) {
+          toast({ title: "Error creating tenant", description: e.message, variant: "destructive" });
           setSaving(false);
           return;
         }
@@ -395,15 +384,14 @@ export default function TenantManagement() {
     }
     setResetting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("reset-tenant-password", {
-        body: { user_id: resetUserId, new_password: newPassword },
-      });
-      if (error || data?.error) {
-        toast({ title: "Error", description: data?.error || error?.message, variant: "destructive" });
-      } else {
+      try {
+        const { resetTenantPassword } = await import("@/lib/functions");
+        await resetTenantPassword(resetUserId, newPassword);
         toast({ title: "Password reset successfully" });
         setResetOpen(false);
         setNewPassword("");
+      } catch (e: any) {
+        toast({ title: "Error", description: e.message, variant: "destructive" });
       }
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });

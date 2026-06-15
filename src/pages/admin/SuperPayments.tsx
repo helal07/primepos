@@ -62,11 +62,8 @@ export default function SuperPayments() {
   const act = async (id: string, action: "approve" | "reject") => {
     setBusy(id + action);
     try {
-      const { data, error } = await supabase.functions.invoke("super-approve-payment", {
-        body: { payment_id: id, action },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const { superApprovePayment } = await import("@/lib/functions");
+      await superApprovePayment(id, action);
       toast({ title: `Payment ${action}d` });
       load();
     } catch (e: any) {
