@@ -136,8 +136,8 @@ class RestRegistry
             'sale_items' => [
                 'model'        => Models\SaleItem::class,
                 'module'       => 'sales',
-                'filters'      => ['sale_id', 'product_id', 'variation_id'],
-                'sort'         => ['sale_id'],
+                'filters'      => ['sale_id', 'product_id', 'variation_id', 'created_at'],
+                'sort'         => ['sale_id', 'created_at'],
                 'default_sort' => 'sale_id',
                 'with'         => ['product', 'variation'],
                 'max_per_page' => 1000,
