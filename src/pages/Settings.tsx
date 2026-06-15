@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings, useSaveSetting } from "@/hooks/useSettings";
 import { ThemePicker } from "@/components/settings/ThemePicker";
-import { supabase } from "@/integrations/supabase/client";
+import { uploadFile } from "@/lib/storage";
 import { toast } from "sonner";
 import { Upload, Loader2, Smartphone, Building2, Receipt, Percent, Bell, Palette, Package, Users, ShoppingCart, ShoppingBag, CreditCard, LayoutDashboard, Settings as SettingsIcon, Hash, Mail, MessageSquare, Tag } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
@@ -38,11 +38,9 @@ function BusinessTab() {
     try {
       const file = await compressImage(raw, { maxWidth: 600, maxHeight: 600, quality: 0.9 });
       const ext = file.name.split(".").pop() || "png";
-      const path = `business-logo/logo-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) throw error;
-      const { data } = supabase.storage.from("branding").getPublicUrl(path);
-      setForm((f) => ({ ...f, logo_url: data.publicUrl }));
+      const filename = `business-logo/logo-${Date.now()}.${ext}`;
+      const { url } = await uploadFile("branding", file, { filename });
+      setForm((f) => ({ ...f, logo_url: url }));
       toast.success("Logo uploaded — click Save Changes to apply");
     } catch (e: any) {
       toast.error(e.message || "Upload failed");
@@ -179,11 +177,9 @@ function InvoiceTab() {
     setUploadingHeader(true);
     try {
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `invoice-header/invoice-header-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: true, contentType: file.type });
-      if (error) throw error;
-      const { data } = supabase.storage.from("branding").getPublicUrl(path);
-      setForm((f) => ({ ...f, header_image_url: data.publicUrl }));
+      const filename = `invoice-header/invoice-header-${Date.now()}.${ext}`;
+      const { url } = await uploadFile("branding", file, { filename });
+      setForm((f) => ({ ...f, header_image_url: url }));
       toast.success("Header image uploaded");
     } catch (e: any) {
       toast.error(e.message || "Upload failed");
@@ -563,11 +559,15 @@ function PwaTab() {
     setUploading(true);
     const file = await compressImage(original, { maxWidth: 512, maxHeight: 512, quality: 0.9, mimeType: "image/jpeg" });
     const ext = file.name.split(".").pop();
-    const path = `pwa/icon-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("branding")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    if (error) { setUploading(false); return toast.error(error.message); }
-    const { data: { publicUrl } } = supabase.storage.from("branding").getPublicUrl(path);
+    const filename = `pwa/icon-${Date.now()}.${ext}`;
+    let publicUrl: string;
+    try {
+      const r = await uploadFile("branding", file, { filename });
+      publicUrl = r.url;
+    } catch (e: any) {
+      setUploading(false);
+      return toast.error(e.message);
+    }
     setForm((f) => ({ ...f, icon_url: publicUrl }));
     setUploading(false);
     toast.success("Icon uploaded — click Save to apply");
