@@ -198,6 +198,75 @@ class RestRegistry
                 'with'         => ['product', 'product.brand', 'variation'],
                 'max_per_page' => 1000,
             ],
+
+            // ===== Accounting (Stage 9e) =====
+            'accounts' => [
+                'model'        => Models\Account::class,
+                'module'       => 'accounting',
+                'filters'      => ['type', 'parent_id', 'is_active'],
+                'sort'         => ['code', 'name', 'created_at'],
+                'default_sort' => 'code',
+                'search'       => ['code', 'name'],
+                'max_per_page' => 1000,
+            ],
+            'transactions' => [
+                'model'        => Models\Transaction::class,
+                'module'       => 'accounting',
+                'filters'      => ['account_id', 'type', 'reference', 'journal_entry_id', 'transaction_date'],
+                'sort'         => ['transaction_date', 'created_at'],
+                'default_sort' => '-transaction_date',
+                'search'       => ['description', 'reference'],
+                'with'         => ['account'],
+                'max_per_page' => 1000,
+            ],
+            'journal_entries' => [
+                'model'        => Models\JournalEntry::class,
+                'module'       => 'accounting',
+                'filters'      => ['status', 'entry_date', 'reference'],
+                'sort'         => ['entry_date', 'created_at'],
+                'default_sort' => '-created_at',
+                'search'       => ['reference', 'description'],
+                'with'         => ['lines'],
+                'max_per_page' => 500,
+            ],
+            'journal_entry_lines' => [
+                'model'        => Models\JournalEntryLine::class,
+                'module'       => 'accounting',
+                'filters'      => ['journal_entry_id', 'account_id'],
+                'sort'         => ['journal_entry_id'],
+                'default_sort' => 'journal_entry_id',
+                'with'         => ['account'],
+                'max_per_page' => 2000,
+            ],
+
+            // ===== Expenses (Stage 9e) =====
+            'expenses' => [
+                'model'        => Models\Expense::class,
+                'module'       => 'expenses',
+                'filters'      => ['category_id', 'sub_category_id', 'location_id', 'account_id', 'payment_status', 'expense_date'],
+                'sort'         => ['expense_date', 'created_at', 'total_amount'],
+                'default_sort' => '-expense_date',
+                'search'       => ['reference_no', 'expense_note', 'contact_name'],
+                'with'         => ['category', 'subCategory', 'warehouse'],
+                'max_per_page' => 500,
+            ],
+            'expense_categories' => [
+                'model'        => Models\ExpenseCategory::class,
+                'module'       => 'expenses',
+                'filters'      => ['parent_id', 'is_active'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name'],
+                'max_per_page' => 500,
+            ],
+            'expense_payments' => [
+                'model'        => Models\ExpensePayment::class,
+                'module'       => 'expenses',
+                'filters'      => ['expense_id', 'payment_method'],
+                'sort'         => ['created_at'],
+                'default_sort' => 'created_at',
+                'max_per_page' => 1000,
+            ],
         ];
     }
 
