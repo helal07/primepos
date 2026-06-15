@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -15,22 +14,14 @@ export function TrialReminderBanner() {
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const { data: prof } = await supabase
-        .from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle();
-      const tid = prof?.tenant_id;
-      if (!tid) return;
-      const { data: t } = await supabase
-        .from("tenants").select("status,subscription_end").eq("id", tid).maybeSingle();
-      if (!t) return;
-      const trial = t.status === "trial";
-      setIsTrial(trial);
-      if (t.subscription_end) {
-        const end = new Date(t.subscription_end + "T23:59:59");
-        const d = Math.ceil((end.getTime() - Date.now()) / 86400_000);
-        setDaysLeft(d);
-      }
-    })();
+    const t = user.tenant;
+    if (!t) return;
+    setIsTrial(t.status === "trial");
+    if (t.subscription_end) {
+      const end = new Date(t.subscription_end + "T23:59:59");
+      const d = Math.ceil((end.getTime() - Date.now()) / 86400_000);
+      setDaysLeft(d);
+    }
   }, [user]);
 
   useEffect(() => {
