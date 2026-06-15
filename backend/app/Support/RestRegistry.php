@@ -573,6 +573,7 @@ class RestRegistry
                 'filters'      => ['tenant_id', 'read_at', 'type'],
                 'sort'         => ['created_at'],
                 'default_sort' => '-created_at',
+                'with'         => ['tenant'],
                 'max_per_page' => 500,
             ],
             'product_group_prices' => [
