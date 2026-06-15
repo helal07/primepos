@@ -71,12 +71,10 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
     queryKey: [paymentsTable, id, txIds.length],
     enabled: txIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(paymentsTable as any)
-        .select("*")
-        .in(paymentFkCol, txIds);
-      if (error) throw error;
-      return (data as any[]) ?? [];
+      return await rest.all<any>(paymentsTable, {
+        filter: { [paymentFkCol]: { in: txIds.join(",") } },
+        perPage: 5000,
+      });
     },
   });
 
@@ -84,15 +82,11 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
     queryKey: ["activity_log", kind, id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("activity_log")
-        .select("*")
-        .eq("entity_type", kind)
-        .eq("entity_id", id!)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return (data as any[]) ?? [];
+      return await rest.all<any>("activity_log", {
+        filter: { entity_type: kind, entity_id: id! },
+        sort: "-created_at",
+        perPage: 100,
+      });
     },
   });
 
