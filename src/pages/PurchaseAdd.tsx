@@ -18,7 +18,6 @@ import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
 import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, usePurchase, usePurchaseItems, type PurchaseItem } from "@/hooks/usePurchases";
 import { type PaymentRow } from "@/components/payments/PaymentDialog";
-import { supabase } from "@/integrations/supabase/client";
 import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
