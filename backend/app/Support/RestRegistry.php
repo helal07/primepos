@@ -413,7 +413,7 @@ class RestRegistry
             'warranties' => [
                 'model'        => Models\Warranty::class,
                 'module'       => 'warranty',
-                'filters'      => ['product_id', 'customer_id', 'status', 'imei_serial', 'warranty_no'],
+                'filters'      => ['product_id', 'customer_id', 'status', 'imei_serial', 'warranty_no', 'is_active'],
                 'sort'         => ['created_at', 'end_date'],
                 'default_sort' => '-created_at',
                 'search'       => ['warranty_no', 'imei_serial'],
