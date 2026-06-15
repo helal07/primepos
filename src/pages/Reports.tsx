@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,10 +41,9 @@ function SalesReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_sales", from, to, locationId],
     queryFn: async () => {
-      let q = supabase.from("sales").select("total_amount, sale_date, payment_method, payment_status, customers(name)").gte("sale_date", from).lte("sale_date", to).order("sale_date");
-      if (locationId) q = q.eq("warehouse_id", locationId);
-      const { data: sales, error } = await q;
-      if (error) throw error;
+      const filter: Record<string, any> = { sale_date: { gte: from, lte: to } };
+      if (locationId) filter.warehouse_id = locationId;
+      const sales = await rest.all<any>("sales", { filter, sort: "sale_date", perPage: 5000 });
 
       const totalRevenue = (sales ?? []).reduce((s, r: any) => s + Number(r.total_amount), 0);
       const totalSales = (sales ?? []).length;
@@ -130,22 +129,21 @@ function InventoryReport() {
     queryFn: async () => {
       let products: any[] = [];
       if (locationId) {
-        const { data, error } = await supabase
-          .from("warehouse_stock")
-          .select("quantity, products!inner(name, selling_price, purchase_price, categories(name))")
-          .eq("warehouse_id", locationId);
-        if (error) throw error;
-        products = (data ?? []).map((r: any) => ({
-          name: r.products.name,
-          stock_quantity: Number(r.quantity),
-          selling_price: r.products.selling_price,
-          purchase_price: r.products.purchase_price,
-          categories: r.products.categories,
+        const rows = await rest.all<any>("warehouse_stock", {
+          filter: { warehouse_id: locationId }, with: ["product"], perPage: 5000,
+        });
+        products = rows.map((r: any) => ({
+          name: r.product?.name,
+          stock_quantity: Number(r.quantity ?? 0),
+          selling_price: r.product?.selling_price,
+          purchase_price: r.product?.purchase_price,
+          categories: r.product?.category ?? null,
         }));
       } else {
-        const { data, error } = await supabase.from("products").select("name, stock_quantity, selling_price, purchase_price, categories(name)").order("stock_quantity");
-        if (error) throw error;
-        products = data ?? [];
+        const rows = await rest.all<any>("products", {
+          with: ["category"], sort: "name", perPage: 5000,
+        });
+        products = rows.map((p: any) => ({ ...p, categories: p.category ?? null }));
       }
 
       const totalStock = (products ?? []).reduce((s, p: any) => s + Number(p.stock_quantity), 0);
@@ -229,10 +227,9 @@ function PurchaseReport() {
   const { data, isLoading } = useQuery({
     queryKey: ["report_purchases", from, to, locationId],
     queryFn: async () => {
-      let q = supabase.from("purchases").select("total_amount, purchase_date, payment_status, suppliers(name)").gte("purchase_date", from).lte("purchase_date", to).order("purchase_date");
-      if (locationId) q = q.eq("warehouse_id", locationId);
-      const { data: purchases, error } = await q;
-      if (error) throw error;
+      const filter: Record<string, any> = { purchase_date: { gte: from, lte: to } };
+      if (locationId) filter.warehouse_id = locationId;
+      const purchases = await rest.all<any>("purchases", { filter, sort: "purchase_date", perPage: 5000 });
 
       const totalSpent = (purchases ?? []).reduce((s, r: any) => s + Number(r.total_amount), 0);
       const totalPurchases = (purchases ?? []).length;
