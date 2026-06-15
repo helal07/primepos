@@ -1,19 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+/** Alias singular Laravel relation → plural Supabase shape so legacy UI keeps working. */
+function aliasAccount<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.account && !out.accounts) out.accounts = out.account;
+  return out;
+}
 
 export function useAccounts() {
   return useQuery({
     queryKey: ["accounts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("accounts")
-        .select("*")
-        .order("code", { ascending: true });
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("accounts", { sort: "code", perPage: 1000 });
     },
   });
 }
@@ -24,8 +27,7 @@ export function useAccountMutations() {
 
   const create = useMutation({
     mutationFn: async (account: { code: string; name: string; type: string; parent_id?: string | null; description?: string }) => {
-      const { error } = await supabase.from("accounts").insert({ ...account, created_by: user?.id });
-      if (error) throw error;
+      await rest.create("accounts", { ...account, created_by: user?.id });
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["accounts"] }); toast.success("Account created"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
@@ -33,8 +35,7 @@ export function useAccountMutations() {
 
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; code?: string; name?: string; type?: string; parent_id?: string | null; description?: string; is_active?: boolean }) => {
-      const { error } = await supabase.from("accounts").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("accounts", id, updates);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["accounts"] }); toast.success("Account updated"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
@@ -42,8 +43,7 @@ export function useAccountMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("accounts").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("accounts", id);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["accounts"] }); toast.success("Account deleted"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
@@ -56,12 +56,7 @@ export function useJournalEntries() {
   return useQuery({
     queryKey: ["journal_entries"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("journal_entries")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("journal_entries", { sort: "-created_at", perPage: 500 });
     },
   });
 }
@@ -71,12 +66,12 @@ export function useJournalEntryLines(entryId: string | null) {
     queryKey: ["journal_entry_lines", entryId],
     enabled: !!entryId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("journal_entry_lines")
-        .select("*, accounts(name, code)")
-        .eq("journal_entry_id", entryId!);
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("journal_entry_lines", {
+        filter: { journal_entry_id: entryId! },
+        with: ["account"],
+        perPage: 2000,
+      });
+      return rows.map(aliasAccount);
     },
   });
 }
@@ -91,20 +86,10 @@ export function useJournalMutations() {
       lines: { account_id: string; debit: number; credit: number; description?: string }[];
     }) => {
       const { lines, ...entryData } = data;
-      const { data: entry, error } = await supabase
-        .from("journal_entries")
-        .insert({ ...entryData, created_by: user?.id })
-        .select()
-        .single();
-      if (error) throw error;
-
+      const entry = await rest.create<any>("journal_entries", { ...entryData, created_by: user?.id });
       if (lines.length > 0) {
-        const entryLines = lines.map((l) => ({ ...l, journal_entry_id: entry.id }));
-        const { error: lErr } = await supabase.from("journal_entry_lines").insert(entryLines);
-        if (lErr) throw lErr;
-
-        // Also create transaction records
-        const txns = lines.map((l) => ({
+        await Promise.all(lines.map((l) => rest.create("journal_entry_lines", { ...l, journal_entry_id: entry.id })));
+        await Promise.all(lines.map((l) => rest.create("transactions", {
           transaction_date: data.entry_date,
           description: l.description || data.description,
           reference: data.reference,
@@ -114,8 +99,7 @@ export function useJournalMutations() {
           credit: l.credit,
           journal_entry_id: entry.id,
           created_by: user?.id,
-        }));
-        await supabase.from("transactions").insert(txns);
+        })));
       }
       return entry;
     },
@@ -129,9 +113,9 @@ export function useJournalMutations() {
 
   const deleteEntry = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("transactions").delete().eq("journal_entry_id", id);
-      const { error } = await supabase.from("journal_entries").delete().eq("id", id);
-      if (error) throw error;
+      const txns = await rest.all<any>("transactions", { filter: { journal_entry_id: id }, perPage: 1000 });
+      await Promise.all(txns.map((t: any) => rest.remove("transactions", t.id)));
+      await rest.remove("journal_entries", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["journal_entries"] });
@@ -148,12 +132,12 @@ export function useTransactions() {
   return useQuery({
     queryKey: ["transactions"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*, accounts(name, code)")
-        .order("transaction_date", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("transactions", {
+        with: ["account"],
+        sort: "-transaction_date",
+        perPage: 1000,
+      });
+      return rows.map(aliasAccount);
     },
   });
 }
