@@ -120,12 +120,10 @@ export default function Subscription() {
     const key = `${plan.id}:${gateway}`;
     setPayingId(key);
     try {
-      const { data, error } = await supabase.functions.invoke("payment-init", {
-        body: { gateway, package_id: plan.id, from: fromRegister ? "register" : "subscription" },
-      });
-      if (error) throw error;
-      if ((data as any)?.url) { window.location.href = (data as any).url; return; }
-      throw new Error((data as any)?.error ?? "Could not start payment");
+      const { paymentInit } = await import("@/lib/functions");
+      const data = await paymentInit({ gateway, package_id: plan.id, from: fromRegister ? "register" : "subscription" });
+      if (data?.url) { window.location.href = data.url; return; }
+      throw new Error("Could not start payment");
     } catch (e: any) {
       toast({ title: "Payment init failed", description: e.message, variant: "destructive" });
     } finally {
