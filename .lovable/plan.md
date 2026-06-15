@@ -74,6 +74,13 @@ Tables: `installment_customers`, `installment_sales`, `installment_schedules`, `
 Hooks: `useHRM`.
 Tables: `employees`, `attendance`, `leave_requests`, `payroll`.
 
+**Status (Stage 9g complete):**
+- Backend: created `Employee`, `Attendance`, `LeaveRequest`, `Payroll` models with `employee` relations.
+- `RestRegistry` exposes `employees`, `attendance`, `leave_requests`, `payroll` (module=hrm).
+- `useHRM.ts` fully migrated to `rest.*`. Aliased `employee→employees` for legacy UI. Attendance "upsert by (employee_id, date)" is now an explicit list-then-create-or-update since REST has no native upsert.
+
+**Infra fix:** nginx 403 at `/` resolved — added `index index.html;` inside SPA `location /` so the server-level `index index.php` no longer leaks into the SPA root, and `entrypoint.sh` now chowns/chmods `public/app` so www-data can serve the Vite build.
+
 ### Substage 9h — Settings, Roles, SaaS Admin, Landing
 Hooks: `useSettings`, `useRoles`, `useSaasAdmin`, `useWarrantyCms`, `useDashboard`.
 Tables: `business_settings`, `roles`, `role_permissions`, `profiles`, `tenants`, `tenant_payments`, `tenant_actions_log`, `tenant_notifications`, `saas_packages`, `sms_plans`, `sms_providers`, `sms_purchases`, `landing_features`, `landing_reviews`, `faq_entries`, `sitemap_entries`, `payment_gateways`, `payment_gateway_credentials`, `activity_log`, `sidebar_permission_audit`, `warranty_claims`.
