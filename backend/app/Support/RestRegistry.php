@@ -494,7 +494,7 @@ class RestRegistry
             'sms_purchases' => [
                 'model'        => Models\SmsPurchase::class,
                 'module'       => 'saas',
-                'filters'      => ['tenant_id', 'plan_id', 'sms_plan_id'],
+                'filters'      => ['tenant_id', 'plan_id', 'sms_plan_id', 'status'],
                 'sort'         => ['purchased_at', 'created_at'],
                 'default_sort' => '-purchased_at',
                 'with'         => ['plan', 'tenant'],
