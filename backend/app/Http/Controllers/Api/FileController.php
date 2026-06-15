@@ -89,4 +89,31 @@ class FileController extends Controller
         $this->storage->delete($bucket, $path);
         return response()->json(['ok' => true]);
     }
+
+    /**
+     * GET /api/files/sign?bucket=&path=&ttl=
+     * Returns a short-lived signed URL for private bucket reads, or the public URL
+     * for public buckets. Caller must be authenticated and pass the policy check.
+     */
+    public function sign(Request $request)
+    {
+        $data = $request->validate([
+            'bucket' => 'required|string',
+            'path'   => 'required|string',
+            'ttl'    => 'nullable|integer|min:1|max:1440',
+        ]);
+
+        $bucket = $data['bucket'];
+        $path   = trim($data['path'], '/');
+        $ttl    = (int)($data['ttl'] ?? 10);
+        $user   = $request->user();
+
+        abort_unless(StorageService::isKnown($bucket), 404, 'Unknown bucket');
+        abort_unless($this->policy->view($user, $bucket, $path), 403);
+
+        return response()->json([
+            'url'        => $this->storage->url($bucket, $path, $ttl),
+            'expires_at' => now()->addMinutes($ttl)->toIso8601String(),
+        ]);
+    }
 }
