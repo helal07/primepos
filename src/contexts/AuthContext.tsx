@@ -1,47 +1,82 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { api, ApiError } from "@/lib/apiClient";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string | null;
+  status?: string;
+  is_superadmin: boolean;
+  tenant_id?: string | null;
+  tenant?: {
+    id: string;
+    name: string;
+    slug?: string;
+    status?: string;
+    enabled_modules?: string[];
+    trial_ends_at?: string | null;
+    subscription_end?: string | null;
+  } | null;
+  roles?: string[];
+}
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
+  signIn: (identifier: string, password: string) => Promise<AuthUser>;
   signOut: () => Promise<void>;
+  refresh: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  session: null,
   user: null,
   loading: true,
+  signIn: async () => { throw new Error("AuthProvider not mounted"); },
   signOut: async () => {},
+  refresh: async () => null,
 });
 
+async function fetchMe(): Promise<AuthUser | null> {
+  try {
+    const r = await api.get<{ user: AuthUser }>("/api/auth/me");
+    return r.user ?? null;
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 401 || e.status === 419)) return null;
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+  const refresh = useCallback(async () => {
+    const u = await fetchMe();
+    setUser(u);
+    return u;
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  useEffect(() => {
+    (async () => {
+      await refresh();
+      setLoading(false);
+    })();
+  }, [refresh]);
+
+  const signIn = useCallback(async (identifier: string, password: string) => {
+    const r = await api.post<{ user: AuthUser }>("/api/auth/login", { identifier, password });
+    setUser(r.user);
+    return r.user;
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try { await api.post("/api/auth/logout"); } catch { /* ignore */ }
+    setUser(null);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, refresh }}>
       {children}
     </AuthContext.Provider>
   );
