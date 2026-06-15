@@ -17,7 +17,8 @@ class SmsPurchase extends Model
 
     public function plan(): BelongsTo
     {
-        return $this->belongsTo(SmsPlan::class, 'sms_plan_id');
+        // Foreign key matches the column the SPA writes (plan_id).
+        return $this->belongsTo(SmsPlan::class, 'plan_id');
     }
 
     public function tenant(): BelongsTo
