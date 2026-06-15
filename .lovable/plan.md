@@ -95,6 +95,21 @@ Tables: `business_settings`, `roles`, `role_permissions`, `role_permission_grant
 
 Deferred to **Stage 9i**: `useDashboard` (heavy aggregates — needs a dedicated `/api/dashboard/stats` endpoint that does the SUM/COUNT in SQL instead of N REST round-trips), public landing reads (need an unauthenticated REST surface), and `useEnabledModules` / `usePermission` (still call SQL functions directly via Supabase).
 
+### Substage 9i — Dashboard, public landing, me-endpoints
+Hooks: `useDashboard`, `useEnabledModules`, `usePermission`, public reads in `useSaasAdmin`.
+
+**Status (Stage 9i complete):**
+- Backend:
+  - `DashboardController::stats` — replaces 14 chained Supabase queries with a single tenant-scoped call. All SUM/COUNT pushed into Postgres; daily/weekly series + recent activity + stock alerts + unpaid invoices come back in one response.
+  - `MeController::modules` and `MeController::permissions` — wrap the `is_superadmin` / `is_tenant_manager_or_above` SQL functions and merge `role_permissions` + `role_permission_grants` server-side.
+  - `PublicController` exposes `/api/public/landing/{features,reviews,pricing,cms/{key}}` — unauthenticated reads scoped to active rows and global (`tenant_id IS NULL`) CMS entries.
+- Routes added under `/api/public/*` (no auth) and `/api/dashboard/stats`, `/api/me/*` (auth:sanctum + tenant.active).
+- Frontend:
+  - `useDashboardStats` reduced to a single `api.get` and a tiny client-side date formatter.
+  - `useEnabledModules` and `useMyPermissions` call the new me-endpoints; Laravel returns `[]` for empty associative arrays so the hook coerces back to `{}`.
+  - `useLandingCms`, `useLandingFeatures(false)`, `useLandingReviews(false)`, `useLandingPricing` now hit `/api/public/...`. `useLandingCmsMutation` writes through the authenticated `business_settings` REST resource (global `tenant_id IS NULL`).
+- Only remaining Supabase data call outside `src/integrations/supabase/client.ts` and auth is `superadmin_delete_tenant` RPC (kept until Stage 10).
+
 ### Substage 9h — Settings, Roles, SaaS Admin, Landing
 Hooks: `useSettings`, `useRoles`, `useSaasAdmin`, `useWarrantyCms`, `useDashboard`.
 Tables: `business_settings`, `roles`, `role_permissions`, `profiles`, `tenants`, `tenant_payments`, `tenant_actions_log`, `tenant_notifications`, `saas_packages`, `sms_plans`, `sms_providers`, `sms_purchases`, `landing_features`, `landing_reviews`, `faq_entries`, `sitemap_entries`, `payment_gateways`, `payment_gateway_credentials`, `activity_log`, `sidebar_permission_audit`, `warranty_claims`.

@@ -36,6 +36,18 @@ Route::post('/track/fb-pixel',  [TrackingController::class, 'fbPixel']);
 
 /*
 |--------------------------------------------------------------------------
+| Public landing-page reads (no auth)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('public')->group(function () {
+    Route::get('/landing/features', [\App\Http\Controllers\Api\PublicController::class, 'landingFeatures']);
+    Route::get('/landing/reviews',  [\App\Http\Controllers\Api\PublicController::class, 'landingReviews']);
+    Route::get('/landing/pricing',  [\App\Http\Controllers\Api\PublicController::class, 'landingPricing']);
+    Route::get('/landing/cms/{key}',[\App\Http\Controllers\Api\PublicController::class, 'landingCms']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Signed-URL backup download (no auth — link is short-lived & signed)
 |--------------------------------------------------------------------------
 */
@@ -90,4 +102,11 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::patch ('/rest/{resource}/{id}',    [RestController::class, 'update']);
     Route::put   ('/rest/{resource}/{id}',    [RestController::class, 'update']);
     Route::delete('/rest/{resource}/{id}',    [RestController::class, 'destroy']);
+
+    // Dashboard aggregates (replaces 14 chained Supabase queries)
+    Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
+
+    // Current-user modules & permissions
+    Route::get('/me/modules',     [\App\Http\Controllers\Api\MeController::class, 'modules']);
+    Route::get('/me/permissions', [\App\Http\Controllers\Api\MeController::class, 'permissions']);
 });
