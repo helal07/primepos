@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaCapture } from "@/components/exchange/MediaCapture";
 import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Save, X } from "lucide-react";
@@ -42,6 +43,8 @@ export default function ExchangePurchaseAdd() {
 
   useEffect(() => {
     if (!user) return;
+    // Profile lookup is still served from the Supabase auth-linked profile row
+    // (auth itself is the Stage-10 milestone). Reads are tiny.
     supabase.from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
       if (data?.tenant_id) setTenantId(data.tenant_id);
     });
@@ -68,11 +71,10 @@ export default function ExchangePurchaseAdd() {
     setSaving(true);
     try {
       // 1. Insert exchange purchase
-      const { data: ex, error } = await supabase.from("exchange_purchases").insert({
+      const ex = await rest.create<any>("exchange_purchases", {
         ...form,
         created_by: user?.id,
-      } as any).select().single();
-      if (error) throw error;
+      });
 
       // 2. Auto-create a stock product so it can be sold
       const productPayload: any = {
@@ -88,11 +90,11 @@ export default function ExchangePurchaseAdd() {
         description: form.condition_notes || null,
         created_by: user?.id,
       };
-      const { data: prod, error: pErr } = await supabase.from("products").insert(productPayload).select().single();
-      if (pErr) {
-        toast.warning("Saved buy, but couldn't create stock entry: " + pErr.message);
-      } else {
-        await supabase.from("exchange_purchases").update({ linked_product_id: prod.id }).eq("id", ex.id);
+      try {
+        const prod = await rest.create<any>("products", productPayload);
+        await rest.update("exchange_purchases", ex.id, { linked_product_id: prod.id });
+      } catch (pErr: any) {
+        toast.warning("Saved buy, but couldn't create stock entry: " + (pErr?.message || "unknown error"));
       }
 
       toast.success("Exchange purchase saved");
