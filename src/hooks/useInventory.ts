@@ -197,7 +197,6 @@ export function useProductMutations() {
       await supabase.from("product_variations").delete().eq("product_id", id);
       await supabase.from("warehouse_stock").delete().eq("product_id", id);
       await supabase.from("product_group_prices").delete().eq("product_id", id);
-      await supabase.from("store_collection_products").delete().eq("product_id", id);
 
       const { data: deleted, error } = await supabase.from("products").delete().eq("id", id).select("id");
       if (error) {
@@ -205,12 +204,11 @@ export function useProductMutations() {
         // Fall back to soft-delete so transactional history is preserved.
         if ((error as any).code === "23503") {
           // Discover which transactional tables still reference this product
-          const checks: Array<{ table: "sale_items" | "purchase_items" | "installment_sales" | "warranty_claims" | "store_order_items"; label: string }> = [
+          const checks: Array<{ table: "sale_items" | "purchase_items" | "installment_sales" | "warranty_claims"; label: string }> = [
             { table: "sale_items", label: "Sales" },
             { table: "purchase_items", label: "Purchases" },
             { table: "installment_sales", label: "Installments" },
             { table: "warranty_claims", label: "Warranty claims" },
-            { table: "store_order_items", label: "Website orders" },
           ];
           const counts = await Promise.all(
             checks.map(async (c) => {
