@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -23,17 +22,7 @@ export function useSaveSetting() {
 
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      // Resolve current tenant so the row is scoped per tenant. Auth still
-      // lives in Supabase, so we look up the profile there for tenant_id.
-      let tenantId: string | null = null;
-      if (user?.id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("tenant_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        tenantId = (profile?.tenant_id as string) ?? null;
-      }
+      const tenantId: string | null = user?.tenant_id ?? null;
 
       const filter: Record<string, any> = { key };
       if (tenantId) filter.tenant_id = tenantId;
