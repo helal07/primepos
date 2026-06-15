@@ -30,7 +30,7 @@ class FileAccessPolicy
         if ($pathTenant !== (string)$tenantId) return false;
 
         if ($bucket === 'tenant-backups') {
-            return $user->hasAnyRole(['tenant_admin', 'tenant_owner']);
+            return $user->hasRole('tenant_admin', 'tenant_owner');
         }
         return true;
     }
@@ -40,11 +40,11 @@ class FileAccessPolicy
         if ($user->hasRole('superadmin')) return true;
         if (!StorageService::isKnown($bucket)) return false;
         if ($bucket === 'tenant-backups') {
-            return $user->hasAnyRole(['tenant_admin', 'tenant_owner']);
+            return $user->hasRole('tenant_admin', 'tenant_owner');
         }
         // Branding restricted to tenant admins
         if ($bucket === 'branding') {
-            return $user->hasAnyRole(['tenant_admin', 'tenant_owner']);
+            return $user->hasRole('tenant_admin', 'tenant_owner');
         }
         return $user->tenant_id !== null;
     }
@@ -54,7 +54,7 @@ class FileAccessPolicy
         // Same scope as view + must be admin/owner for shared buckets
         if (!$this->view($user, $bucket, $path)) return false;
         if (StorageService::isPublic($bucket)) {
-            return $user->hasAnyRole(['superadmin', 'tenant_admin', 'tenant_owner']);
+            return $user->hasRole('superadmin', 'tenant_admin', 'tenant_owner');
         }
         return true;
     }
