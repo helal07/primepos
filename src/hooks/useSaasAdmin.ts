@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
 import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -169,20 +170,13 @@ export function useTenantActionLogs(tenantId?: string) {
   });
 }
 
-// ─── Landing CMS (business_settings key/value) ───────────
-// Kept on Supabase: tenant_id may be null for global rows AND this is read
-// from the public landing page where the user is not authenticated.
+// ─── Landing CMS (business_settings key/value, global tenant_id IS NULL) ───
 export function useLandingCms(key: string) {
   return useQuery({
     queryKey: ["business_settings", key],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("business_settings")
-        .select("value")
-        .eq("key", key)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.value ?? null;
+      const res = await api.get<{ value: any }>(`/api/public/landing/cms/${encodeURIComponent(key)}`);
+      return res.value ?? null;
     },
   });
 }
@@ -193,23 +187,15 @@ export function useLandingCmsMutation() {
 
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { data: existing } = await supabase
-        .from("business_settings")
-        .select("id")
-        .eq("key", key)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("business_settings")
-          .update({ value })
-          .eq("id", existing.id);
-        if (error) throw error;
+      // Admin-only write — global rows have tenant_id IS NULL.
+      const existing = await rest.all<{ id: string }>("business_settings", {
+        filter: { key, tenant_id: { null: true } },
+        perPage: 1,
+      });
+      if (existing[0]) {
+        await rest.update("business_settings", existing[0].id, { value });
       } else {
-        const { error } = await supabase
-          .from("business_settings")
-          .insert({ key, value });
-        if (error) throw error;
+        await rest.create("business_settings", { key, value, tenant_id: null });
       }
     },
     onSuccess: (_, { key }) => {
@@ -228,14 +214,7 @@ export function useLandingFeatures(adminMode = false) {
       if (adminMode) {
         return await rest.all<any>("landing_features", { sort: "sort_order", perPage: 200 });
       }
-      // Public/anonymous read — keep on Supabase until a public REST surface exists.
-      const { data, error } = await supabase
-        .from("landing_features")
-        .select("*")
-        .order("sort_order")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data ?? [];
+      return await api.get<any[]>("/api/public/landing/features");
     },
   });
 }
@@ -270,13 +249,7 @@ export function useLandingReviews(adminMode = false) {
       if (adminMode) {
         return await rest.all<any>("landing_reviews", { sort: "sort_order", perPage: 200 });
       }
-      const { data, error } = await supabase
-        .from("landing_reviews")
-        .select("*")
-        .order("sort_order")
-        .eq("is_active", true);
-      if (error) throw error;
-      return data ?? [];
+      return await api.get<any[]>("/api/public/landing/reviews");
     },
   });
 }
@@ -304,19 +277,9 @@ export function useLandingReviewMutations() {
 }
 
 // ---------- Public landing pricing (uses saas_packages) ----------
-// Anonymous read — kept on Supabase since /api/rest requires auth.
 export function useLandingPricing() {
   return useQuery({
     queryKey: ["landing_pricing"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("saas_packages")
-        .select("*")
-        .eq("is_active", true)
-        .eq("show_on_landing", true)
-        .order("price");
-      if (error) throw error;
-      return data ?? [];
-    },
+    queryFn: async () => await api.get<any[]>("/api/public/landing/pricing"),
   });
 }
