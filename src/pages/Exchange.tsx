@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight, Plus, ListOrdered, ShoppingCart, TrendingUp, FileSignature } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { AgreementTemplateDialog } from "@/components/exchange/AgreementTemplateDialog";
 
 export default function Exchange() {
@@ -15,11 +15,9 @@ export default function Exchange() {
   const { data: stats } = useQuery({
     queryKey: ["exchange_stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("exchange_purchases")
-        .select("status, purchase_price");
-      if (error) throw error;
-      const all = data || [];
+      const all = await rest.all<{ status: string; purchase_price: number | string }>(
+        "exchange_purchases", { perPage: 5000 }
+      );
       const inStock = all.filter((r: any) => r.status === "in_stock");
       const sold = all.filter((r: any) => r.status === "sold");
       const investedInStock = inStock.reduce((s: number, r: any) => s + Number(r.purchase_price || 0), 0);

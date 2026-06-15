@@ -5,7 +5,7 @@ import {
   CheckCircle2, MessageSquare, Activity, Package as PackageIcon,
 } from "lucide-react";
 import { useTenants, usePackages } from "@/hooks/useSaasAdmin";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQuery } from "@tanstack/react-query";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -34,11 +34,9 @@ export default function AdminDashboard() {
   const { data: smsRevenue } = useQuery({
     queryKey: ["admin_sms_revenue"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("sms_purchases")
-        .select("amount, status, purchased_at")
-        .eq("status", "approved");
-      return data ?? [];
+      return await rest.all<any>("sms_purchases", {
+        filter: { status: "approved" }, perPage: 5000,
+      });
     },
   });
 

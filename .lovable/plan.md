@@ -185,3 +185,35 @@ Foundation in place: `RestController`, `RestRegistry`, REST routes, `restResourc
 **Frontend**
 - `useSaasAdmin.useTenantMutations.remove` now calls `api.delete(\`/api/admin/tenants/{id}\`)` — the last `supabase.rpc(...)` call in the app is gone.
 - `NotificationBell` — Supabase Realtime channel removed. Switched to a 30 s React-Query `refetchInterval` and toasts any newly-arrived rows by diffing against `seenIds`. Chime + popover behaviour unchanged.
+
+## Stage 12 ✅ — Final sweep: all remaining `supabase.from(...)` removed
+
+**Backend**
+- New models: `SellingPriceGroup`, `CustomerGroup`. `TenantNotification::tenant()` BelongsTo added.
+- `RestRegistry` gains `selling_price_groups`, `customer_groups`; `product_group_prices` filters extended with `variation_id` + `selling_price_group_id`; `sms_purchases` filter set gains `status`; `warranties` filter set gains `is_active`; `warehouse_stock` `with` extended to `product.category`/`product.brand`; `tenant_notifications` `with` extended to `tenant`.
+
+**Frontend — migrated to REST**
+- `usePriceGroups` (selling_price_groups, customer_groups, product_group_prices — upsert reimplemented as list→update-or-create since REST has no native upsert).
+- `useAvailableSerials` (purchase_items + exchange_purchases + sale_items in parallel).
+- `Exchange.tsx`, `ExchangePurchases.tsx`, `ActivityLog.tsx`, `Warranties.tsx`, `reports/StockReport.tsx` (warehouse_stock with `product.category`/`product.brand` aliased back to `categories`/`brands`).
+- `admin/Notifications.tsx` (tenants + tenant_notifications; aliases `tenant`→`tenants`).
+- `admin/AdminDashboard.tsx` (sms_purchases approved).
+- `admin/TenantManagement.tsx` (profiles lookup).
+- `admin/AdminLayout.tsx` (profile avatar_url).
+- `pages/POS.tsx` (customer quick-add).
+- `pages/ProductBulkImport.tsx` (categories/brands/units lookup-or-create).
+- `pages/SalesOrderAdd.tsx` (warranties active list).
+- `pages/StockTransfers.tsx` (warehouse_stock check).
+
+**Frontend — auth-context replacements (no profiles round-trip)**
+- `TrialReminderBanner` now reads `user.tenant` from `AuthContext`.
+- `ExchangePurchaseAdd` and `Subscription` use `user.tenant_id` directly.
+
+**Frontend — public CMS reads**
+- `BrandingInjector` and `TrackingInjector` now use `useLandingCms("cms_branding" / "cms_tracking")` (`/api/public/landing/cms/{key}`) instead of `business_settings`. `TrackingInjector` pixel-proxy URL switched from `VITE_SUPABASE_URL/functions/v1/fb-pixel-proxy` to relative `/api/fb-pixel-proxy`.
+
+**Removed / dropped**
+- `AppSidebar` sidebar_permission_audit insert dropped (Supabase-only debug write; no Laravel endpoint yet).
+- Unused `supabase` imports removed from `InstallmentCustomerAdd`, `useInventory`, `Users`, `ProductAdd`, `PurchaseAdd`, `Subscription`, `ExchangePurchaseAdd`, `AppSidebar`.
+
+**Verified:** `bunx tsc --noEmit` clean. `rg "supabase\." src` shows zero remaining runtime calls (only a stale comment in `useContacts.ts`).

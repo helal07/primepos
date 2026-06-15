@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -36,23 +36,16 @@ export default function Warranties() {
   const { data, isLoading } = useQuery({
     queryKey: ["warranties"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("warranties")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Warranty[];
+      return await rest.all<Warranty>("warranties", { sort: "-created_at", perPage: 500 });
     },
   });
 
   const save = useMutation({
     mutationFn: async () => {
       if (editId) {
-        const { error } = await (supabase as any).from("warranties").update(form).eq("id", editId);
-        if (error) throw error;
+        await rest.update("warranties", editId, form);
       } else {
-        const { error } = await (supabase as any).from("warranties").insert(form);
-        if (error) throw error;
+        await rest.create("warranties", form);
       }
     },
     onSuccess: () => {
@@ -67,8 +60,7 @@ export default function Warranties() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("warranties").delete().eq("id", id);
-      if (error) throw error;
+      await rest.remove("warranties", id);
     },
     onSuccess: () => {
       toast.success("Warranty deleted");

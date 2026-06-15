@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { useTenants, useTenantMutations, usePackages } from "@/hooks/useSaasAdmin";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -150,12 +150,10 @@ export default function TenantManagement() {
     let ownerEmail = t.email ?? "";
     let ownerUserId = t.owner_user_id ?? "";
     if (ownerUserId) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("user_id, display_name")
-        .eq("user_id", ownerUserId)
-        .maybeSingle();
-      if (prof?.user_id) ownerUserId = prof.user_id;
+      const profs = await rest.all<{ user_id: string; display_name: string | null }>(
+        "profiles", { filter: { user_id: ownerUserId }, perPage: 1 }
+      ).catch(() => [] as any[]);
+      if (profs[0]?.user_id) ownerUserId = profs[0].user_id;
     }
 
     const next = {

@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
 interface AdminLayoutProps {
@@ -20,12 +20,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setAvatarUrl((data?.avatar_url as string) ?? null));
+    rest.all<{ avatar_url: string | null }>("profiles", {
+      filter: { user_id: user.id }, perPage: 1,
+    }).then((rows) => setAvatarUrl(rows[0]?.avatar_url ?? null)).catch(() => {});
   }, [user]);
 
   const initials = user?.name

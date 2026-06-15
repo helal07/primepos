@@ -3,7 +3,7 @@ import { useStockTransfers, useStockTransferMutations, useProducts } from "@/hoo
 import { useWarehouses } from "@/hooks/useWarehouses";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useToast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -39,15 +39,12 @@ export default function StockTransfers() {
     queryKey: ["warehouse_stock_check", form.from_warehouse_id, form.product_id],
     enabled: !!form.from_warehouse_id && !!form.product_id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warehouse_stock")
-        .select("quantity")
-        .eq("warehouse_id", form.from_warehouse_id)
-        .eq("product_id", form.product_id)
-        .is("variation_id", null)
-        .maybeSingle();
-      if (error) throw error;
-      return Number(data?.quantity ?? 0);
+      const rows = await rest.all<{ quantity: number; variation_id: string | null }>("warehouse_stock", {
+        filter: { warehouse_id: form.from_warehouse_id, product_id: form.product_id },
+        perPage: 100,
+      });
+      const base = rows.find((r) => !r.variation_id);
+      return Number(base?.quantity ?? 0);
     },
   });
 

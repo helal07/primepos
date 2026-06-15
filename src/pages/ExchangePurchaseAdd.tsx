@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MediaCapture } from "@/components/exchange/MediaCapture";
-import { supabase } from "@/integrations/supabase/client";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -43,11 +42,7 @@ export default function ExchangePurchaseAdd() {
 
   useEffect(() => {
     if (!user) return;
-    // Profile lookup is still served from the Supabase auth-linked profile row
-    // (auth itself is the Stage-10 milestone). Reads are tiny.
-    supabase.from("profiles").select("tenant_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (data?.tenant_id) setTenantId(data.tenant_id);
-    });
+    if (user.tenant_id) setTenantId(user.tenant_id);
   }, [user]);
 
   const update = (k: keyof typeof form, v: any) => setForm((f) => ({ ...f, [k]: v }));

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useCustomers } from "@/hooks/useContacts";
 import { useInstallmentCustomerMutations } from "@/hooks/useInstallments";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { uploadFile as apiUploadFile } from "@/lib/storage";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";

@@ -62,7 +62,6 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -334,16 +333,8 @@ export function AppSidebar() {
     const key = `spa_audit:${user.id}:${route}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, "1");
-    const keys = Array.from(permData.keys ?? []);
-    const modulePerms = permData.perms ?? {};
-    supabase.from("sidebar_permission_audit" as any).insert({
-      user_id: user.id,
-      is_admin: !!permData.isAdmin,
-      permission_keys: keys,
-      module_permissions: modulePerms as any,
-      route,
-      user_agent: navigator.userAgent,
-    }).then(() => {}, () => {});
+    // Sidebar permission audit was a Supabase-only debug write; backend endpoint
+    // not yet implemented, so the insert is skipped on the Sanctum stack.
   }, [user, permData, location.pathname]);
 
   const canSeeUrl = (url: string) => {

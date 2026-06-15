@@ -15,7 +15,7 @@ import { Search, ArrowLeft, Plus, Minus, X, Save, Printer, ChevronDown, ChevronU
 import { useProducts } from "@/hooks/useInventory";
 import { useCustomers } from "@/hooks/useContacts";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useSale, useSaleItems, useSaleMutations, type SaleItem } from "@/hooks/useSales";
 import { toast } from "sonner";
 
@@ -23,10 +23,9 @@ function useWarranties() {
   return useQuery({
     queryKey: ["warranties", "active"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("warranties").select("id,name,duration,duration_type").eq("is_active", true);
-      if (error) throw error;
-      return data as { id: string; name: string; duration: number; duration_type: string }[];
+      return await rest.all<{ id: string; name: string; duration: number; duration_type: string }>(
+        "warranties", { filter: { is_active: true }, perPage: 500 }
+      );
     },
   });
 }

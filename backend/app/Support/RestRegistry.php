@@ -81,7 +81,7 @@ class RestRegistry
                 'filters' => ['warehouse_id', 'product_id', 'variation_id'],
                 'sort'    => ['quantity', 'updated_at'],
                 'default_sort' => '-updated_at',
-                'with'    => ['product', 'variation', 'warehouse'],
+                'with'    => ['product', 'product.category', 'product.brand', 'variation', 'warehouse'],
             ],
             'stock_adjustments' => [
                 'model'   => Models\StockAdjustment::class,
@@ -413,7 +413,7 @@ class RestRegistry
             'warranties' => [
                 'model'        => Models\Warranty::class,
                 'module'       => 'warranty',
-                'filters'      => ['product_id', 'customer_id', 'status', 'imei_serial', 'warranty_no'],
+                'filters'      => ['product_id', 'customer_id', 'status', 'imei_serial', 'warranty_no', 'is_active'],
                 'sort'         => ['created_at', 'end_date'],
                 'default_sort' => '-created_at',
                 'search'       => ['warranty_no', 'imei_serial'],
@@ -494,7 +494,7 @@ class RestRegistry
             'sms_purchases' => [
                 'model'        => Models\SmsPurchase::class,
                 'module'       => 'saas',
-                'filters'      => ['tenant_id', 'plan_id', 'sms_plan_id'],
+                'filters'      => ['tenant_id', 'plan_id', 'sms_plan_id', 'status'],
                 'sort'         => ['purchased_at', 'created_at'],
                 'default_sort' => '-purchased_at',
                 'with'         => ['plan', 'tenant'],
@@ -573,12 +573,13 @@ class RestRegistry
                 'filters'      => ['tenant_id', 'read_at', 'type'],
                 'sort'         => ['created_at'],
                 'default_sort' => '-created_at',
+                'with'         => ['tenant'],
                 'max_per_page' => 500,
             ],
             'product_group_prices' => [
                 'model'        => Models\ProductGroupPrice::class,
                 'module'       => 'inventory',
-                'filters'      => ['product_id', 'group_id'],
+                'filters'      => ['product_id', 'variation_id', 'group_id', 'selling_price_group_id'],
                 'sort'         => ['product_id'],
                 'default_sort' => 'product_id',
                 'max_per_page' => 2000,
@@ -589,6 +590,26 @@ class RestRegistry
                 'filters'      => ['user_id', 'action', 'entity_type', 'entity_id'],
                 'sort'         => ['created_at'],
                 'default_sort' => '-created_at',
+                'max_per_page' => 500,
+            ],
+
+            // ===== Stage 12 — price/customer groups =====
+            'selling_price_groups' => [
+                'model'        => Models\SellingPriceGroup::class,
+                'module'       => 'inventory',
+                'filters'      => ['is_active'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name'],
+                'max_per_page' => 500,
+            ],
+            'customer_groups' => [
+                'model'        => Models\CustomerGroup::class,
+                'module'       => 'contacts',
+                'filters'      => ['is_active', 'selling_price_group_id'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name'],
                 'max_per_page' => 500,
             ],
         ];

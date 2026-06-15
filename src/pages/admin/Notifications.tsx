@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -27,25 +27,18 @@ export default function Notifications() {
   const { data: tenants = [] } = useQuery({
     queryKey: ["notif-tenants"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenants")
-        .select("id,name,email,phone,status")
-        .order("name");
-      if (error) throw error;
-      return data || [];
+      return await rest.all<any>("tenants", { sort: "name", perPage: 1000 });
     },
   });
 
   const { data: history = [] } = useQuery({
     queryKey: ["notif-history"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenant_notifications")
-        .select("id,channel,subject,message,status,error,created_at,tenant_id,tenants(name)")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data || [];
+      const rows = await rest.all<any>("tenant_notifications", {
+        sort: "-created_at", perPage: 50, with: ["tenant"],
+      });
+      // Alias `tenant` -> `tenants` to match existing UI shape
+      return rows.map((r: any) => ({ ...r, tenants: r.tenant }));
     },
   });
 
