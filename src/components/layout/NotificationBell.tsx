@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -56,6 +55,7 @@ export function NotificationBell() {
   const { data: items = [] } = useQuery({
     queryKey: ["my-notifications"],
     enabled: !!user,
+    refetchInterval: 30_000,
     queryFn: async () => {
       return await rest.all<NotifRow>("tenant_notifications", {
         filter: { channel: "push" },
@@ -67,39 +67,25 @@ export function NotificationBell() {
 
   const unread = items.filter((i) => !i.read_at).length;
 
-  // Seed seen set from first fetch so we don't toast on initial load
+  // Toast newly-arrived push notifications when polling picks them up.
+  // Seed `seenIds` on the first fetch so we don't toast the initial backlog.
   useEffect(() => {
-    if (!initialized.current && items.length >= 0) {
+    if (!initialized.current) {
       items.forEach((i) => seenIds.current.add(i.id));
       initialized.current = true;
+      return;
     }
+    const fresh = items.filter((i) => !seenIds.current.has(i.id));
+    if (fresh.length === 0) return;
+    fresh.forEach((row) => {
+      seenIds.current.add(row.id);
+      playChime();
+      toast(row.subject || "New notification", {
+        description: row.message,
+        duration: 8000,
+      });
+    });
   }, [items]);
-
-  // Realtime subscription for new push notifications for this tenant
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("tenant_notifications_push")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "tenant_notifications", filter: "channel=eq.push" },
-        (payload) => {
-          const row = payload.new as NotifRow;
-          if (seenIds.current.has(row.id)) return;
-          seenIds.current.add(row.id);
-          playChime();
-          toast(row.subject || "New notification", {
-            description: row.message,
-            duration: 8000,
-          });
-          qc.invalidateQueries({ queryKey: ["my-notifications"] });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, qc]);
 
   const markRead = useMutation({
     mutationFn: async (id?: string) => {

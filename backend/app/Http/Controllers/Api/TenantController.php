@@ -93,6 +93,47 @@ class TenantController extends Controller
         return $this->signup($request);
     }
 
+    /**
+     * Superadmin-only. Hard-deletes a tenant and every row scoped to it.
+     * Replaces the legacy `superadmin_delete_tenant` Postgres RPC.
+     */
+    public function adminDelete(Request $request, string $tenantId): JsonResponse
+    {
+        abort_unless($request->user()?->isSuperadmin(), 403, 'Only superadmins may delete tenants.');
+
+        $tenant = Tenant::query()->withoutGlobalScopes()->find($tenantId);
+        abort_unless($tenant, 404, 'Tenant not found.');
+
+        DB::transaction(function () use ($tenant) {
+            $tid = $tenant->id;
+
+            // Wipe every tenant-scoped row. We discover scoped tables by looking at
+            // information_schema for any public table with a tenant_id column.
+            $tables = DB::table('information_schema.columns')
+                ->where('table_schema', 'public')
+                ->where('column_name', 'tenant_id')
+                ->pluck('table_name')
+                ->reject(fn ($t) => in_array($t, ['tenants'], true))
+                ->values();
+
+            foreach ($tables as $table) {
+                try {
+                    DB::table($table)->where('tenant_id', $tid)->delete();
+                } catch (\Throwable $e) {
+                    // ignore tables we don't have privileges on / non-data tables
+                }
+            }
+
+            // Drop staff users attached to the tenant (owner included).
+            User::query()->withoutGlobalScopes()->where('tenant_id', $tid)->delete();
+
+            // Finally drop the tenant row itself.
+            Tenant::query()->withoutGlobalScopes()->where('id', $tid)->delete();
+        });
+
+        return response()->json(['ok' => true, 'tenant_id' => $tenantId]);
+    }
+
     private function uniqueSlug(string $base): string
     {
         $slug = $base ?: 'tenant';
