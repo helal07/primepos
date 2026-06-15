@@ -18,8 +18,8 @@ export function AppHeader() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const initials = user?.user_metadata?.display_name
-    ? user.user_metadata.display_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+  const initials = user?.name
+    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.slice(0, 2).toUpperCase() ?? "??";
 
   return (
