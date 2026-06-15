@@ -1,17 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { rest } from "@/lib/restResource";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+
+// Stage 9c — migrated from supabase.from() to /api/rest. Query keys preserved
+// so consumer pages continue to work without changes.
 
 export function useCustomers() {
   return useQuery({
     queryKey: ["customers"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("*").order("name");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => rest.all<Tables<"customers">>("customers", { sort: "name", perPage: 500 }),
   });
 }
 
@@ -21,28 +20,21 @@ export function useCustomerMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["customers"] });
 
   const create = useMutation({
-    mutationFn: async (c: TablesInsert<"customers">) => {
-      const { error } = await supabase.from("customers").insert(c);
-      if (error) throw error;
-    },
+    mutationFn: (c: TablesInsert<"customers">) =>
+      rest.create("customers", c as unknown as Record<string, unknown>),
     onSuccess: () => { invalidate(); toast({ title: "Customer created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...updates }: TablesUpdate<"customers"> & { id: string }) => {
-      const { error } = await supabase.from("customers").update(updates).eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, ...updates }: TablesUpdate<"customers"> & { id: string }) =>
+      rest.update("customers", id, updates as Record<string, unknown>),
     onSuccess: () => { invalidate(); toast({ title: "Customer updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("customers").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => rest.remove("customers", id),
     onSuccess: () => { invalidate(); toast({ title: "Customer deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
@@ -53,11 +45,7 @@ export function useCustomerMutations() {
 export function useSuppliers() {
   return useQuery({
     queryKey: ["suppliers"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("suppliers").select("*").order("name");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => rest.all<Tables<"suppliers">>("suppliers", { sort: "name", perPage: 500 }),
   });
 }
 
@@ -67,28 +55,21 @@ export function useSupplierMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["suppliers"] });
 
   const create = useMutation({
-    mutationFn: async (s: TablesInsert<"suppliers">) => {
-      const { error } = await supabase.from("suppliers").insert(s);
-      if (error) throw error;
-    },
+    mutationFn: (s: TablesInsert<"suppliers">) =>
+      rest.create("suppliers", s as unknown as Record<string, unknown>),
     onSuccess: () => { invalidate(); toast({ title: "Supplier created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...updates }: TablesUpdate<"suppliers"> & { id: string }) => {
-      const { error } = await supabase.from("suppliers").update(updates).eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, ...updates }: TablesUpdate<"suppliers"> & { id: string }) =>
+      rest.update("suppliers", id, updates as Record<string, unknown>),
     onSuccess: () => { invalidate(); toast({ title: "Supplier updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("suppliers").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => rest.remove("suppliers", id),
     onSuccess: () => { invalidate(); toast({ title: "Supplier deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });

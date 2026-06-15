@@ -1,8 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { rest } from "@/lib/restResource";
 import { toast } from "sonner";
+
+// Stage 9c — migrated to Laravel REST. Eloquent relations are returned
+// under singular names (customer / product / variation); we alias them
+// to the Supabase plural shape (`customers`, `products`, `product_variations`)
+// so existing UI code keeps working unchanged.
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyRec = Record<string, any>;
+
+function aliasSale(row: AnyRec): AnyRec {
+  if (row && row.customer && !row.customers) row.customers = row.customer;
+  return row;
+}
+
+function aliasSaleItem(row: AnyRec): AnyRec {
+  if (row && row.product && !row.products) row.products = row.product;
+  if (row && row.variation && !row.product_variations) row.product_variations = row.variation;
+  return row;
+}
 
 export interface SaleItem {
   id?: string;
@@ -56,12 +75,12 @@ export function useSales() {
   return useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales")
-        .select("*, customers(name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<AnyRec>("sales", {
+        with: ["customer"],
+        sort: "-created_at",
+        perPage: 500,
+      });
+      return rows.map(aliasSale);
     },
   });
 }
@@ -71,13 +90,8 @@ export function useSale(id: string | null) {
     queryKey: ["sale", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sales")
-        .select("*, customers(name, phone, address, email)")
-        .eq("id", id!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const row = await rest.get<AnyRec>("sales", id!, { with: ["customer"] });
+      return row ? aliasSale(row) : row;
     },
   });
 }
@@ -87,12 +101,12 @@ export function useSaleItems(saleId: string | null) {
     queryKey: ["sale_items", saleId],
     enabled: !!saleId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sale_items")
-        .select("*, products(name), product_variations(name)")
-        .eq("sale_id", saleId!);
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<AnyRec>("sale_items", {
+        filter: { sale_id: saleId! },
+        with: ["product", "variation"],
+        perPage: 1000,
+      });
+      return rows.map(aliasSaleItem);
     },
   });
 }
@@ -101,15 +115,12 @@ export function useSalePayments(saleId: string | null) {
   return useQuery({
     queryKey: ["sale_payments", saleId],
     enabled: !!saleId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("sale_payments")
-        .select("*")
-        .eq("sale_id", saleId!)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () =>
+      rest.all("sale_payments", {
+        filter: { sale_id: saleId! },
+        sort: "created_at",
+        perPage: 1000,
+      }),
   });
 }
 
@@ -120,34 +131,28 @@ export function useSaleMutations() {
   const createSale = useMutation({
     mutationFn: async (formData: SaleFormData) => {
       const { items, ...saleData } = formData;
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .insert({ ...saleData, created_by: user?.id })
-        .select()
-        .single();
-      if (saleError) throw saleError;
-
+      const sale = await rest.create<AnyRec>("sales", { ...saleData, created_by: user?.id });
       if (items.length > 0) {
-        const saleItems = items.map((item) => ({
-          sale_id: sale.id,
-          product_id: item.product_id,
-          variation_id: item.variation_id || null,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          discount: item.discount,
-          tax_percent: item.tax_percent,
-          total: item.total,
-          serial_number: item.serial_number || null,
-          warranty_id: item.warranty_id || null,
-          warranty_name: item.warranty_name || null,
-          imei_text: item.imei_text || null,
-          discount_type: item.discount_type || 'fixed',
-          unit: item.unit || null,
-        }));
-        const { error: itemsError } = await supabase
-          .from("sale_items")
-          .insert(saleItems);
-        if (itemsError) throw itemsError;
+        await Promise.all(
+          items.map((item) =>
+            rest.create("sale_items", {
+              sale_id: sale.id,
+              product_id: item.product_id,
+              variation_id: item.variation_id || null,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount: item.discount,
+              tax_percent: item.tax_percent,
+              total: item.total,
+              serial_number: item.serial_number || null,
+              warranty_id: item.warranty_id || null,
+              warranty_name: item.warranty_name || null,
+              imei_text: item.imei_text || null,
+              discount_type: item.discount_type || "fixed",
+              unit: item.unit || null,
+            }),
+          ),
+        );
       }
       return sale;
     },
@@ -161,9 +166,16 @@ export function useSaleMutations() {
   const createSalePayments = useMutation({
     mutationFn: async ({ saleId, payments }: { saleId: string; payments: { amount: number; payment_method: string; payment_note: string }[] }) => {
       if (payments.length === 0) return;
-      const rows = payments.map(p => ({ sale_id: saleId, amount: p.amount, payment_method: p.payment_method, payment_note: p.payment_note || null }));
-      const { error } = await supabase.from("sale_payments").insert(rows);
-      if (error) throw error;
+      await Promise.all(
+        payments.map((p) =>
+          rest.create("sale_payments", {
+            sale_id: saleId,
+            amount: p.amount,
+            payment_method: p.payment_method,
+            payment_note: p.payment_note || null,
+          }),
+        ),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sale_payments"] });
@@ -172,13 +184,8 @@ export function useSaleMutations() {
   });
 
   const updateSaleStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase
-        .from("sales")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      rest.update("sales", id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       toast.success("Sale updated");
@@ -189,39 +196,35 @@ export function useSaleMutations() {
   const updateSale = useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData: SaleFormData }) => {
       const { items, ...saleData } = formData;
-      const { error: saleError } = await supabase
-        .from("sales")
-        .update(saleData)
-        .eq("id", id);
-      if (saleError) throw saleError;
+      await rest.update("sales", id, saleData as unknown as Record<string, unknown>);
 
-      const { error: delError } = await supabase
-        .from("sale_items")
-        .delete()
-        .eq("sale_id", id);
-      if (delError) throw delError;
+      const existing = await rest.all<AnyRec>("sale_items", {
+        filter: { sale_id: id },
+        perPage: 1000,
+      });
+      await Promise.all(existing.map((row) => rest.remove("sale_items", row.id as string)));
 
       if (items.length > 0) {
-        const saleItems = items.map((item) => ({
-          sale_id: id,
-          product_id: item.product_id,
-          variation_id: item.variation_id || null,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          discount: item.discount,
-          tax_percent: item.tax_percent,
-          total: item.total,
-          serial_number: item.serial_number || null,
-          warranty_id: item.warranty_id || null,
-          warranty_name: item.warranty_name || null,
-          imei_text: item.imei_text || null,
-          discount_type: item.discount_type || 'fixed',
-          unit: item.unit || null,
-        }));
-        const { error: itemsError } = await supabase
-          .from("sale_items")
-          .insert(saleItems);
-        if (itemsError) throw itemsError;
+        await Promise.all(
+          items.map((item) =>
+            rest.create("sale_items", {
+              sale_id: id,
+              product_id: item.product_id,
+              variation_id: item.variation_id || null,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              discount: item.discount,
+              tax_percent: item.tax_percent,
+              total: item.total,
+              serial_number: item.serial_number || null,
+              warranty_id: item.warranty_id || null,
+              warranty_name: item.warranty_name || null,
+              imei_text: item.imei_text || null,
+              discount_type: item.discount_type || "fixed",
+              unit: item.unit || null,
+            }),
+          ),
+        );
       }
     },
     onSuccess: () => {
@@ -234,10 +237,7 @@ export function useSaleMutations() {
   });
 
   const deleteSale = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("sales").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => rest.remove("sales", id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       toast.success("Sale deleted");

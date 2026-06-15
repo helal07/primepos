@@ -101,6 +101,55 @@ class RestRegistry
                 'with'    => ['product', 'variation'],
                 'max_per_page' => 500,
             ],
+
+            // ===== Contacts (Stage 9c) =====
+            'customers' => [
+                'model'        => Models\Customer::class,
+                'module'       => 'contacts',
+                'filters'      => ['is_active', 'customer_group_id', 'phone', 'email'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name', 'phone', 'email'],
+                'max_per_page' => 500,
+            ],
+            'suppliers' => [
+                'model'        => Models\Supplier::class,
+                'module'       => 'contacts',
+                'filters'      => ['is_active', 'phone', 'email'],
+                'sort'         => ['name', 'created_at'],
+                'default_sort' => 'name',
+                'search'       => ['name', 'phone', 'email'],
+                'max_per_page' => 500,
+            ],
+
+            // ===== Sales (Stage 9c) =====
+            'sales' => [
+                'model'        => Models\Sale::class,
+                'module'       => 'sales',
+                'filters'      => ['customer_id', 'status', 'payment_status', 'payment_method', 'warehouse_id', 'sale_date', 'created_at'],
+                'sort'         => ['created_at', 'sale_date', 'total_amount', 'invoice_number'],
+                'default_sort' => '-created_at',
+                'search'       => ['invoice_number', 'order_no', 'notes'],
+                'with'         => ['customer', 'items', 'payments'],
+                'max_per_page' => 500,
+            ],
+            'sale_items' => [
+                'model'        => Models\SaleItem::class,
+                'module'       => 'sales',
+                'filters'      => ['sale_id', 'product_id', 'variation_id'],
+                'sort'         => ['sale_id'],
+                'default_sort' => 'sale_id',
+                'with'         => ['product', 'variation'],
+                'max_per_page' => 1000,
+            ],
+            'sale_payments' => [
+                'model'        => Models\SalePayment::class,
+                'module'       => 'sales',
+                'filters'      => ['sale_id', 'payment_method'],
+                'sort'         => ['created_at'],
+                'default_sort' => 'created_at',
+                'max_per_page' => 1000,
+            ],
         ];
     }
 

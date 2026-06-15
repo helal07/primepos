@@ -18,4 +18,19 @@ class Sale extends Model
     protected $casts = [
         'sale_date' => 'datetime',
     ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(SaleItem::class, 'sale_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(SalePayment::class, 'sale_id');
+    }
 }
