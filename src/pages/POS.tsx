@@ -1156,26 +1156,23 @@ export default function POS() {
               disabled={savingCust || !newCust.name.trim()}
               onClick={async () => {
                 setSavingCust(true);
-                const { data, error } = await supabase
-                  .from("customers")
-                  .insert({
+                try {
+                  const created = await rest.create<{ id: string }>("customers", {
                     name: newCust.name.trim(),
                     phone: newCust.phone || null,
                     email: newCust.email || null,
                     address: newCust.address || null,
-                  })
-                  .select()
-                  .single();
-                setSavingCust(false);
-                if (error) {
-                  toast.error(error.message);
-                  return;
+                  });
+                  await qc.invalidateQueries({ queryKey: ["customers"] });
+                  if (created?.id) setCustomerId(created.id);
+                  toast.success("Customer added");
+                  setNewCust({ name: "", phone: "", email: "", address: "" });
+                  setShowAddCustomer(false);
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Failed to create customer");
+                } finally {
+                  setSavingCust(false);
                 }
-                await qc.invalidateQueries({ queryKey: ["customers"] });
-                if (data?.id) setCustomerId(data.id);
-                toast.success("Customer added");
-                setNewCust({ name: "", phone: "", email: "", address: "" });
-                setShowAddCustomer(false);
               }}
             >
               {savingCust ? "Saving..." : "Save Customer"}
