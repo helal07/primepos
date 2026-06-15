@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,29 +19,33 @@ export default function StockReport() {
     queryKey: ["report_stock", locationId],
     queryFn: async () => {
       if (locationId) {
-        const { data: rows, error } = await supabase
-          .from("warehouse_stock")
-          .select("quantity, products!inner(id, name, sku, purchase_price, selling_price, alert_quantity, categories(name), brands(name))")
-          .eq("warehouse_id", locationId);
-        if (error) throw error;
-        return (rows ?? []).map((r: any) => ({
-          id: r.products.id,
-          name: r.products.name,
-          sku: r.products.sku,
-          stock_quantity: Number(r.quantity),
-          purchase_price: r.products.purchase_price,
-          selling_price: r.products.selling_price,
-          alert_quantity: r.products.alert_quantity,
-          categories: r.products.categories,
-          brands: r.products.brands,
-        }));
+        const rows = await rest.all<any>("warehouse_stock", {
+          filter: { warehouse_id: locationId },
+          with: ["product", "product.category", "product.brand"],
+          perPage: 2000,
+        });
+        return rows
+          .filter((r: any) => r.product)
+          .map((r: any) => ({
+            id: r.product.id,
+            name: r.product.name,
+            sku: r.product.sku,
+            stock_quantity: Number(r.quantity),
+            purchase_price: r.product.purchase_price,
+            selling_price: r.product.selling_price,
+            alert_quantity: r.product.alert_quantity,
+            categories: r.product.category,
+            brands: r.product.brand,
+          }));
       }
-      const { data: products, error } = await supabase
-        .from("products")
-        .select("id, name, sku, stock_quantity, purchase_price, selling_price, alert_quantity, categories(name), brands(name)")
-        .order("stock_quantity");
-      if (error) throw error;
-      return products ?? [];
+      const products = await rest.all<any>("products", {
+        with: ["category", "brand"], sort: "stock_quantity", perPage: 2000,
+      });
+      return products.map((p: any) => ({
+        ...p,
+        categories: p.category,
+        brands: p.brand,
+      }));
     },
   });
 
