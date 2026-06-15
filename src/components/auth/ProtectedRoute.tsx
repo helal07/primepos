@@ -1,77 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
-type AccessState =
-  | { kind: "loading" }
-  | { kind: "ok" }
-  | { kind: "suspended"; tenantName?: string }
-  | { kind: "no_tenant" };
-
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
-  const [access, setAccess] = useState<AccessState>({ kind: "loading" });
 
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) {
-      setAccess({ kind: "loading" });
-      return;
-    }
-    (async () => {
-      // Superadmins live in their own console — never enter tenant area
-      const { data: isSuper } = await supabase.rpc("is_superadmin", { _user_id: user.id });
-      if (cancelled) return;
-      if (isSuper) {
-        setAccess({ kind: "redirect_super" } as any);
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tenant_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-
-      const tenantId = (profile as any)?.tenant_id;
-      if (!tenantId) {
-        setAccess({ kind: "no_tenant" });
-        return;
-      }
-
-      const { data: tenant } = await supabase
-        .from("tenants")
-        .select("id,name,status,subscription_end")
-        .eq("id", tenantId)
-        .maybeSingle();
-      if (cancelled) return;
-
-      if (!tenant) {
-        setAccess({ kind: "no_tenant" });
-        return;
-      }
-      const t: any = tenant;
-      const expired =
-        t.subscription_end &&
-        new Date(t.subscription_end + "T23:59:59") < new Date();
-      if (t.status === "suspended" || expired) {
-        if (expired && t.status !== "suspended") {
-          // Auto-suspend immediately on access
-          await supabase.from("tenants").update({ status: "suspended" }).eq("id", t.id);
-        }
-        setAccess({ kind: "suspended", tenantName: (tenant as any).name });
-        return;
-      }
-      setAccess({ kind: "ok" });
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
-
-  if (loading || (user && access.kind === "loading")) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -83,12 +18,18 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  if ((access as any).kind === "redirect_super") {
+  if (user.is_superadmin) {
     return <Navigate to="/superadmin" replace />;
   }
 
-  if (access.kind === "suspended" || access.kind === "no_tenant") {
-    const isSuspended = access.kind === "suspended";
+  const tenant = user.tenant;
+  const tenantMissing = !user.tenant_id || !tenant;
+  const expired = !!tenant?.subscription_end &&
+    new Date(tenant.subscription_end + "T23:59:59") < new Date();
+  const suspended = tenant?.status === "suspended" || expired;
+
+  if (tenantMissing || suspended) {
+    const isSuspended = !tenantMissing && suspended;
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="max-w-md w-full rounded-lg border bg-card p-6 text-center shadow-sm">
@@ -100,7 +41,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           </h1>
           <p className="text-sm text-muted-foreground mb-6">
             {isSuspended
-              ? `Your account${access.kind === "suspended" && access.tenantName ? ` (${access.tenantName})` : ""} has been suspended. Please contact support to restore access.`
+              ? `Your account${tenant?.name ? ` (${tenant.name})` : ""} has been suspended. Please contact support to restore access.`
               : "Your account is no longer available. It may have been removed. Please contact support if you believe this is a mistake."}
           </p>
           <Button onClick={async () => { await signOut(); window.location.href = "/login"; }} className="w-full">

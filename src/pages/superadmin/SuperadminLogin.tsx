@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,51 +12,32 @@ import { Helmet } from "react-helmet-async";
 export default function SuperadminLogin() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signIn, signOut } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [data, setData] = useState({ email: "", password: "" });
-  const [checking, setChecking] = useState(true);
-  const [alreadySuper, setAlreadySuper] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (authLoading) return;
-    if (!user) { setChecking(false); return; }
-    supabase.rpc("is_superadmin", { _user_id: user.id }).then(({ data }) => {
-      if (cancelled) return;
-      setAlreadySuper(!!data);
-      setChecking(false);
-    });
-    return () => { cancelled = true; };
-  }, [user, authLoading]);
-
-  if (alreadySuper) return <Navigate to="/superadmin" replace />;
+  if (!authLoading && user?.is_superadmin) return <Navigate to="/superadmin" replace />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { data: signIn, error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    if (error || !signIn.user) {
-      setLoading(false);
+    try {
+      const u = await signIn(data.email, data.password);
+      if (!u.is_superadmin) {
+        await signOut();
+        toast({ title: "Access denied", description: "This account is not a Superadmin.", variant: "destructive" });
+        return;
+      }
+      navigate("/superadmin", { replace: true });
+    } catch {
       toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
-      return;
-    }
-    const { data: isSuper } = await supabase.rpc("is_superadmin", { _user_id: signIn.user.id });
-    if (!isSuper) {
-      await supabase.auth.signOut();
+    } finally {
       setLoading(false);
-      toast({ title: "Access denied", description: "This account is not a Superadmin.", variant: "destructive" });
-      return;
     }
-    setLoading(false);
-    navigate("/superadmin", { replace: true });
   };
 
-  if (authLoading || checking) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
