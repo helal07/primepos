@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useCategoryMutations, useBrandMutations, useUnitMutations, useCategories, useBrands, useUnits } from "@/hooks/useInventory";
+import { rest } from "@/lib/restResource";
 
 type Kind = "category" | "brand" | "unit";
 
@@ -26,20 +27,24 @@ export function QuickAddDialog({ kind, onCreated }: Props) {
 
   const label = kind === "category" ? "Category" : kind === "brand" ? "Brand" : "Unit";
 
+  const lookupId = async (resource: "categories" | "brands" | "units", nm: string) => {
+    const rows = await rest.all<{ id: string }>(resource, {
+      filter: { name: nm }, sort: "-created_at", perPage: 1,
+    });
+    return rows[0]?.id || "";
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
     if (kind === "category") {
       await catM.create.mutateAsync({ name: name.trim(), is_active: true } as any);
-      const fresh = (await (await import("@/integrations/supabase/client")).supabase.from("categories").select("id").eq("name", name.trim()).order("created_at", { ascending: false }).limit(1).single()).data;
-      onCreated?.(fresh?.id || "");
+      onCreated?.(await lookupId("categories", name.trim()));
     } else if (kind === "brand") {
       await brandM.create.mutateAsync({ name: name.trim(), is_active: true } as any);
-      const fresh = (await (await import("@/integrations/supabase/client")).supabase.from("brands").select("id").eq("name", name.trim()).order("created_at", { ascending: false }).limit(1).single()).data;
-      onCreated?.(fresh?.id || "");
+      onCreated?.(await lookupId("brands", name.trim()));
     } else {
       await unitM.create.mutateAsync({ name: name.trim(), short_name: shortName.trim() || name.trim().slice(0, 3), is_active: true } as any);
-      const fresh = (await (await import("@/integrations/supabase/client")).supabase.from("units").select("id").eq("name", name.trim()).order("created_at", { ascending: false }).limit(1).single()).data;
-      onCreated?.(fresh?.id || "");
+      onCreated?.(await lookupId("units", name.trim()));
     }
     setName("");
     setShortName("");
