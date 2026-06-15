@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,9 +44,7 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
     queryKey: [table, id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from(table as any).select("*").eq("id", id!).maybeSingle();
-      if (error) throw error;
-      return data as any;
+      return await rest.get<any>(table, id!);
     },
   });
 
@@ -54,15 +52,8 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
     queryKey: [txTable, "by-contact", id, from, to],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(txTable as any)
-        .select("*")
-        .eq(fkCol, id!)
-        .gte(txDateCol, from)
-        .lte(txDateCol, to)
-        .order(txDateCol, { ascending: false });
-      if (error) throw error;
-      return (data as any[]) ?? [];
+      const filter: Record<string, any> = { [fkCol]: id!, [txDateCol]: { gte: from, lte: to } };
+      return await rest.all<any>(txTable, { filter, sort: `-${txDateCol}`, perPage: 2000 });
     },
   });
 
@@ -70,12 +61,7 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
     queryKey: [txTable, "overall", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from(txTable as any)
-        .select("total_amount")
-        .eq(fkCol, id!);
-      if (error) throw error;
-      return (data as any[]) ?? [];
+      return await rest.all<any>(txTable, { filter: { [fkCol]: id! }, perPage: 5000 });
     },
   });
 
