@@ -81,6 +81,20 @@ Tables: `employees`, `attendance`, `leave_requests`, `payroll`.
 
 **Infra fix:** nginx 403 at `/` resolved — added `index index.html;` inside SPA `location /` so the server-level `index index.php` no longer leaks into the SPA root, and `entrypoint.sh` now chowns/chmods `public/app` so www-data can serve the Vite build.
 
+### Substage 9h — Settings, Roles, SaaS Admin, Warranty CMS
+Hooks: `useSettings`, `useRoles`, `useSaasAdmin`, `useWarrantyCms`.
+Tables: `business_settings`, `roles`, `role_permissions`, `role_permission_grants`, `permission_catalog`, `user_roles`, `profiles`, `tenants`, `saas_packages`, `tenant_actions_log`, `landing_features`, `landing_reviews`, `warranty_claims`, `warranties`.
+
+**Status (Stage 9h complete):**
+- Backend: added `BusinessSetting`, `WarrantyClaim`, `Warranty`, `TenantActionsLog`, `LandingFeature`, `LandingReview` models. `BusinessSetting` deliberately skips `BelongsToTenant` because `tenant_id` is nullable for global rows; callers filter explicitly.
+- `RestRegistry` now exposes `business_settings`, `roles`, `role_permissions`, `role_permission_grants`, `permission_catalog`, `user_roles`, `profiles`, `tenants`, `saas_packages`, `tenant_actions_log`, `landing_features`, `landing_reviews`, `warranty_claims`, `warranties`.
+- `useSettings.ts` — list + per-tenant key/value upsert migrated to `rest.*`. Tenant lookup still uses Supabase auth's `profiles` row (auth itself is migrated in stage 10).
+- `useRoles.ts` — fully migrated. Bulk delete-then-insert pattern (no native bulk delete in REST) reimplemented as list → delete each → create each, run with `Promise.all`. `useUpdateUserRole` mirrors the same pattern. Aliased `role→roles` for `useUsersWithRoles`.
+- `useSaasAdmin.ts` — packages, tenants, tenant_actions_log, admin-mode landing features/reviews migrated. Aliased `package→saas_packages` on tenants. The `superadmin_delete_tenant` RPC stays on Supabase for now (cascade across many tables in one TX). `useLandingCms`, `useLandingCmsMutation`, public-mode `useLandingFeatures(false)` / `useLandingReviews(false)`, and `useLandingPricing` keep using Supabase because `/api/rest/*` requires `auth:sanctum`; opening a public REST surface is deferred to stage 9i.
+- `useWarrantyCms.ts` — `warranty_claims` list + mutations migrated. Aliased `customer→customers`, `product→products`.
+
+Deferred to **Stage 9i**: `useDashboard` (heavy aggregates — needs a dedicated `/api/dashboard/stats` endpoint that does the SUM/COUNT in SQL instead of N REST round-trips), public landing reads (need an unauthenticated REST surface), and `useEnabledModules` / `usePermission` (still call SQL functions directly via Supabase).
+
 ### Substage 9h — Settings, Roles, SaaS Admin, Landing
 Hooks: `useSettings`, `useRoles`, `useSaasAdmin`, `useWarrantyCms`, `useDashboard`.
 Tables: `business_settings`, `roles`, `role_permissions`, `profiles`, `tenants`, `tenant_payments`, `tenant_actions_log`, `tenant_notifications`, `saas_packages`, `sms_plans`, `sms_providers`, `sms_purchases`, `landing_features`, `landing_reviews`, `faq_entries`, `sitemap_entries`, `payment_gateways`, `payment_gateway_credentials`, `activity_log`, `sidebar_permission_audit`, `warranty_claims`.
