@@ -150,6 +150,54 @@ class RestRegistry
                 'default_sort' => 'created_at',
                 'max_per_page' => 1000,
             ],
+
+            // ===== Purchases (Stage 9d) =====
+            'purchases' => [
+                'model'        => Models\Purchase::class,
+                'module'       => 'purchases',
+                'filters'      => ['supplier_id', 'status', 'payment_status', 'payment_method', 'purchase_date', 'created_at'],
+                'sort'         => ['created_at', 'purchase_date', 'total_amount', 'reference_number'],
+                'default_sort' => '-created_at',
+                'search'       => ['reference_number', 'notes'],
+                'with'         => ['supplier', 'items', 'payments'],
+                'max_per_page' => 500,
+            ],
+            'purchase_items' => [
+                'model'        => Models\PurchaseItem::class,
+                'module'       => 'purchases',
+                'filters'      => ['purchase_id', 'product_id', 'variation_id'],
+                'sort'         => ['purchase_id'],
+                'default_sort' => 'purchase_id',
+                'with'         => ['product', 'variation'],
+                'max_per_page' => 1000,
+            ],
+            'purchase_payments' => [
+                'model'        => Models\PurchasePayment::class,
+                'module'       => 'purchases',
+                'filters'      => ['purchase_id', 'payment_method'],
+                'sort'         => ['created_at'],
+                'default_sort' => 'created_at',
+                'max_per_page' => 1000,
+            ],
+            'purchase_orders' => [
+                'model'        => Models\PurchaseOrder::class,
+                'module'       => 'purchases',
+                'filters'      => ['supplier_id', 'status', 'order_date'],
+                'sort'         => ['created_at', 'order_date', 'reference_number'],
+                'default_sort' => '-created_at',
+                'search'       => ['reference_number', 'notes'],
+                'with'         => ['supplier', 'items'],
+                'max_per_page' => 500,
+            ],
+            'purchase_order_items' => [
+                'model'        => Models\PurchaseOrderItem::class,
+                'module'       => 'purchases',
+                'filters'      => ['purchase_order_id', 'product_id', 'variation_id'],
+                'sort'         => ['purchase_order_id'],
+                'default_sort' => 'purchase_order_id',
+                'with'         => ['product', 'product.brand', 'variation'],
+                'max_per_page' => 1000,
+            ],
         ];
     }
 
