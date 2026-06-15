@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Trash2, Search, ArrowLeft } from "lucide-react";
 import { useProducts } from "@/hooks/useInventory";
 import { useSuppliers } from "@/hooks/useContacts";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -50,7 +50,7 @@ export default function PurchaseOrderAdd() {
   useEffect(() => {
     if (!isEdit) return;
     (async () => {
-      const { data: po } = await supabase.from("purchase_orders").select("*").eq("id", editId!).maybeSingle();
+      const po = await rest.get<any>("purchase_orders", editId!).catch(() => null);
       if (po) {
         setSupplierId(po.supplier_id || "");
         setOrderDate(po.order_date);
@@ -59,12 +59,14 @@ export default function PurchaseOrderAdd() {
         setStatus(po.status);
         setNotes(po.notes || "");
       }
-      const { data: its } = await supabase.from("purchase_order_items").select("*, products(name, sku)").eq("purchase_order_id", editId!);
-      if (its) {
+      const its = await rest.all<any>("purchase_order_items", {
+        filter: { purchase_order_id: editId! }, with: ["product"], perPage: 2000,
+      });
+      if (its && its.length) {
         setItems(its.map((i: any) => ({
           product_id: i.product_id,
-          product_name: i.products?.name || "",
-          sku: i.products?.sku,
+          product_name: i.product?.name || "",
+          sku: i.product?.sku,
           quantity: i.quantity,
           unit_cost: Number(i.unit_cost),
           total: Number(i.total),
@@ -115,28 +117,28 @@ export default function PurchaseOrderAdd() {
     try {
       let poId = editId;
       if (isEdit) {
-        const { error } = await supabase.from("purchase_orders").update({
+        await rest.update("purchase_orders", editId!, {
           supplier_id: supplierId || null, order_date: orderDate,
           expected_date: expectedDate || null, reference_number: referenceNumber,
           status, notes: notes || null,
-        }).eq("id", editId!);
-        if (error) throw error;
-        await supabase.from("purchase_order_items").delete().eq("purchase_order_id", editId!);
+        });
+        const existing = await rest.all<{ id: string }>("purchase_order_items", {
+          filter: { purchase_order_id: editId! }, perPage: 2000,
+        });
+        await Promise.all(existing.map((r) => rest.remove("purchase_order_items", r.id)));
       } else {
-        const { data, error } = await supabase.from("purchase_orders").insert({
+        const data = await rest.create<any>("purchase_orders", {
           supplier_id: supplierId || null, order_date: orderDate,
           expected_date: expectedDate || null, reference_number: referenceNumber,
           status, notes: notes || null, created_by: user?.id,
-        }).select().single();
-        if (error) throw error;
+        });
         poId = data.id;
       }
       const rows = items.map((i) => ({
         purchase_order_id: poId!, product_id: i.product_id,
         quantity: i.quantity, unit_cost: i.unit_cost, total: i.total,
       }));
-      const { error: iErr } = await supabase.from("purchase_order_items").insert(rows);
-      if (iErr) throw iErr;
+      await Promise.all(rows.map((r) => rest.create("purchase_order_items", r)));
       await qc.invalidateQueries({ queryKey: ["purchase_orders"] });
       toast.success(isEdit ? "Purchase order updated" : "Purchase order created");
       navigate("/purchase-orders");
