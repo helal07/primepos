@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
+import { rest } from "@/lib/restResource";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,14 +10,7 @@ import { toast } from "sonner";
 export function usePackages() {
   return useQuery({
     queryKey: ["saas_packages"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("saas_packages")
-        .select("*")
-        .order("sort_order");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => rest.all<any>("saas_packages", { sort: "sort_order", perPage: 200 }),
   });
 }
 
@@ -25,55 +19,22 @@ export function usePackageMutations() {
   const { toast } = useToast();
 
   const create = useMutation({
-    mutationFn: async (pkg: {
-      name: string;
-      price: number;
-      duration_days: number;
-      max_users: number;
-      max_business_location: number;
-      max_invoice: number;
-      features: string[];
-      is_popular: boolean;
-      is_active: boolean;
-      sort_order: number;
-      enabled_modules?: string[];
-    }) => {
-      const { error } = await supabase.from("saas_packages").insert(pkg);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["saas_packages"] });
-      toast({ title: "Package created" });
-    },
+    mutationFn: async (pkg: any) => { await rest.create("saas_packages", pkg); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["saas_packages"] }); toast({ title: "Package created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...rest }: { id: string } & Partial<{
-      name: string; price: number; duration_days: number; max_users: number;
-      max_business_location: number; max_invoice: number; features: string[];
-      is_popular: boolean; is_active: boolean; sort_order: number;
-      enabled_modules: string[];
-    }>) => {
-      const { error } = await supabase.from("saas_packages").update(rest).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, ...rest_ }: { id: string } & Record<string, any>) => {
+      await rest.update("saas_packages", id, rest_);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["saas_packages"] });
-      toast({ title: "Package updated" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["saas_packages"] }); toast({ title: "Package updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("saas_packages").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["saas_packages"] });
-      toast({ title: "Package deleted" });
-    },
+    mutationFn: async (id: string) => { await rest.remove("saas_packages", id); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["saas_packages"] }); toast({ title: "Package deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
@@ -85,12 +46,9 @@ export function useTenants() {
   return useQuery({
     queryKey: ["tenants"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenants")
-        .select("*, saas_packages(name, price, duration_days)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("tenants", { with: ["package"], sort: "-created_at", perPage: 500 });
+      // Alias singular Eloquent relation to legacy plural key the UI expects.
+      return rows.map((t) => ({ ...t, saas_packages: t.package ?? null }));
     },
   });
 }
@@ -102,100 +60,65 @@ export function useTenantMutations() {
 
   const create = useMutation({
     mutationFn: async (t: {
-      name: string;
-      phone?: string;
-      email?: string;
-      address?: string;
-      owner_user_id: string;
-      package_id?: string;
-      subscription_start?: string;
-      subscription_end?: string;
-      status?: string;
-      notes?: string;
+      name: string; phone?: string; email?: string; address?: string;
+      owner_user_id: string; package_id?: string;
+      subscription_start?: string; subscription_end?: string;
+      status?: string; notes?: string;
     }) => {
-      const { data, error } = await supabase.from("tenants").insert(t).select().single();
-      if (error) throw error;
-      // Set tenant_id on the owner's profile for data isolation
-      await supabase
-        .from("profiles")
-        .update({ tenant_id: data.id } as any)
-        .eq("user_id", t.owner_user_id);
-      // Log action
-      await supabase.from("tenant_actions_log").insert({
-        tenant_id: data.id,
-        action: "created",
-        performed_by: user!.id,
+      const data = await rest.create<any>("tenants", t as any);
+      // Set tenant_id on the owner's profile (lookup by user_id → patch by id).
+      const profiles = await rest.all<{ id: string }>("profiles", {
+        filter: { user_id: t.owner_user_id }, perPage: 1,
+      });
+      if (profiles[0]) {
+        await rest.update("profiles", profiles[0].id, { tenant_id: data.id });
+      }
+      await rest.create("tenant_actions_log", {
+        tenant_id: data.id, action: "created", performed_by: user!.id,
       });
       return data;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast({ title: "Tenant created" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Tenant created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...rest }: { id: string } & Partial<{
-      name: string; phone: string; email: string; address: string;
-      owner_user_id: string; package_id: string; subscription_start: string;
-      subscription_end: string; status: string; notes: string;
-    }>) => {
-      const { error } = await supabase.from("tenants").update(rest).eq("id", id);
-      if (error) throw error;
-      await supabase.from("tenant_actions_log").insert({
-        tenant_id: id,
-        action: "updated",
-        details: rest as any,
-        performed_by: user!.id,
+    mutationFn: async ({ id, ...patch }: { id: string } & Record<string, any>) => {
+      await rest.update("tenants", id, patch);
+      await rest.create("tenant_actions_log", {
+        tenant_id: id, action: "updated", details: patch, performed_by: user!.id,
       });
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast({ title: "Tenant updated" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Tenant updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      // Keeps using the Supabase RPC: superadmin_delete_tenant cascades across
+      // many tables in a single transaction — not yet ported to a Laravel endpoint.
       const { error } = await supabase.rpc("superadmin_delete_tenant", { _tenant_id: id } as any);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast({ title: "Tenant deleted" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Tenant deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const suspend = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tenants").update({ status: "suspended" }).eq("id", id);
-      if (error) throw error;
-      await supabase.from("tenant_actions_log").insert({
-        tenant_id: id,
-        action: "suspended",
-        performed_by: user!.id,
+      await rest.update("tenants", id, { status: "suspended" });
+      await rest.create("tenant_actions_log", {
+        tenant_id: id, action: "suspended", performed_by: user!.id,
       });
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast({ title: "Tenant suspended" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Tenant suspended" }); },
   });
 
   const activate = useMutation({
     mutationFn: async (id: string) => {
-      const { data: tenant, error: tenantError } = await supabase
-        .from("tenants")
-        .select("subscription_end, saas_packages(duration_days)")
-        .eq("id", id)
-        .single();
-      if (tenantError) throw tenantError;
-
+      const tenant = await rest.get<any>("tenants", id, { with: ["package"] });
       const currentEnd = tenant?.subscription_end ? new Date(`${tenant.subscription_end}T23:59:59`) : null;
-      const tenantPackage = tenant?.saas_packages as { duration_days?: number | null } | null;
+      const tenantPackage = (tenant?.package ?? tenant?.saas_packages) as { duration_days?: number | null } | null;
       const patch: { status: string; subscription_start?: string; subscription_end?: string } = { status: "active" };
 
       if (!currentEnd || currentEnd < new Date()) {
@@ -206,45 +129,30 @@ export function useTenantMutations() {
         patch.subscription_end = newEnd.toISOString().split("T")[0];
       }
 
-      const { error } = await supabase.from("tenants").update(patch).eq("id", id);
-      if (error) throw error;
-      await supabase.from("tenant_actions_log").insert({
-        tenant_id: id,
-        action: "activated",
-        details: patch,
-        performed_by: user!.id,
+      await rest.update("tenants", id, patch);
+      await rest.create("tenant_actions_log", {
+        tenant_id: id, action: "activated", details: patch, performed_by: user!.id,
       });
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast({ title: "Tenant activated" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Tenant activated" }); },
   });
 
   const extend = useMutation({
     mutationFn: async ({ id, days }: { id: string; days: number }) => {
-      // Get current end date
-      const { data: tenant } = await supabase.from("tenants").select("subscription_end").eq("id", id).single();
+      const tenant = await rest.get<any>("tenants", id);
       const now = new Date();
       const currentEnd = tenant?.subscription_end ? new Date(`${tenant.subscription_end}T23:59:59`) : now;
       if (currentEnd < now) currentEnd.setTime(now.getTime());
       currentEnd.setDate(currentEnd.getDate() + days);
-      const { error } = await supabase.from("tenants").update({
+      await rest.update("tenants", id, {
         subscription_end: currentEnd.toISOString().split("T")[0],
         status: "active",
-      }).eq("id", id);
-      if (error) throw error;
-      await supabase.from("tenant_actions_log").insert({
-        tenant_id: id,
-        action: "extended",
-        details: { days },
-        performed_by: user!.id,
+      });
+      await rest.create("tenant_actions_log", {
+        tenant_id: id, action: "extended", details: { days }, performed_by: user!.id,
       });
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenants"] });
-      toast({ title: "Subscription extended" });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tenants"] }); toast({ title: "Subscription extended" }); },
   });
 
   return { create, update, remove, suspend, activate, extend };
@@ -255,19 +163,15 @@ export function useTenantActionLogs(tenantId?: string) {
   return useQuery({
     queryKey: ["tenant_actions_log", tenantId],
     enabled: !!tenantId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tenant_actions_log")
-        .select("*")
-        .eq("tenant_id", tenantId!)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => rest.all<any>("tenant_actions_log", {
+      filter: { tenant_id: tenantId! }, sort: "-created_at", perPage: 500,
+    }),
   });
 }
 
-// ─── Landing CMS ─────────────────────────────────────────
+// ─── Landing CMS (business_settings key/value) ───────────
+// Kept on Supabase: tenant_id may be null for global rows AND this is read
+// from the public landing page where the user is not authenticated.
 export function useLandingCms(key: string) {
   return useQuery({
     queryKey: ["business_settings", key],
@@ -299,7 +203,7 @@ export function useLandingCmsMutation() {
         const { error } = await supabase
           .from("business_settings")
           .update({ value })
-          .eq("key", key);
+          .eq("id", existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
@@ -321,8 +225,15 @@ export function useLandingFeatures(adminMode = false) {
   return useQuery({
     queryKey: ["landing_features", adminMode],
     queryFn: async () => {
-      const q = supabase.from("landing_features").select("*").order("sort_order");
-      const { data, error } = adminMode ? await q : await q.eq("is_active", true);
+      if (adminMode) {
+        return await rest.all<any>("landing_features", { sort: "sort_order", perPage: 200 });
+      }
+      // Public/anonymous read — keep on Supabase until a public REST surface exists.
+      const { data, error } = await supabase
+        .from("landing_features")
+        .select("*")
+        .order("sort_order")
+        .eq("is_active", true);
       if (error) throw error;
       return data ?? [];
     },
@@ -334,22 +245,17 @@ export function useLandingFeatureMutations() {
   const upsert = useMutation({
     mutationFn: async (row: any) => {
       if (row.id) {
-        const { id, created_at, updated_at, ...rest } = row;
-        const { error } = await supabase.from("landing_features").update(rest).eq("id", id);
-        if (error) throw error;
+        const { id, created_at, updated_at, ...rest_ } = row;
+        await rest.update("landing_features", id, rest_);
       } else {
-        const { error } = await supabase.from("landing_features").insert(row);
-        if (error) throw error;
+        await rest.create("landing_features", row);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_features"] }); toast.success("Feature saved"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("landing_features").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => { await rest.remove("landing_features", id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_features"] }); toast.success("Deleted"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
@@ -361,8 +267,14 @@ export function useLandingReviews(adminMode = false) {
   return useQuery({
     queryKey: ["landing_reviews", adminMode],
     queryFn: async () => {
-      const q = supabase.from("landing_reviews").select("*").order("sort_order");
-      const { data, error } = adminMode ? await q : await q.eq("is_active", true);
+      if (adminMode) {
+        return await rest.all<any>("landing_reviews", { sort: "sort_order", perPage: 200 });
+      }
+      const { data, error } = await supabase
+        .from("landing_reviews")
+        .select("*")
+        .order("sort_order")
+        .eq("is_active", true);
       if (error) throw error;
       return data ?? [];
     },
@@ -374,22 +286,17 @@ export function useLandingReviewMutations() {
   const upsert = useMutation({
     mutationFn: async (row: any) => {
       if (row.id) {
-        const { id, created_at, updated_at, ...rest } = row;
-        const { error } = await supabase.from("landing_reviews").update(rest).eq("id", id);
-        if (error) throw error;
+        const { id, created_at, updated_at, ...rest_ } = row;
+        await rest.update("landing_reviews", id, rest_);
       } else {
-        const { error } = await supabase.from("landing_reviews").insert(row);
-        if (error) throw error;
+        await rest.create("landing_reviews", row);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_reviews"] }); toast.success("Review saved"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("landing_reviews").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => { await rest.remove("landing_reviews", id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["landing_reviews"] }); toast.success("Deleted"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
@@ -397,6 +304,7 @@ export function useLandingReviewMutations() {
 }
 
 // ---------- Public landing pricing (uses saas_packages) ----------
+// Anonymous read — kept on Supabase since /api/rest requires auth.
 export function useLandingPricing() {
   return useQuery({
     queryKey: ["landing_pricing"],
