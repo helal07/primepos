@@ -49,7 +49,8 @@ COPY --from=frontend /app/dist /var/www/html/public/app
 
 # Composer autoload + cache
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
-RUN composer dump-autoload --optimize --no-dev \
+RUN composer dump-autoload --optimize --no-dev --no-scripts \
+ && mkdir -p storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
 
