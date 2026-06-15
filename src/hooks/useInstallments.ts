@@ -1,20 +1,49 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+
+/** Map Laravel singular relation names → plural Supabase shape expected by legacy UI. */
+function aliasInstallmentCustomer<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.customer && !out.customers) out.customers = out.customer;
+  return out;
+}
+function aliasInstallmentSale<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.customer && !out.customers) out.customers = out.customer;
+  if (out.product && !out.products) out.products = out.product;
+  if (out.installmentCustomer && !out.installment_customers) out.installment_customers = out.installmentCustomer;
+  return out;
+}
+function aliasSchedule<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.installmentSale && !out.installment_sales) {
+    const s = aliasInstallmentSale(out.installmentSale);
+    out.installment_sales = s;
+  }
+  return out;
+}
+function aliasCollection<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.schedule && !out.installment_schedules) out.installment_schedules = out.schedule;
+  return out;
+}
 
 // ── Installment Customers ──
 export function useInstallmentCustomers() {
   return useQuery({
     queryKey: ["installment_customers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("installment_customers")
-        .select("*, customers(name, phone, email, address)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("installment_customers", {
+        with: ["customer"], sort: "-created_at", perPage: 500,
+      });
+      return rows.map(aliasInstallmentCustomer);
     },
   });
 }
@@ -25,28 +54,19 @@ export function useInstallmentCustomerMutations() {
   const inv = () => qc.invalidateQueries({ queryKey: ["installment_customers"] });
 
   const create = useMutation({
-    mutationFn: async (row: any) => {
-      const { error } = await supabase.from("installment_customers").insert(row);
-      if (error) throw error;
-    },
+    mutationFn: async (row: any) => { await rest.create("installment_customers", row); },
     onSuccess: () => { inv(); toast({ title: "Installment customer created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, ...rest }: any) => {
-      const { error } = await supabase.from("installment_customers").update(rest).eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async ({ id, ...patch }: any) => { await rest.update("installment_customers", id, patch); },
     onSuccess: () => { inv(); toast({ title: "Customer updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("installment_customers").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => { await rest.remove("installment_customers", id); },
     onSuccess: () => { inv(); toast({ title: "Customer deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
@@ -59,12 +79,11 @@ export function useInstallmentSales() {
   return useQuery({
     queryKey: ["installment_sales"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("installment_sales")
-        .select("*, customers(name, phone), products(name, image_url), installment_customers(guarantor_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("installment_sales", {
+        with: ["customer", "product", "installmentCustomer"],
+        sort: "-created_at", perPage: 500,
+      });
+      return rows.map(aliasInstallmentSale);
     },
   });
 }
@@ -80,18 +99,12 @@ export function useInstallmentSaleMutations() {
 
   const create = useMutation({
     mutationFn: async ({ schedules, ...sale }: any) => {
-      const { data, error } = await supabase
-        .from("installment_sales")
-        .insert({ ...sale, created_by: user?.id })
-        .select("id")
-        .single();
-      if (error) throw error;
+      const created = await rest.create<any>("installment_sales", { ...sale, created_by: user?.id });
       if (schedules?.length) {
-        const rows = schedules.map((s: any) => ({ ...s, installment_sale_id: data.id }));
-        const { error: se } = await supabase.from("installment_schedules").insert(rows);
-        if (se) throw se;
+        await Promise.all(schedules.map((s: any) =>
+          rest.create("installment_schedules", { ...s, installment_sale_id: created.id })));
       }
-      return data;
+      return { id: created.id };
     },
     onSuccess: () => { inv(); toast({ title: "Installment sale created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
@@ -99,8 +112,7 @@ export function useInstallmentSaleMutations() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("installment_sales").update({ status }).eq("id", id);
-      if (error) throw error;
+      await rest.update("installment_sales", id, { status });
     },
     onSuccess: () => { inv(); toast({ title: "Status updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
@@ -115,13 +127,10 @@ export function useInstallmentSchedules(saleId: string | null) {
     queryKey: ["installment_schedules", saleId],
     enabled: !!saleId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("installment_schedules")
-        .select("*")
-        .eq("installment_sale_id", saleId!)
-        .order("serial_no");
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("installment_schedules", {
+        filter: { installment_sale_id: saleId! },
+        sort: "serial_no", perPage: 2000,
+      });
     },
   });
 }
@@ -130,12 +139,11 @@ export function useAllSchedules() {
   return useQuery({
     queryKey: ["installment_schedules_all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("installment_schedules")
-        .select("*, installment_sales(invoice_no, customers(name, phone), products(name))")
-        .order("due_date");
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("installment_schedules", {
+        with: ["installmentSale", "installmentSale.customer", "installmentSale.product"],
+        sort: "due_date", perPage: 2000,
+      });
+      return rows.map(aliasSchedule);
     },
   });
 }
@@ -146,11 +154,12 @@ export function useInstallmentCollections(saleId?: string | null) {
     queryKey: ["installment_collections", saleId],
     enabled: saleId !== undefined,
     queryFn: async () => {
-      let q = supabase.from("installment_collections").select("*, installment_schedules(serial_no, due_date)");
-      if (saleId) q = q.eq("installment_sale_id", saleId);
-      const { data, error } = await q.order("collected_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const filter: Record<string, any> = {};
+      if (saleId) filter.installment_sale_id = saleId;
+      const rows = await rest.all<any>("installment_collections", {
+        filter, with: ["schedule"], sort: "-collected_at", perPage: 1000,
+      });
+      return rows.map(aliasCollection);
     },
   });
 }
@@ -162,23 +171,16 @@ export function useCollectionMutations() {
 
   const collect = useMutation({
     mutationFn: async (row: any) => {
-      // Insert collection
-      const { error } = await supabase.from("installment_collections").insert({ ...row, collected_by: user?.id });
-      if (error) throw error;
-      // Update schedule paid_amount
-      const { data: schedule } = await supabase
-        .from("installment_schedules")
-        .select("paid_amount, amount")
-        .eq("id", row.schedule_id)
-        .single();
+      await rest.create("installment_collections", { ...row, collected_by: user?.id });
+      const schedule = await rest.get<any>("installment_schedules", row.schedule_id);
       if (schedule) {
         const newPaid = (schedule.paid_amount || 0) + row.amount;
         const newStatus = newPaid >= schedule.amount ? "paid" : "partial";
-        await supabase.from("installment_schedules").update({
+        await rest.update("installment_schedules", row.schedule_id, {
           paid_amount: newPaid,
           paid_date: newPaid >= schedule.amount ? new Date().toISOString().split("T")[0] : null,
           status: newStatus,
-        }).eq("id", row.schedule_id);
+        });
       }
     },
     onSuccess: () => {
