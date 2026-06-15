@@ -67,10 +67,16 @@ After 9h: page-level call sites (`supabase.from(...)` outside hooks) get cleaned
 - Each substage updates one hook file + adds 1 entry per table to `RestRegistry`. If a substage breaks a page, reverting that hook restores prior behavior.
 - During the migration, the same data is reachable through both Supabase RLS *and* Laravel REST + policies. Both paths must agree, which is the case since they both rely on `tenant_id` + role checks already enforced in DB.
 
-## This turn (9a) deliverables
-1. `RestController`, `RestRegistry`, `RestAccess` middleware, routes.
-2. `src/lib/restResource.ts` + `src/hooks/rest/useRest.ts`.
-3. Register the **Inventory** resources in `RestRegistry` so 9b can start immediately.
-4. No hook changes yet — existing app keeps working.
+## Stage 9a ✅ shipped
+Foundation in place: `RestController`, `RestRegistry`, REST routes, `restResource.ts`, `useRest.ts`.
 
-Replying "go" applies 9a as described. Tell me if any module ordering should change (e.g. POS-critical paths first), or if you want a different envelope/filter syntax.
+## Stage 9b ✅ shipped
+- Eloquent relations added to `Product`, `ProductVariation`, `WarehouseStock`, `StockAdjustment`, `StockTransfer`.
+- `stock_adjustments` and `stock_transfers` registered in `RestRegistry`; `variation` added to `warehouse_stock` with-list.
+- `src/hooks/useInventory.ts` and `src/hooks/useWarehouses.ts` now talk to `/api/rest/*`. Query keys and response shapes (incl. `categories/brands/units/products/product_variations/warehouses` relation aliases) preserved so 27 consumer files keep working unchanged.
+- `useProductStockMap` realtime channel replaced with 30 s polling.
+- `useImeiValidation` deferred to 9c/9d (depends on tables not yet in registry).
+- Product hard-delete falls back to soft-delete on FK violations; `product_group_prices` cleanup still uses Supabase until 9c.
+
+## Next: Stage 9c — Contacts & Sales
+`useContacts`, `useSales` → `customers`, `suppliers`, `sales`, `sale_items`, `sale_payments`, `shipments`, `shipment_status_history`.

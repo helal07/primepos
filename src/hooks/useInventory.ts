@@ -1,18 +1,54 @@
+/**
+ * Inventory hooks — Stage 9b.
+ * Data now flows through the Laravel REST layer (/api/rest/*) instead of
+ * direct Supabase table calls. Public hook names, query keys, and the
+ * response shape (including relation aliases like `categories`, `brands`,
+ * `units`, `products`, `product_variations`, `warehouses`) are preserved so
+ * existing consumer pages don't need to change.
+ *
+ * Some destructive operations still need cross-table fallbacks (cascading
+ * unlinks, soft-delete on FK violation) — those use Supabase as the
+ * fallback path until the related modules are migrated in later stages.
+ */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { rest } from "@/lib/restResource";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
+/** Map Eloquent singular relations back to Supabase-style plural aliases. */
+function aliasProduct<T extends Record<string, any>>(p: T): T {
+  if (!p) return p;
+  return {
+    ...p,
+    categories: p.categories ?? p.category ?? null,
+    brands: p.brands ?? p.brand ?? null,
+    units: p.units ?? p.unit ?? null,
+  };
+}
+function aliasVariation<T extends Record<string, any>>(v: T): T {
+  if (!v) return v;
+  return { ...v, products: v.products ?? v.product ?? null };
+}
+function aliasStockRow<T extends Record<string, any>>(r: T): T {
+  if (!r) return r;
+  return {
+    ...r,
+    products: r.products ?? r.product ?? null,
+    product_variations: r.product_variations ?? r.variation ?? null,
+    warehouses: r.warehouses ?? r.warehouse ?? null,
+  };
+}
+
+// ============================================================
 // Categories
+// ============================================================
 export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*").order("name");
-      if (error) throw error;
-      return data as Tables<"categories">[];
-    },
+    queryFn: async () =>
+      (await rest.all<Tables<"categories">>("categories", { sort: "name", perPage: 500 })),
   });
 }
 
@@ -23,8 +59,7 @@ export function useCategoryMutations() {
 
   const create = useMutation({
     mutationFn: async (cat: TablesInsert<"categories">) => {
-      const { error } = await supabase.from("categories").insert(cat);
-      if (error) throw error;
+      await rest.create("categories", cat as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Category created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
@@ -32,8 +67,7 @@ export function useCategoryMutations() {
 
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"categories"> & { id: string }) => {
-      const { error } = await supabase.from("categories").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("categories", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Category updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
@@ -41,30 +75,33 @@ export function useCategoryMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      // Unlink products from this category so deletion is not blocked by FK
-      await supabase.from("products").update({ category_id: null }).eq("category_id", id);
-      // Unlink any subcategories
-      await supabase.from("categories").update({ parent_id: null }).eq("parent_id", id);
-      const { data, error } = await supabase.from("categories").delete().eq("id", id).select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission to delete this category.");
+      // Unlink products + subcategories so the delete isn't blocked by FK.
+      // (products/categories are now both REST resources.)
+      const products = await rest.all<{ id: string }>("products", {
+        filter: { category_id: id }, perPage: 500,
+      });
+      await Promise.all(products.map((p) => rest.update("products", p.id, { category_id: null })));
+      const subs = await rest.all<{ id: string }>("categories", {
+        filter: { parent_id: id }, perPage: 500,
+      });
+      await Promise.all(subs.map((c) => rest.update("categories", c.id, { parent_id: null })));
+      await rest.remove("categories", id);
     },
-    onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
+    onSuccess: () => { invalidate(); qc.invalidateQueries({ queryKey: ["products"] }); toast({ title: "Category deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   return { create, update, remove };
 }
 
+// ============================================================
 // Brands
+// ============================================================
 export function useBrands() {
   return useQuery({
     queryKey: ["brands"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("brands").select("*").order("name");
-      if (error) throw error;
-      return data as Tables<"brands">[];
-    },
+    queryFn: async () =>
+      (await rest.all<Tables<"brands">>("brands", { sort: "name", perPage: 500 })),
   });
 }
 
@@ -74,45 +111,33 @@ export function useBrandMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["brands"] });
 
   const create = useMutation({
-    mutationFn: async (b: TablesInsert<"brands">) => {
-      const { error } = await supabase.from("brands").insert(b);
-      if (error) throw error;
-    },
+    mutationFn: async (b: TablesInsert<"brands">) => { await rest.create("brands", b as any); },
     onSuccess: () => { invalidate(); toast({ title: "Brand created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"brands"> & { id: string }) => {
-      const { error } = await supabase.from("brands").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("brands", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Brand updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await supabase.from("brands").delete().eq("id", id).select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
-    },
+    mutationFn: async (id: string) => { await rest.remove("brands", id); },
     onSuccess: () => { invalidate(); toast({ title: "Brand deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   return { create, update, remove };
 }
 
+// ============================================================
 // Units
+// ============================================================
 export function useUnits() {
   return useQuery({
     queryKey: ["units"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("units").select("*").order("name");
-      if (error) throw error;
-      return data as Tables<"units">[];
-    },
+    queryFn: async () =>
+      (await rest.all<Tables<"units">>("units", { sort: "name", perPage: 500 })),
   });
 }
 
@@ -122,47 +147,38 @@ export function useUnitMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["units"] });
 
   const create = useMutation({
-    mutationFn: async (u: TablesInsert<"units">) => {
-      const { error } = await supabase.from("units").insert(u);
-      if (error) throw error;
-    },
+    mutationFn: async (u: TablesInsert<"units">) => { await rest.create("units", u as any); },
     onSuccess: () => { invalidate(); toast({ title: "Unit created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"units"> & { id: string }) => {
-      const { error } = await supabase.from("units").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("units", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Unit updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await supabase.from("units").delete().eq("id", id).select("id");
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Delete blocked. You may not have permission, or the item is referenced by other records.");
-    },
+    mutationFn: async (id: string) => { await rest.remove("units", id); },
     onSuccess: () => { invalidate(); toast({ title: "Unit deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   return { create, update, remove };
 }
 
+// ============================================================
 // Products
+// ============================================================
 export function useProducts() {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*, categories(name), brands(name), units(name, short_name)")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("products", {
+        sort: "-created_at",
+        perPage: 200,
+        with: ["category", "brand", "unit"],
+      });
+      return rows.map(aliasProduct);
     },
   });
 }
@@ -173,18 +189,14 @@ export function useProductMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["products"] });
 
   const create = useMutation({
-    mutationFn: async (p: TablesInsert<"products">) => {
-      const { error } = await supabase.from("products").insert(p);
-      if (error) throw error;
-    },
+    mutationFn: async (p: TablesInsert<"products">) => { await rest.create("products", p as any); },
     onSuccess: () => { invalidate(); toast({ title: "Product created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"products"> & { id: string }) => {
-      const { error } = await supabase.from("products").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("products", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Product updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
@@ -192,52 +204,53 @@ export function useProductMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      // First, clear non-transactional references that should not block deletion.
-      // These are safe to remove because they don't represent historical records.
-      await supabase.from("product_variations").delete().eq("product_id", id);
-      await supabase.from("warehouse_stock").delete().eq("product_id", id);
+      // Clear non-transactional references first (variations, stock rows, group prices).
+      // product_group_prices is not yet a REST resource — Supabase fallback for now.
+      try {
+        const vars = await rest.all<{ id: string }>("product_variations", {
+          filter: { product_id: id }, perPage: 500,
+        });
+        await Promise.all(vars.map((v) => rest.remove("product_variations", v.id)));
+        const stock = await rest.all<{ id: string }>("warehouse_stock", {
+          filter: { product_id: id }, perPage: 500,
+        });
+        await Promise.all(stock.map((s) => rest.remove("warehouse_stock", s.id)));
+      } catch {
+        // best-effort cleanup
+      }
       await supabase.from("product_group_prices").delete().eq("product_id", id);
 
-      const { data: deleted, error } = await supabase.from("products").delete().eq("id", id).select("id");
-      if (error) {
-        // Foreign key violation — product is referenced by sales/purchases/etc.
-        // Fall back to soft-delete so transactional history is preserved.
-        if ((error as any).code === "23503") {
-          // Discover which transactional tables still reference this product
-          const checks: Array<{ table: "sale_items" | "purchase_items" | "installment_sales" | "warranty_claims"; label: string }> = [
-            { table: "sale_items", label: "Sales" },
-            { table: "purchase_items", label: "Purchases" },
-            { table: "installment_sales", label: "Installments" },
-            { table: "warranty_claims", label: "Warranty claims" },
-          ];
-          const counts = await Promise.all(
-            checks.map(async (c) => {
-              const { count } = await supabase
-                .from(c.table)
-                .select("id", { count: "exact", head: true })
-                .eq("product_id", id);
-              return { label: c.label, count: count ?? 0 };
-            })
-          );
-          const refs = counts.filter((c) => c.count > 0);
-          const { error: updErr } = await supabase
-            .from("products")
-            .update({ is_active: false, show_on_website: false })
-            .eq("id", id);
-          if (updErr) throw updErr;
-          return { soft: true, refs };
-        }
-        throw error;
+      try {
+        await rest.remove("products", id);
+        return { soft: false, refs: [] as { label: string; count: number }[] };
+      } catch (err: any) {
+        // FK violation from transactional tables → soft-delete to preserve history.
+        const msg = String(err?.message ?? "");
+        const status = err?.status as number | undefined;
+        const looksLikeFk = msg.includes("foreign key") || msg.includes("23503") || status === 409;
+        if (!looksLikeFk) throw err;
+
+        const checks: Array<{ table: "sale_items" | "purchase_items" | "installment_sales" | "warranty_claims"; label: string }> = [
+          { table: "sale_items", label: "Sales" },
+          { table: "purchase_items", label: "Purchases" },
+          { table: "installment_sales", label: "Installments" },
+          { table: "warranty_claims", label: "Warranty claims" },
+        ];
+        const counts = await Promise.all(checks.map(async (c) => {
+          const { count } = await supabase
+            .from(c.table)
+            .select("id", { count: "exact", head: true })
+            .eq("product_id", id);
+          return { label: c.label, count: count ?? 0 };
+        }));
+        const refs = counts.filter((c) => c.count > 0);
+        await rest.update("products", id, { is_active: false, show_on_website: false });
+        return { soft: true, refs };
       }
-      if (!deleted || deleted.length === 0) throw new Error("Delete blocked. You may not have permission to delete this product.");
-      return { soft: false, refs: [] as { label: string; count: number }[] };
     },
     onSuccess: (res) => {
       invalidate();
-      if (!res?.soft) {
-        toast({ title: "Product deleted" });
-        return;
-      }
+      if (!res?.soft) { toast({ title: "Product deleted" }); return; }
       const refSummary = res.refs.length
         ? res.refs.map((r) => `${r.label} (${r.count})`).join(", ")
         : "existing transactional records";
@@ -253,16 +266,20 @@ export function useProductMutations() {
   return { create, update, remove };
 }
 
+// ============================================================
 // Product Variations
+// ============================================================
 export function useVariations(productId?: string) {
   return useQuery({
     queryKey: ["variations", productId],
     queryFn: async () => {
-      let q = supabase.from("product_variations").select("*, products(name)").order("name");
-      if (productId) q = q.eq("product_id", productId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("product_variations", {
+        sort: "name",
+        perPage: 500,
+        with: ["product"],
+        filter: productId ? { product_id: productId } : undefined,
+      });
+      return rows.map(aliasVariation);
     },
   });
 }
@@ -274,46 +291,39 @@ export function useVariationMutations() {
 
   const create = useMutation({
     mutationFn: async (v: TablesInsert<"product_variations">) => {
-      const { error } = await supabase.from("product_variations").insert(v);
-      if (error) throw error;
+      await rest.create("product_variations", v as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Variation created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"product_variations"> & { id: string }) => {
-      const { error } = await supabase.from("product_variations").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("product_variations", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Variation updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("product_variations").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => { await rest.remove("product_variations", id); },
     onSuccess: () => { invalidate(); toast({ title: "Variation deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   return { create, update, remove };
 }
 
+// ============================================================
 // Stock Adjustments
+// ============================================================
 export function useStockAdjustments() {
   return useQuery({
     queryKey: ["stock_adjustments"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stock_adjustments")
-        .select("*, products(name), product_variations(name)")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("stock_adjustments", {
+        sort: "-created_at",
+        perPage: 200,
+        with: ["product", "variation"],
+      });
+      return rows.map(aliasStockRow);
     },
   });
 }
@@ -324,32 +334,33 @@ export function useStockAdjustmentMutations() {
 
   const create = useMutation({
     mutationFn: async (a: TablesInsert<"stock_adjustments">) => {
-      const { error } = await supabase.from("stock_adjustments").insert(a);
-      if (error) throw error;
+      await rest.create("stock_adjustments", a as any);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["stock_adjustments"] });
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["warehouse_stock"] });
+      qc.invalidateQueries({ queryKey: ["product_stock_map"] });
       toast({ title: "Stock adjusted" });
     },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   return { create };
 }
 
+// ============================================================
 // Stock Transfers
+// ============================================================
 export function useStockTransfers() {
   return useQuery({
     queryKey: ["stock_transfers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stock_transfers")
-        .select("*, products(name), product_variations(name)")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("stock_transfers", {
+        sort: "-created_at",
+        perPage: 200,
+        with: ["product", "variation"],
+      });
+      return rows.map(aliasStockRow);
     },
   });
 }
@@ -361,21 +372,17 @@ export function useStockTransferMutations() {
 
   const create = useMutation({
     mutationFn: async (t: TablesInsert<"stock_transfers">) => {
-      const { error } = await supabase.from("stock_transfers").insert(t);
-      if (error) throw error;
+      await rest.create("stock_transfers", t as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Transfer created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"stock_transfers"> & { id: string }) => {
-      const { error } = await supabase.from("stock_transfers").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("stock_transfers", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Transfer updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
-
   return { create, update };
 }

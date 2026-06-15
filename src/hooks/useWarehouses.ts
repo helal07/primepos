@@ -1,21 +1,39 @@
+/**
+ * Warehouse + stock hooks — Stage 9b.
+ * Routes through the Laravel REST layer; previously-used Supabase realtime
+ * subscription on warehouse_stock is replaced with periodic refetch
+ * (refetchInterval) since Laravel does not provide WS broadcasts here.
+ * Public hook names, query keys and response shapes are preserved.
+ */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { rest } from "@/lib/restResource";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+
+function aliasStockRow<T extends Record<string, any>>(r: T): T {
+  if (!r) return r;
+  return {
+    ...r,
+    products: r.products ?? r.product ?? null,
+    product_variations: r.product_variations ?? r.variation ?? null,
+    warehouses: r.warehouses ?? r.warehouse ?? null,
+  };
+}
 
 export function useWarehouses() {
   return useQuery({
     queryKey: ["warehouses"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warehouses")
-        .select("*")
-        .order("is_default", { ascending: false })
-        .order("name");
-      if (error) throw error;
-      return data as Tables<"warehouses">[];
+      // is_default desc, then name asc — REST sort syntax: "-is_default,name".
+      // `is_default` isn't in the sort whitelist, so do client-side sort.
+      const rows = await rest.all<Tables<"warehouses">>("warehouses", {
+        sort: "name", perPage: 500,
+      });
+      return [...rows].sort((a, b) => {
+        if (!!b.is_default !== !!a.is_default) return (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0);
+        return (a.name ?? "").localeCompare(b.name ?? "");
+      });
     },
   });
 }
@@ -31,28 +49,21 @@ export function useWarehouseMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["warehouses"] });
 
   const create = useMutation({
-    mutationFn: async (w: TablesInsert<"warehouses">) => {
-      const { error } = await supabase.from("warehouses").insert(w);
-      if (error) throw error;
-    },
+    mutationFn: async (w: TablesInsert<"warehouses">) => { await rest.create("warehouses", w as any); },
     onSuccess: () => { invalidate(); toast({ title: "Warehouse created" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const update = useMutation({
     mutationFn: async ({ id, ...updates }: TablesUpdate<"warehouses"> & { id: string }) => {
-      const { error } = await supabase.from("warehouses").update(updates).eq("id", id);
-      if (error) throw error;
+      await rest.update("warehouses", id, updates as any);
     },
     onSuccess: () => { invalidate(); toast({ title: "Warehouse updated" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("warehouses").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => { await rest.remove("warehouses", id); },
     onSuccess: () => { invalidate(); toast({ title: "Warehouse deleted" }); },
     onError: (e: Error) => toast({ title: "Error", description: toFriendlyError(e), variant: "destructive" }),
   });
@@ -64,55 +75,36 @@ export function useWarehouseStock(warehouseId?: string) {
   return useQuery({
     queryKey: ["warehouse_stock", warehouseId ?? "all"],
     queryFn: async () => {
-      let q = supabase
-        .from("warehouse_stock")
-        .select("*, products(name, sku, alert_quantity, purchase_price, selling_price), product_variations(name, sku), warehouses(name, code)")
-        .order("updated_at", { ascending: false });
-      if (warehouseId) q = q.eq("warehouse_id", warehouseId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data ?? [];
+      const rows = await rest.all<any>("warehouse_stock", {
+        sort: "-updated_at",
+        perPage: 500,
+        with: ["product", "variation", "warehouse"],
+        filter: warehouseId ? { warehouse_id: warehouseId } : undefined,
+      });
+      return rows.map(aliasStockRow);
     },
   });
 }
 
 /**
- * Returns a Map of product_id -> total on-hand quantity across all warehouses.
- * Used by POS to show real stock instead of the (often stale) products.stock_quantity column.
+ * product_id → total on-hand quantity across warehouses.
+ * Polls every 30s to replace the former Supabase realtime channel.
  */
 export function useProductStockMap() {
-  const qc = useQueryClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("warehouse_stock_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "warehouse_stock" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["product_stock_map"] });
-          qc.invalidateQueries({ queryKey: ["warehouse_stock"] });
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [qc]);
-
   return useQuery({
     queryKey: ["product_stock_map"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("warehouse_stock")
-        .select("product_id, quantity");
-      if (error) throw error;
+      const rows = await rest.all<{ product_id: string | null; quantity: number | string }>(
+        "warehouse_stock", { perPage: 5000 }
+      );
       const map = new Map<string, number>();
-      for (const row of data ?? []) {
+      for (const row of rows) {
         if (!row.product_id) continue;
         map.set(row.product_id, (map.get(row.product_id) ?? 0) + Number(row.quantity || 0));
       }
       return map;
     },
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
