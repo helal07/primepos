@@ -62,11 +62,8 @@ export default function Notifications() {
       if (ids.length === 0) throw new Error("Select at least one tenant");
       if (!message.trim()) throw new Error("Message is required");
       if (channel === "email" && !subject.trim()) throw new Error("Subject is required for email");
-      const { data, error } = await supabase.functions.invoke("send-tenant-notification", {
-        body: { tenant_ids: ids, channel, subject, message },
-      });
-      if (error) throw error;
-      return data;
+      const { sendTenantNotification } = await import("@/lib/functions");
+      return await sendTenantNotification({ tenant_ids: ids, channel, subject, message });
     },
     onSuccess: (data: any) => {
       toast({ title: "Sent", description: `Delivered to ${data?.sent ?? 0} tenant(s)${data?.failed ? `, ${data.failed} failed` : ""}` });
