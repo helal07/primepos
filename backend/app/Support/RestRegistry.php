@@ -307,6 +307,44 @@ class RestRegistry
                 'with'         => ['schedule'],
                 'max_per_page' => 1000,
             ],
+
+            // ===== HRM (Stage 9g) =====
+            'employees' => [
+                'model'        => Models\Employee::class,
+                'module'       => 'hrm',
+                'filters'      => ['status', 'department', 'designation'],
+                'sort'         => ['name', 'created_at', 'joining_date'],
+                'default_sort' => 'name',
+                'search'       => ['name', 'email', 'phone', 'designation'],
+                'max_per_page' => 500,
+            ],
+            'attendance' => [
+                'model'        => Models\Attendance::class,
+                'module'       => 'hrm',
+                'filters'      => ['employee_id', 'date', 'status'],
+                'sort'         => ['date', 'created_at'],
+                'default_sort' => '-date',
+                'with'         => ['employee'],
+                'max_per_page' => 1000,
+            ],
+            'leave_requests' => [
+                'model'        => Models\LeaveRequest::class,
+                'module'       => 'hrm',
+                'filters'      => ['employee_id', 'status', 'leave_type'],
+                'sort'         => ['created_at', 'start_date'],
+                'default_sort' => '-created_at',
+                'with'         => ['employee'],
+                'max_per_page' => 500,
+            ],
+            'payroll' => [
+                'model'        => Models\Payroll::class,
+                'module'       => 'hrm',
+                'filters'      => ['employee_id', 'month', 'year', 'status'],
+                'sort'         => ['year', 'month', 'created_at'],
+                'default_sort' => '-year',
+                'with'         => ['employee'],
+                'max_per_page' => 500,
+            ],
         ];
     }
 

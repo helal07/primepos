@@ -1,17 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
-import { supabase } from "@/integrations/supabase/client";
+import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+/** Alias singular Laravel relations → plural Supabase shape for legacy UI. */
+function aliasEmployee<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  const out: any = { ...row };
+  if (out.employee && !out.employees) out.employees = out.employee;
+  return out;
+}
 
 // ── Employees ──
 export function useEmployees() {
   return useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("employees").select("*").order("name");
-      if (error) throw error;
-      return data;
+      return await rest.all<any>("employees", { sort: "name", perPage: 500 });
     },
   });
 }
@@ -23,11 +29,10 @@ export function useEmployeeMutations() {
   const upsertEmployee = useMutation({
     mutationFn: async (emp: any) => {
       if (emp.id) {
-        const { error } = await supabase.from("employees").update(emp).eq("id", emp.id);
-        if (error) throw error;
+        const { id, ...patch } = emp;
+        await rest.update("employees", id, patch);
       } else {
-        const { error } = await supabase.from("employees").insert({ ...emp, created_by: user?.id });
-        if (error) throw error;
+        await rest.create("employees", { ...emp, created_by: user?.id });
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["employees"] }); toast.success("Employee saved"); },
@@ -35,10 +40,7 @@ export function useEmployeeMutations() {
   });
 
   const deleteEmployee = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("employees").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: async (id: string) => { await rest.remove("employees", id); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["employees"] }); toast.success("Employee deleted"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
@@ -51,11 +53,12 @@ export function useAttendance(date?: string) {
   return useQuery({
     queryKey: ["attendance", date],
     queryFn: async () => {
-      let q = supabase.from("attendance").select("*, employees(name)").order("date", { ascending: false });
-      if (date) q = q.eq("date", date);
-      const { data, error } = await q.limit(200);
-      if (error) throw error;
-      return data;
+      const filter: Record<string, any> = {};
+      if (date) filter.date = date;
+      const rows = await rest.all<any>("attendance", {
+        filter, with: ["employee"], sort: "-date", perPage: 200,
+      });
+      return rows.map(aliasEmployee);
     },
   });
 }
@@ -65,8 +68,17 @@ export function useAttendanceMutations() {
 
   const markAttendance = useMutation({
     mutationFn: async (record: any) => {
-      const { error } = await supabase.from("attendance").upsert(record, { onConflict: "employee_id,date" });
-      if (error) throw error;
+      // Manual upsert by (employee_id, date) since REST has no native upsert.
+      const existing = await rest.all<any>("attendance", {
+        filter: { employee_id: record.employee_id, date: record.date },
+        perPage: 1,
+      });
+      if (existing[0]?.id) {
+        const { id: _i, ...patch } = record;
+        await rest.update("attendance", existing[0].id, patch);
+      } else {
+        await rest.create("attendance", record);
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["attendance"] }); toast.success("Attendance saved"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
@@ -80,9 +92,10 @@ export function useLeaveRequests() {
   return useQuery({
     queryKey: ["leave_requests"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("leave_requests").select("*, employees(name)").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const rows = await rest.all<any>("leave_requests", {
+        with: ["employee"], sort: "-created_at", perPage: 500,
+      });
+      return rows.map(aliasEmployee);
     },
   });
 }
@@ -92,18 +105,14 @@ export function useLeaveMutations() {
   const { user } = useAuth();
 
   const createLeave = useMutation({
-    mutationFn: async (leave: any) => {
-      const { error } = await supabase.from("leave_requests").insert(leave);
-      if (error) throw error;
-    },
+    mutationFn: async (leave: any) => { await rest.create("leave_requests", leave); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leave_requests"] }); toast.success("Leave request created"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
   });
 
   const updateLeaveStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("leave_requests").update({ status, approved_by: user?.id }).eq("id", id);
-      if (error) throw error;
+      await rest.update("leave_requests", id, { status, approved_by: user?.id });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leave_requests"] }); toast.success("Leave status updated"); },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
@@ -117,11 +126,12 @@ export function usePayroll(month?: number, year?: number) {
   return useQuery({
     queryKey: ["payroll", month, year],
     queryFn: async () => {
-      let q = supabase.from("payroll").select("*, employees(name)").order("year", { ascending: false }).order("month", { ascending: false });
-      if (month && year) q = q.eq("month", month).eq("year", year);
-      const { data, error } = await q.limit(200);
-      if (error) throw error;
-      return data;
+      const filter: Record<string, any> = {};
+      if (month && year) { filter.month = month; filter.year = year; }
+      const rows = await rest.all<any>("payroll", {
+        filter, with: ["employee"], sort: "-year,-month", perPage: 200,
+      });
+      return rows.map(aliasEmployee);
     },
   });
 }
@@ -134,11 +144,10 @@ export function usePayrollMutations() {
     mutationFn: async (record: any) => {
       const payload = { ...record, created_by: user?.id };
       if (record.id) {
-        const { error } = await supabase.from("payroll").update(payload).eq("id", record.id);
-        if (error) throw error;
+        const { id, ...patch } = payload;
+        await rest.update("payroll", id, patch);
       } else {
-        const { error } = await supabase.from("payroll").insert(payload);
-        if (error) throw error;
+        await rest.create("payroll", payload);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["payroll"] }); toast.success("Payroll saved"); },
