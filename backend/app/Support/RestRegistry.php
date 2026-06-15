@@ -81,7 +81,7 @@ class RestRegistry
                 'filters' => ['warehouse_id', 'product_id', 'variation_id'],
                 'sort'    => ['quantity', 'updated_at'],
                 'default_sort' => '-updated_at',
-                'with'    => ['product', 'variation', 'warehouse'],
+                'with'    => ['product', 'product.category', 'product.brand', 'variation', 'warehouse'],
             ],
             'stock_adjustments' => [
                 'model'   => Models\StockAdjustment::class,
