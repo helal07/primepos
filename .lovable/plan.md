@@ -176,3 +176,12 @@ Foundation in place: `RestController`, `RestRegistry`, REST routes, `restResourc
 - `NotificationBell` realtime channel (Supabase Realtime → Laravel broadcast / polling).
 - `useSaasAdmin.useTenantMutations.remove` → still calls `superadmin_delete_tenant` RPC.
 - `src/integrations/supabase/{client,types,...}` and `src/integrations/lovable/index.ts` stay in the tree (auto-generated) — purely unused now for auth.
+
+## Stage 11 ✅ — Last runtime Supabase calls dropped (tenant delete + realtime)
+
+**Backend**
+- `TenantController::adminDelete` + `DELETE /api/admin/tenants/{tenantId}` (role:superadmin). Wraps the delete in a single transaction, discovers all `public.*` tables with a `tenant_id` column via `information_schema`, wipes their rows, then drops the tenant users and the tenant itself. Replaces the legacy `superadmin_delete_tenant` Postgres RPC.
+
+**Frontend**
+- `useSaasAdmin.useTenantMutations.remove` now calls `api.delete(\`/api/admin/tenants/{id}\`)` — the last `supabase.rpc(...)` call in the app is gone.
+- `NotificationBell` — Supabase Realtime channel removed. Switched to a 30 s React-Query `refetchInterval` and toasts any newly-arrived rows by diffing against `seenIds`. Chime + popover behaviour unchanged.
