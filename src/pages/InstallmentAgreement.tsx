@@ -1,18 +1,19 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useInstallmentSales, useInstallmentSchedules, useInstallmentCustomers } from "@/hooks/useInstallments";
-import { supabase } from "@/integrations/supabase/client";
+import { signedUrl } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 
 // Helper to get a signed URL for a private bucket path
 async function getSignedUrl(path: string | null | undefined): Promise<string | null> {
   if (!path) return null;
-  // If it's already a full URL (legacy data), return as-is
   if (path.startsWith("http")) return path;
-  const { data, error } = await supabase.storage.from("installment-docs").createSignedUrl(path, 3600);
-  if (error || !data?.signedUrl) return null;
-  return data.signedUrl;
+  try {
+    return await signedUrl("installment-docs", path, 60);
+  } catch {
+    return null;
+  }
 }
 
 export default function InstallmentAgreement() {
