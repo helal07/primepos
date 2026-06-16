@@ -471,3 +471,21 @@ Goal: target a single recipient with an instant toast (assignment, payment recei
 **Verification:** `bunx tsc --noEmit` clean.
 
 **Next candidates (deferred):** Redis-backed scaling for multi-node Reverb; broadcast tenant-admin events (subscription change, tenant suspend) for a live superadmin dashboard; wire concrete call-sites (sale assignment, payment received) to pass `userId` into `NotificationService::send`.
+
+## Stage 25 ✅ — Superadmin live channel + Redis-scaling knobs
+
+Goal: give the SuperAdmin control panel a real-time view of tenant lifecycle events, and expose the env knobs needed to run Reverb on more than one node.
+
+**Backend**
+- `routes/channels.php` — new `superadmin` private channel authorised only when `$user->isSuperadmin()`.
+- `app/Events/SuperadminEvent.php` (new) — generic `ShouldBroadcast` on `private(superadmin)`, broadcast name `.superadmin.event`, tiny `{resource, action, id}` payload. Listeners refetch via REST.
+- `app/Observers/TenantObserver.php` — now broadcasts `tenants` on `created` / `deleted`, plus `status:<value>` on update when the `status` column flips (otherwise `updated`). Failures swallowed + logged.
+- `backend/.env.example` — documents `REVERB_SCALING_ENABLED`, `REVERB_SCALING_CHANNEL`, and the `REDIS_*` block consumed by `config/reverb.php` (already shipped in Stage 20). Flip `REVERB_SCALING_ENABLED=true` to fan-out events across multiple Reverb workers via Redis pub/sub.
+
+**Frontend**
+- `src/hooks/useSuperadminRealtime.ts` (new) — mirrors `useTenantRealtime` but subscribes to `private(superadmin)`. No-ops when the user isn't a superadmin (channel auth would reject anyway) or when Reverb env isn't configured.
+- `useTenants` (`src/hooks/useSaasAdmin.ts`) — calls `useSuperadminRealtime(["tenants"], [["tenants"], ["admin_sms_revenue"]])`, so the SuperAdmin dashboard's tenant list and revenue tiles refresh instantly when a tenant is created, suspended, reactivated, or deleted.
+
+**Verification:** `bunx tsc --noEmit` clean.
+
+**Next candidates (deferred):** broadcast `saas_packages` / `sms_purchases` lifecycle for full SuperAdmin coverage; wire concrete call-sites (sale assignment, payment received) to pass `userId` into `NotificationService::send`; instrument Reverb with Pulse once scaling is enabled.
