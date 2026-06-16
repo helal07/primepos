@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\StockAdjustment;
+use App\Events\TenantResourceChanged;
 use App\Services\WarehouseStockService;
 
 class StockAdjustmentObserver
@@ -18,6 +19,7 @@ class StockAdjustmentObserver
             $a->product_id, $a->variation_id,
             $sign * (float) $a->quantity
         );
+        $this->broadcast($a, 'created');
     }
 
     public function deleted(StockAdjustment $a): void
@@ -29,5 +31,14 @@ class StockAdjustmentObserver
             $a->product_id, $a->variation_id,
             $sign * (float) $a->quantity
         );
+        $this->broadcast($a, 'deleted');
+    }
+
+    private function broadcast(StockAdjustment $a, string $action): void
+    {
+        if (! $a->tenant_id) return;
+        try {
+            event(new TenantResourceChanged((string) $a->tenant_id, 'stock_adjustments', $action, (string) $a->id));
+        } catch (\Throwable) {}
     }
 }

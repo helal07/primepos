@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import { toast } from "sonner";
 
 export interface PurchaseItem {
@@ -54,6 +55,7 @@ function aliasPurchaseItem<T extends Record<string, any>>(row: T): T {
 }
 
 export function usePurchases() {
+  useTenantRealtime(["purchases"], [["purchases"]]);
   return useQuery({
     queryKey: ["purchases"],
     queryFn: async () => {

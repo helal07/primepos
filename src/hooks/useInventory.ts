@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { useToast } from "@/hooks/use-toast";
 import { rest } from "@/lib/restResource";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 /** Map Eloquent singular relations back to Supabase-style plural aliases. */
@@ -324,6 +325,10 @@ export function useVariationMutations() {
 // Stock Adjustments
 // ============================================================
 export function useStockAdjustments() {
+  useTenantRealtime(
+    ["stock_adjustments", "sales", "purchases"],
+    [["stock_adjustments"], ["warehouse_stock"], ["product_stock_map"]],
+  );
   return useQuery({
     queryKey: ["stock_adjustments"],
     queryFn: async () => {

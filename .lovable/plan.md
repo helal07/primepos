@@ -412,3 +412,24 @@ then point `VITE_REVERB_HOST=ws.example.com` for the SPA build and add TLS via `
 **Verification:** `bunx tsc --noEmit` clean.
 
 **Next candidates (deferred):** broadcast installment collections + expense events; add Redis scaling for horizontal Reverb; per-user channels for personal toasts.
+
+## Stage 22 ✅ — Realtime coverage rolled out across modules
+
+Extended the Stage-21 broadcast hook into every transactional surface so each list page reacts instantly to backend mutations made by other devices/users in the same tenant.
+
+**Backend observers now dispatching `TenantResourceChanged`:**
+- `InstallmentCollectionObserver` → `installment_collections` (created/updated/deleted).
+- `ExpenseObserver` → `expenses` (created/updated/deleted).
+- `StockAdjustmentObserver` → `stock_adjustments` (created/deleted).
+
+**Frontend hooks subscribed via `useTenantRealtime`:**
+- `useSales` → invalidates `["sales"]` on `sales` events.
+- `usePurchases` → invalidates `["purchases"]` on `purchases` events.
+- `useExpenses` → invalidates `["expenses"]` on `expenses` events.
+- `useInstallmentCollections` → invalidates `["installment_collections"]` + `["installment_schedules"]` on `installment_collections` events.
+- `useStockAdjustments` → invalidates `["stock_adjustments"]` + `["warehouse_stock"]` + `["product_stock_map"]` on `stock_adjustments / sales / purchases`.
+- `useWarehouseStock` → invalidates `["warehouse_stock"]` on `sales / purchases / stock_adjustments` (since all three move stock).
+
+**Verification:** `bunx tsc --noEmit` clean.
+
+**Next candidates (deferred):** per-user channels for personal toasts; Redis-backed scaling for multi-node Reverb; broadcast HRM attendance + warranty claims so those screens are live too.
