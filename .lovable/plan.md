@@ -243,6 +243,31 @@ cd backend && ./vendor/bin/phpunit
 ```
 
 **Next candidates (deferred):**
-- REST CRUD round-trip tests per module (would need a tenant-scoped User factory + role grant helper).
 - CI workflow that runs `vendor/bin/phpunit` + `bunx tsc --noEmit` on every push.
 - Realtime / Reverb migration to drop the 30s polling on `NotificationBell`.
+
+## Stage 15 ✅ — REST CRUD round-trip tests
+
+Goal: exercise the generic `/api/rest/{resource}` pipeline end-to-end so refactors of `RestController`, `RestRegistry`, `BelongsToTenant`, or `TenantScope` can't silently break the SPA.
+
+**Backend change**
+- `RestController::authorizePerm()` now short-circuits when the caller `isSuperadmin()`, before invoking the Postgres-only `public.has_perm()` SQL helper. Matches existing `User::canModule()` / `hasPerm()` semantics and keeps the controller portable across DB engines (so sqlite tests work without stubbing).
+
+**Added — `backend/tests/Feature/RestCrudTest.php`** (5 tests, 39 assertions, all green)
+- Bootstraps a real `Tenant` + superadmin `User` pinned to that tenant, signs in via `actingAs(..., 'sanctum')`.
+- `unknown_resource` → 404.
+- `brands` full round-trip: POST (201 + tenant_id stamped), index envelope (`data` + `meta.total/page/per_page/last_page`), show, PATCH rename, `?filter[is_active]=1` eq filter, DELETE → 404 on re-fetch.
+- `categories` create: confirms `BelongsToTenant` trait auto-stamps `tenant_id` and the row lands in the DB.
+- `customers`: two creates, list total = 2, `?filter[phone]=...` returns exactly the matching row, `?sort=name` returns alphabetical order.
+- Unknown filter columns and unknown sort columns are silently dropped (no SQL error, no leak).
+
+**Run**
+```bash
+cd backend && ./vendor/bin/phpunit            # 16 tests, 482 assertions
+cd backend && ./vendor/bin/phpunit --filter RestCrudTest
+```
+
+**Next candidates (deferred):**
+- CI workflow that runs `vendor/bin/phpunit` + `bunx tsc --noEmit` on every push.
+- Realtime / Reverb migration to drop the 30s polling on `NotificationBell`.
+- Per-module CRUD tests for sales/purchases/installments (need factory + role-grant helper to exercise the non-superadmin `has_perm()` path).
