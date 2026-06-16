@@ -30,26 +30,6 @@ export class ApiError extends Error {
   }
 }
 
-let csrfReady: Promise<void> | null = null;
-
-function readCookie(name: string): string | undefined {
-  if (typeof document === "undefined") return undefined;
-  const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m ? decodeURIComponent(m[1]) : undefined;
-}
-
-async function ensureCsrf(): Promise<void> {
-  if (!API_URL) return;
-  if (!csrfReady) {
-    csrfReady = fetch(`${API_URL}/sanctum/csrf-cookie`, {
-      credentials: "include",
-    }).then(() => undefined).catch(() => {
-      csrfReady = null;
-    });
-  }
-  return csrfReady;
-}
-
 type Body = unknown | FormData | undefined;
 
 interface Opts {
@@ -71,15 +51,10 @@ function buildUrl(path: string, query?: Opts["query"]): string {
 }
 
 async function request<T = unknown>(method: string, path: string, body?: Body, opts: Opts = {}): Promise<T> {
-  const needsCsrf = method !== "GET" && method !== "HEAD";
-  if (needsCsrf) await ensureCsrf();
-
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(opts.headers ?? {}),
   };
-  const xsrf = readCookie("XSRF-TOKEN");
-  if (xsrf && needsCsrf) headers["X-XSRF-TOKEN"] = xsrf;
   const token = getAuthToken();
   if (token && !headers["Authorization"]) headers["Authorization"] = `Bearer ${token}`;
 
@@ -95,7 +70,6 @@ async function request<T = unknown>(method: string, path: string, body?: Body, o
     method,
     headers,
     body: payload,
-    credentials: "include",
     signal: opts.signal,
   });
 
