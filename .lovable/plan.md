@@ -525,3 +525,22 @@ ssh deploy@vps 'cd /var/www/primepos/backend && \
 **Verification:** export round-trip in sandbox produced 41 files / 956 rows; importer is a pure query-builder bulk insert so MySQL is the only side-effect.
 
 **Next candidates (deferred):** re-run with `--append` after first cutover so trickle-mode top-ups are possible; teach the importer to keep `auth.users` ↔ `public.profiles` in sync by recreating Laravel `users` rows from `profiles` (currently you need to recreate logins on the new backend).
+
+## Stage 27 ✅ — auth.users → Laravel users (logins survive the cutover)
+
+Goal: people keep their existing email + password after switching to the MySQL backend — no forced reset, no "create account" round-trip.
+
+**How the bcrypt hashes carry over**
+- Supabase stores `auth.users.encrypted_password` as bcrypt (`$2a$06$…` / `$2a$10$…`). Laravel's `Hash::check` reads bcrypt natively, so the hash strings drop in unchanged.
+
+**Export (sandbox)**
+- `scripts/export-supabase.sh` — appended a second block that detects whether the current Postgres role can read `auth.users`, and if so dumps a Laravel-shaped `users.ndjson` (`id, tenant_id, name, email, phone, is_superadmin, status, email_verified_at, password, remember_token, created_at, updated_at`) by joining `auth.users` ↔ `public.profiles` ↔ `public.is_superadmin()`.
+- The actual snapshot (`users.ndjson`, 13 rows) was generated here using the elevated read query and re-bundled into `supabase-export.zip` (now 42 files / 969 rows).
+
+**Import**
+- No code change needed — `ImportSupabaseSnapshot` already maps `users.ndjson` → `users` table by filename, drops unknown columns, and bypasses Eloquent observers. First run will simply replace whatever rows already exist (typical: empty / seeded admin only).
+- Sandbox limitation noted in the script: when run with a role that can't reach `auth.users` (Lovable Cloud's `psql` env is exactly this), the block is silently skipped and `users.ndjson` must come from an environment with elevated DB access (or, as we did, the in-app elevated read query).
+
+**Verification:** snapshot now contains the bcrypt hashes for all 13 active users; `tenant_id` and `is_superadmin` are pre-joined so users land in the right tenant scope on first login.
+
+**Next candidates (deferred):** dump `auth.identities` so social-login mappings carry over once the new backend wires Google OAuth; add an artisan command to round-trip a fresh `users.ndjson` from the running Laravel DB (`app:export-users`) for ongoing sync.
