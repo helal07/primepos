@@ -42,7 +42,7 @@ class TenantUserController extends Controller
             'name'      => $data['name'],
             'email'     => $data['email'],
             'phone'     => $data['phone'] ?? null,
-            'password'  => Hash::make($data['password']),
+            'password'  => $data['password'],
             'status'    => 'active',
         ]);
 
@@ -81,7 +81,7 @@ class TenantUserController extends Controller
         $user = User::query()->withoutGlobalScopes()->findOrFail($userId);
         if (! $auth->isSuperadmin() && $user->tenant_id !== $auth->tenant_id) abort(403);
 
-        $user->forceFill(['password' => Hash::make($data['password'])])->saveQuietly();
+        $user->forceFill(['password' => $data['password']])->saveQuietly();
         return response()->json(['ok' => true]);
     }
 }

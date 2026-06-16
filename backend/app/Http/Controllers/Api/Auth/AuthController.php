@@ -100,7 +100,8 @@ class AuthController extends Controller
                 'current_password' => ['Current password is incorrect.'],
             ]);
         }
-        $user->password = Hash::make($data['new_password']);
+        // User model casts 'password' => 'hashed' — assign plain text.
+        $user->password = $data['new_password'];
         $user->save();
         return response()->json(['ok' => true]);
     }
