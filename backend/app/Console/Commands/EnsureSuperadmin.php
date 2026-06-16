@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class EnsureSuperadmin extends Command
@@ -18,8 +19,9 @@ class EnsureSuperadmin extends Command
 
     public function handle(): int
     {
-        $email = $this->option('email') ?: env('SUPERADMIN_EMAIL', 'admin@primepos.xyz');
-        $password = $this->option('password') ?: env('SUPERADMIN_PASSWORD', 'ChangeMe@12345');
+        $email = trim((string) ($this->option('email') ?: env('SUPERADMIN_EMAIL', 'admin@primepos.xyz')));
+        $envPassword = env('SUPERADMIN_PASSWORD');
+        $password = (string) ($this->option('password') ?: $envPassword ?: 'ChangeMe@12345');
         $name = $this->option('name') ?: 'Super Admin';
 
         if (! $email || ! $password) {
@@ -47,7 +49,11 @@ class EnsureSuperadmin extends Command
         $changed = false;
         if (! $user->is_superadmin) { $user->is_superadmin = true; $changed = true; }
         if ($user->status !== 'active') { $user->status = 'active'; $changed = true; }
-        if ($this->option('reset-password')) { $user->password = $password; $changed = true; }
+        $shouldResetPassword = $this->option('reset-password')
+            || $this->option('password')
+            || ($envPassword && ! Hash::check($password, $user->password));
+
+        if ($shouldResetPassword) { $user->password = $password; $changed = true; }
 
         if ($changed) {
             $user->save();
