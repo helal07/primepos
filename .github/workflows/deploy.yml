@@ -105,5 +105,6 @@ jobs:
             php artisan route:cache &&
             php artisan event:cache &&
             (sudo systemctl reload php8.4-fpm 2>/dev/null || sudo systemctl reload php-fpm 2>/dev/null || true) &&
-            (sudo systemctl reload nginx 2>/dev/null || true)
+           (sudo systemctl reload nginx 2>/dev/null || true) &&
+           (sudo supervisorctl restart primepos-reverb 2>/dev/null || true)
           '"
