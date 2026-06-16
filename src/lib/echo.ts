@@ -47,12 +47,11 @@ export function getEcho(): Echo<"reverb"> | null {
       // included on the cross-origin auth XHR (the default axios authorizer
       // doesn't set credentials: include).
       authorizer: (channel: { name: string }) => ({
-        authorize: async (
+        authorize: (
           socketId: string,
-          callback: (err: Error | null, data: unknown) => void,
+          callback: (err: Error | null, data: { auth: string; [k: string]: unknown }) => void,
         ) => {
-          try {
-            const res = await fetch(`${API_URL}/broadcasting/auth`, {
+          fetch(`${API_URL}/broadcasting/auth`, {
               method: "POST",
               credentials: "include",
               headers: {
@@ -64,12 +63,12 @@ export function getEcho(): Echo<"reverb"> | null {
                 socket_id: socketId,
                 channel_name: channel.name,
               }),
-            });
-            if (!res.ok) throw new Error(`broadcast-auth ${res.status}`);
-            callback(null, await res.json());
-          } catch (err) {
-            callback(err as Error, null);
-          }
+            })
+            .then(async (res) => {
+              if (!res.ok) throw new Error(`broadcast-auth ${res.status}`);
+              callback(null, await res.json());
+            })
+            .catch((err) => callback(err as Error, { auth: "" }));
         },
       }),
     });
