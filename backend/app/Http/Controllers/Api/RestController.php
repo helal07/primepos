@@ -127,6 +127,18 @@ class RestController extends Controller
         if (method_exists($user, 'isSuperadmin') && $user->isSuperadmin()) {
             return;
         }
+        // Portable fallback for non-pgsql engines (sqlite test suite, ad-hoc
+        // mysql installs). The Postgres helpers below don't exist there, so
+        // we re-use the Eloquent equivalent on the User model which already
+        // mirrors has_perm() semantics.
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            abort_unless(
+                method_exists($user, 'canModule') && $user->canModule($module, $action),
+                403,
+                "Forbidden: {$module}.{$action}"
+            );
+            return;
+        }
         // Re-use the existing SQL helper so policy stays in one place.
         $row = DB::selectOne('select public.has_perm(?, ?) as ok', [
             $user->id, "{$module}.{$action}",

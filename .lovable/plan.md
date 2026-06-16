@@ -332,3 +332,26 @@ DEPLOY_USER=deploy DOMAIN=app.example.com API_DOMAIN=api.example.com \
 ```
 
 **Next candidates (deferred):** Reverb realtime, per-module CRUD tests.
+
+## Stage 19 ✅ — Per-module CRUD tests (non-superadmin permission path)
+
+Goal: lock in the `RestController` permission/tenant-scoping pipeline for ordinary tenant users, not just the superadmin short-circuit covered by Stage 15.
+
+**Backend change**
+- `RestController::authorizePerm()` now falls back to `User::canModule()` when the DB driver isn't `pgsql`. Postgres prod still uses `has_perm()` / `has_module_permission()`; sqlite tests and any mysql install get the same semantics via Eloquent (`role_permissions.can_view|create|edit|delete` joined through `user_roles`).
+
+**Added — `backend/tests/Feature/RestPermsTest.php`** (6 tests)
+- Bootstraps a tenant, a non-super `User`, a `Role`, and a `UserRole` link; `grant($module, $actions)` helper writes a `role_permissions` row.
+- `sales_without_grant_is_forbidden` — index + store both 403.
+- `sales_view_create_grant_allows_only_those_actions` — POST 201, list returns the row, PATCH 403, DELETE 403.
+- `purchases_create_edit_grant_allows_patch_but_not_delete` — verifies per-action isolation and that the `sales` module stays locked.
+- `installments_module_isolates_per_resource_actions` — full CRUD across `installment_customers` + `installment_sales`, including `?filter[installment_customer_id]=` and 404-after-delete.
+- `view_only_grant_blocks_writes` — read OK, write 403.
+- `non_super_user_only_sees_own_tenant_rows` — seeds a row in a second tenant, asserts the SPA tenant scope hides it (`meta.total = 1`, only `MINE-1` returned).
+
+**Run**
+```bash
+cd backend && ./vendor/bin/phpunit --filter RestPermsTest --testdox
+```
+
+**Next candidate (deferred):** Reverb realtime to drop the 30s `NotificationBell` polling.
