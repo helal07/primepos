@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BroadcastsTenantChanges;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Warranty extends Model
 {
-    use HasUuids, BelongsToTenant;
+    use HasUuids, BelongsToTenant, BroadcastsTenantChanges;
+
+    public static function broadcastResource(): string { return 'warranties'; }
 
     protected $table = 'warranties';
     public $incrementing = false;
