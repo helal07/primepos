@@ -7,6 +7,17 @@
 
 export const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+const TOKEN_KEY = "pp_auth_token";
+export function getAuthToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+export function setAuthToken(token: string | null): void {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch { /* ignore */ }
+}
+
 export class ApiError extends Error {
   status: number;
   errors?: Record<string, string[]>;
@@ -69,6 +80,8 @@ async function request<T = unknown>(method: string, path: string, body?: Body, o
   };
   const xsrf = readCookie("XSRF-TOKEN");
   if (xsrf && needsCsrf) headers["X-XSRF-TOKEN"] = xsrf;
+  const token = getAuthToken();
+  if (token && !headers["Authorization"]) headers["Authorization"] = `Bearer ${token}`;
 
   let payload: BodyInit | undefined;
   if (body instanceof FormData) {
