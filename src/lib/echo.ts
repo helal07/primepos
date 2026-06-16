@@ -43,13 +43,35 @@ export function getEcho(): Echo<"reverb"> | null {
       forceTLS: scheme === "https",
       enabledTransports: ["ws", "wss"],
       authEndpoint: `${API_URL}/broadcasting/auth`,
-      auth: {
-        headers: {
-          "X-XSRF-TOKEN": readCookie("XSRF-TOKEN") ?? "",
+      // Custom authorizer so the Sanctum session cookie + XSRF token are
+      // included on the cross-origin auth XHR (the default axios authorizer
+      // doesn't set credentials: include).
+      authorizer: (channel: { name: string }) => ({
+        authorize: async (
+          socketId: string,
+          callback: (err: Error | null, data: unknown) => void,
+        ) => {
+          try {
+            const res = await fetch(`${API_URL}/broadcasting/auth`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-XSRF-TOKEN": readCookie("XSRF-TOKEN") ?? "",
+              },
+              body: new URLSearchParams({
+                socket_id: socketId,
+                channel_name: channel.name,
+              }),
+            });
+            if (!res.ok) throw new Error(`broadcast-auth ${res.status}`);
+            callback(null, await res.json());
+          } catch (err) {
+            callback(err as Error, null);
+          }
         },
-      },
-      // include cookies on the auth XHR so Sanctum session is forwarded
-      authorizer: undefined,
+      }),
     });
   } catch (err) {
     console.warn("[echo] init failed", err);
