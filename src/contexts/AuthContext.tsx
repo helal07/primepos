@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, ApiError } from "@/lib/apiClient";
+import { api, ApiError, setAuthToken, getAuthToken } from "@/lib/apiClient";
 
 export interface AuthUser {
   id: string;
@@ -39,10 +39,14 @@ const AuthContext = createContext<AuthContextType>({
 
 async function fetchMe(): Promise<AuthUser | null> {
   try {
+    if (!getAuthToken()) return null;
     const r = await api.get<{ user: AuthUser }>("/api/auth/me");
     return r.user ?? null;
   } catch (e) {
-    if (e instanceof ApiError && (e.status === 401 || e.status === 419)) return null;
+    if (e instanceof ApiError && (e.status === 401 || e.status === 419)) {
+      setAuthToken(null);
+      return null;
+    }
     return null;
   }
 }
@@ -65,13 +69,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const signIn = useCallback(async (identifier: string, password: string) => {
-    const r = await api.post<{ user: AuthUser }>("/api/auth/login", { identifier, password });
+    const r = await api.post<{ token: string; user: AuthUser }>("/api/auth/token", {
+      identifier,
+      password,
+      device_name: "web",
+    });
+    setAuthToken(r.token);
     setUser(r.user);
     return r.user;
   }, []);
 
   const signOut = useCallback(async () => {
     try { await api.post("/api/auth/logout"); } catch { /* ignore */ }
+    setAuthToken(null);
     setUser(null);
   }, []);
 
