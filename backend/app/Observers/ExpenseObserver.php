@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Expense;
 use App\Models\Transaction;
+use App\Events\TenantResourceChanged;
 use App\Services\NumberGeneratorService;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,7 @@ class ExpenseObserver
     public function created(Expense $e): void
     {
         $this->syncTransaction($e);
+        $this->broadcast($e, 'created');
     }
 
     public function updated(Expense $e): void
@@ -28,6 +30,7 @@ class ExpenseObserver
         if ($e->wasChanged(['amount', 'expense_date', 'payment_method', 'notes', 'reference_no'])) {
             $this->syncTransaction($e);
         }
+        $this->broadcast($e, 'updated');
     }
 
     public function deleted(Expense $e): void
@@ -36,6 +39,15 @@ class ExpenseObserver
             ->where('source_type', 'expense')
             ->where('source_id', $e->id)
             ->delete();
+        $this->broadcast($e, 'deleted');
+    }
+
+    private function broadcast(Expense $e, string $action): void
+    {
+        if (! $e->tenant_id) return;
+        try {
+            event(new TenantResourceChanged((string) $e->tenant_id, 'expenses', $action, (string) $e->id));
+        } catch (\Throwable) {}
     }
 
     protected function syncTransaction(Expense $e): void
