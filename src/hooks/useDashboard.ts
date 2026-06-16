@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 
 export interface DashboardStats {
   todaySales: number;
@@ -28,9 +29,14 @@ export interface DashboardStats {
  * Replaces the previous 14 chained Supabase queries.
  */
 export function useDashboardStats() {
+  // Real-time refresh: dashboard auto-refetches when a sale or purchase
+  // happens anywhere in the tenant. Polling drops to 2 minutes as a
+  // safety net for offline / blocked-websocket cases.
+  useTenantRealtime(["sales", "purchases"], [["dashboard_stats"]]);
+
   return useQuery({
     queryKey: ["dashboard_stats"],
-    refetchInterval: 30_000,
+    refetchInterval: 120_000,
     queryFn: async () => {
       const res = await api.get<DashboardStats>("/api/dashboard/stats");
 
