@@ -3,8 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Models\{Sale, SaleItem, SalePayment, PurchaseItem, StockAdjustment, StockTransfer, Expense, Tenant, InstallmentCollection};
-use App\Observers\{SaleObserver, SaleItemObserver, SalePaymentObserver, PurchaseItemObserver, StockAdjustmentObserver, StockTransferObserver, ExpenseObserver, TenantObserver, InstallmentCollectionObserver};
+use App\Models\{Sale, SaleItem, SalePayment, Purchase, PurchaseItem, StockAdjustment, StockTransfer, Expense, Tenant, InstallmentCollection};
+use App\Observers\{SaleObserver, SaleItemObserver, SalePaymentObserver, PurchaseObserver, PurchaseItemObserver, StockAdjustmentObserver, StockTransferObserver, ExpenseObserver, TenantObserver, InstallmentCollectionObserver};
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,6 +18,7 @@ class AppServiceProvider extends ServiceProvider
         Sale::observe(SaleObserver::class);
         SaleItem::observe(SaleItemObserver::class);
         SalePayment::observe(SalePaymentObserver::class);
+        Purchase::observe(PurchaseObserver::class);
         PurchaseItem::observe(PurchaseItemObserver::class);
         StockAdjustment::observe(StockAdjustmentObserver::class);
         StockTransfer::observe(StockTransferObserver::class);
