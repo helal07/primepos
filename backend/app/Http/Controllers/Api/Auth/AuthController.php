@@ -37,7 +37,9 @@ class AuthController extends Controller
         }
 
         Auth::login($user, $data['remember'] ?? false);
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         return response()->json(['user' => $this->userPayload($user)]);
     }
