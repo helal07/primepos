@@ -21,9 +21,9 @@ RUN composer install \
       --no-scripts --no-autoloader --no-progress
 
 # ---------------------------------------------------------------------------
-# Stage 3 — Runtime: PHP-FPM 8.3 + Nginx + Supervisor
+# Stage 3 — Runtime: PHP-FPM 8.4 + Nginx + Supervisor
 # ---------------------------------------------------------------------------
-FROM php:8.3-fpm-alpine AS runtime
+FROM php:8.4-fpm-alpine AS runtime
 
 # System deps + PHP extensions
 RUN apk add --no-cache \
