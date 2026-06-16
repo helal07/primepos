@@ -121,6 +121,12 @@ class RestController extends Controller
     {
         $user = $request->user();
         abort_unless($user, 401);
+        // Superadmin bypass — matches User::canModule() / hasPerm() behavior and
+        // keeps the controller portable across DB engines (the SQL helpers below
+        // are Postgres-only).
+        if (method_exists($user, 'isSuperadmin') && $user->isSuperadmin()) {
+            return;
+        }
         // Re-use the existing SQL helper so policy stays in one place.
         $row = DB::selectOne('select public.has_perm(?, ?) as ok', [
             $user->id, "{$module}.{$action}",
