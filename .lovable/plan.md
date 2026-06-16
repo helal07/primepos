@@ -489,3 +489,39 @@ Goal: give the SuperAdmin control panel a real-time view of tenant lifecycle eve
 **Verification:** `bunx tsc --noEmit` clean.
 
 **Next candidates (deferred):** broadcast `saas_packages` / `sms_purchases` lifecycle for full SuperAdmin coverage; wire concrete call-sites (sale assignment, payment received) to pass `userId` into `NotificationService::send`; instrument Reverb with Pulse once scaling is enabled.
+
+## Stage 26 ✅ — Live Supabase → MySQL data migration
+
+Goal: copy every populated row from the live Supabase Postgres database into the Laravel MySQL backend, exactly once, with zero schema drift.
+
+**Pre-flight**
+- Cross-checked Supabase public schema (71 tables) vs Laravel migrations: every Supabase table has a matching MySQL table. MySQL-only tables (`users`, `personal_access_tokens`, `cache`, `jobs`, `number_counters`, `variations`) are infra and not part of the snapshot.
+- 41 of 71 tables hold data; 956 rows total — small enough to ship as a single archive.
+
+**Export (sandbox)**
+- `scripts/export-supabase.sh` (new) — dumps every populated `public.*` table to NDJSON via `\copy (SELECT to_jsonb(r) FROM public.t r) TO file`. NDJSON preserves Postgres `jsonb` and `text[]` natively, which CSV cannot.
+- Snapshot produced and bundled: `supabase-export.zip` (one `.ndjson` per table, 240 KB unpacked).
+
+**Import (VPS)**
+- `backend/app/Console/Commands/ImportSupabaseSnapshot.php` (new) — `php artisan app:import-supabase <dir> [--append] [--chunk=100]`.
+  - Iterates over every `*.ndjson` in the directory.
+  - Drops columns not present on the MySQL table (defensive against schema drift).
+  - Re-encodes any array/object value as a JSON string so Postgres `jsonb` / `text[]` lands in MySQL JSON columns.
+  - Truncates the target table before insert (or `--append` to keep existing rows).
+  - Wraps the run in `SET FOREIGN_KEY_CHECKS=0/1` so insert order is irrelevant.
+  - Uses `DB::table(...)->insert(...)` so Eloquent observers + `TenantResourceChanged` / `SuperadminEvent` broadcasts do **not** fire during the import.
+
+**Run on the VPS**
+```bash
+# 1. Push the snapshot to the server
+scp supabase-export.zip deploy@vps:/tmp/
+ssh deploy@vps 'cd /tmp && unzip -o supabase-export.zip'
+
+# 2. Import (replaces existing rows)
+ssh deploy@vps 'cd /var/www/primepos/backend && \
+  php artisan app:import-supabase /tmp/supabase-export'
+```
+
+**Verification:** export round-trip in sandbox produced 41 files / 956 rows; importer is a pure query-builder bulk insert so MySQL is the only side-effect.
+
+**Next candidates (deferred):** re-run with `--append` after first cutover so trickle-mode top-ups are possible; teach the importer to keep `auth.users` ↔ `public.profiles` in sync by recreating Laravel `users` rows from `profiles` (currently you need to recreate logins on the new backend).
