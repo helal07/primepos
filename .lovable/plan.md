@@ -223,3 +223,26 @@ Foundation in place: `RestController`, `RestRegistry`, REST routes, `restResourc
 - `src/pages/admin/Sitemap.tsx`: `SITEMAP_URL` switched from `${VITE_SUPABASE_URL}/functions/v1/sitemap` to the Laravel-served `/sitemap.xml` (already wired to `SitemapController::sitemap`).
 - Verified zero runtime imports of `@/integrations/supabase/client` or `@/integrations/lovable` across `src/`. The auto-generated `integrations/{supabase,lovable}/*` files and `supabase/functions/*` directory are now dead code retained only as auto-managed scaffolding (per platform rules; not safe to delete). Type-only imports of `Database`/`Tables` from `supabase/types.ts` are kept — they describe the same Postgres schema Laravel speaks to.
 - Migration from Supabase to Laravel is now functionally complete: no runtime `supabase.from`, `supabase.rpc`, `supabase.auth`, `supabase.channel`, or `supabase.functions.invoke` calls remain.
+
+## Stage 14 ✅ — Backend test suite scaffolded
+
+Goal: lock in the Laravel migration with an executable safety net so future changes can't silently regress the API.
+
+**Added**
+- `backend/phpunit.xml` — PHPUnit 11 config; uses sqlite `:memory:`, `array` cache/session, `sync` queue, `bcrypt rounds=4`. No real network, DB, or filesystem touched.
+- `backend/tests/TestCase.php` + `backend/tests/CreatesApplication.php` — standard Laravel test bootstrap pointing at `bootstrap/app.php`.
+- `backend/tests/Unit/RestRegistryTest.php` — asserts the REST whitelist still exposes all 40+ core resources (products, sales, purchases, accounting, installments, HRM, tenants, CMS, warranties, SMS, notifications, activity log…), every entry has a real `model` class, and `filters/sort/search/with` are always arrays.
+- `backend/tests/Feature/HealthTest.php` — `/api/health` smoke test plus 401 enforcement on `/api/auth/me`, `/api/dashboard/stats`, `/api/rest/products`, and unknown resources.
+- `backend/tests/Feature/AuthTest.php` — login happy path, bad-password rejection, and current-password enforcement on `POST /api/auth/password`. Uses `RefreshDatabase`.
+- `backend/tests/Feature/PublicLandingTest.php` — `/api/public/landing/features` filters out inactive rows; `/api/public/landing/cms/{key}` returns the global (`tenant_id IS NULL`) value or `null`. Uses `RefreshDatabase`.
+
+**Run**
+```bash
+cd backend && ./vendor/bin/phpunit
+# or: php artisan test
+```
+
+**Next candidates (deferred):**
+- REST CRUD round-trip tests per module (would need a tenant-scoped User factory + role grant helper).
+- CI workflow that runs `vendor/bin/phpunit` + `bunx tsc --noEmit` on every push.
+- Realtime / Reverb migration to drop the 30s polling on `NotificationBell`.
