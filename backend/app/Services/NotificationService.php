@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\TenantNotification;
+use App\Events\TenantNotificationCreated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -30,6 +31,14 @@ class NotificationService
             'message'   => $message,
             'data'      => $data,
         ]);
+
+        // Push the new row to any connected SPA listeners over Reverb.
+        // Failures are non-fatal — the SPA also has a 30s poll fallback.
+        try {
+            event(new TenantNotificationCreated($notif));
+        } catch (\Throwable $e) {
+            Log::warning('notification.broadcast_failed', ['err' => $e->getMessage()]);
+        }
 
         if ($email) {
             try {
