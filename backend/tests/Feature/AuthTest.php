@@ -21,8 +21,8 @@ class AuthTest extends TestCase
         ]);
 
         $this->postJson('/api/auth/login', [
-                'email'    => 'owner@example.test',
-                'password' => 'secret-pass',
+                'identifier' => 'owner@example.test',
+                'password'   => 'secret-pass',
             ])
             ->assertOk()
             ->assertJsonStructure(['user' => ['id', 'email']]);
@@ -43,8 +43,8 @@ class AuthTest extends TestCase
         ]);
 
         $this->postJson('/api/auth/login', [
-                'email'    => 'owner2@example.test',
-                'password' => 'wrong',
+                'identifier' => 'owner2@example.test',
+                'password'   => 'wrong',
             ])
             ->assertStatus(422);
     }
