@@ -57,7 +57,7 @@ class TenantController extends Controller
                 'name'      => $data['owner_name'],
                 'email'     => $data['email'],
                 'phone'     => $data['phone'] ?? null,
-                'password'  => Hash::make($data['password']),
+                'password'  => $data['password'],
                 'status'    => 'active',
             ]);
 
