@@ -384,3 +384,31 @@ Goal: replace the 30s polling fallback with instant push over Laravel Reverb so 
 - Backend test suite untouched (Reverb path is event-bus only; existing tests stay green).
 
 **Next candidates (deferred):** push Echo wiring into more surfaces (live sales dashboard, in-flight POS sync); add Redis scaling once a second app server is in play.
+
+## Stage 21 ✅ — Live dashboard via Reverb + WS nginx proxy
+
+Goal: extend the Reverb plumbing from Stage 20 beyond notifications so the dashboard auto-refreshes the moment a sale or purchase happens anywhere in the tenant, and make the bootstrap script provision the websocket vhost out of the box.
+
+**Backend**
+- `app/Events/TenantResourceChanged.php` (new) — generic `ShouldBroadcast` event on `private(tenant.{id})` with name `.tenant.resource.changed` and a tiny payload (`{resource, action, id}`). Listeners refetch through their existing REST endpoints, so authorization stays in one place.
+- `app/Observers/SaleObserver.php` — broadcasts `sales` on `created/updated/deleted` (failures swallowed).
+- `app/Observers/PurchaseObserver.php` (new) — same pattern for `purchases`; registered in `AppServiceProvider`.
+
+**Frontend**
+- `src/hooks/useTenantRealtime.ts` (new) — subscribes to `private(tenant.{id})`, listens for `.tenant.resource.changed`, filters by a set of watched `resource` slugs, and invalidates the supplied React-Query keys. No-ops when Reverb isn't configured.
+- `src/hooks/useDashboard.ts` — calls `useTenantRealtime(["sales","purchases"], [["dashboard_stats"]])`; polling drops from 30s → 120s safety net.
+
+**Infra**
+- `scripts/vps-bootstrap.sh` — new `WS_DOMAIN` env var. When set, the bootstrap appends a third nginx server block that reverse-proxies `WS_DOMAIN` → `127.0.0.1:8080` with the `Upgrade`/`Connection: upgrade` headers and 7-day read/send timeouts so Reverb websockets stay open. Without `WS_DOMAIN` the script behaves exactly as before.
+
+**Run**
+```bash
+DEPLOY_USER=deploy DOMAIN=app.example.com API_DOMAIN=api.example.com \
+  WS_DOMAIN=ws.example.com SSH_PUBLIC_KEY="ssh-ed25519 ..." \
+  bash scripts/vps-bootstrap.sh
+```
+then point `VITE_REVERB_HOST=ws.example.com` for the SPA build and add TLS via `certbot --nginx -d ws.example.com`.
+
+**Verification:** `bunx tsc --noEmit` clean.
+
+**Next candidates (deferred):** broadcast installment collections + expense events; add Redis scaling for horizontal Reverb; per-user channels for personal toasts.
