@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: Frontend (tsc + vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.1'
+      - name: Install deps
+        run: bun install --frozen-lockfile || bun install
+      - name: Typecheck
+        run: bunx tsc --noEmit
+      - name: Unit tests
+        run: bunx vitest run --reporter=default
+
+  backend:
+    name: Backend (phpunit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, mbstring, intl, bcmath, zip, gd, exif
+          coverage: none
+          tools: composer:v2
+      - name: Cache composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      - name: Install composer deps
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Prepare env
+        run: |
+          cp .env.example .env || true
+          php artisan key:generate --force
+      - name: Run phpunit
+        run: ./vendor/bin/phpunit --testdox
