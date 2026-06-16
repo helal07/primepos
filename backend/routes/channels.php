@@ -20,3 +20,12 @@ Broadcast::channel('tenant.{tenantId}', function (User $user, string $tenantId) 
 Broadcast::channel('user.{userId}', function (User $user, string $userId) {
     return $user->isSuperadmin() || (string) $user->id === (string) $userId;
 });
+
+/*
+ * Superadmin-only firehose for the global control-panel dashboard. Anything
+ * broadcast here (tenant created/suspended/subscription changed, signup
+ * events, etc.) lights up the SuperAdmin SPA in real time.
+ */
+Broadcast::channel('superadmin', function (User $user) {
+    return $user->isSuperadmin();
+});
