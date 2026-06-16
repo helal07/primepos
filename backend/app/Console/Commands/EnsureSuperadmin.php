@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class EnsureSuperadmin extends Command
@@ -35,7 +34,8 @@ class EnsureSuperadmin extends Command
             $user->id = (string) Str::uuid();
             $user->name = $name;
             $user->email = $email;
-            $user->password = Hash::make($password);
+            // User model casts 'password' => 'hashed' — assign plain text, cast hashes it.
+            $user->password = $password;
             $user->is_superadmin = true;
             $user->status = 'active';
             $user->tenant_id = null;
@@ -47,7 +47,7 @@ class EnsureSuperadmin extends Command
         $changed = false;
         if (! $user->is_superadmin) { $user->is_superadmin = true; $changed = true; }
         if ($user->status !== 'active') { $user->status = 'active'; $changed = true; }
-        if ($this->option('reset-password')) { $user->password = Hash::make($password); $changed = true; }
+        if ($this->option('reset-password')) { $user->password = $password; $changed = true; }
 
         if ($changed) {
             $user->save();
