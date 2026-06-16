@@ -24,6 +24,7 @@ set -euo pipefail
 : "${DEPLOY_USER:=deploy}"
 : "${DOMAIN:=_}"                 # SPA hostname (or _ for default server)
 : "${API_DOMAIN:=_}"             # Laravel API hostname (or _ for default)
+: "${WS_DOMAIN:=}"               # Reverb websocket hostname (optional)
 : "${SSH_PUBLIC_KEY:=}"          # public key for the deploy user (optional but recommended)
 : "${PHP_VERSION:=8.4}"
 : "${FRONTEND_DIR:=/var/www/primepos/frontend}"
@@ -213,6 +214,31 @@ server {
     }
 }
 NGINX
+
+if [[ -n "${WS_DOMAIN}" ]]; then
+  cat >> "$VHOST" <<NGINX
+
+# ---------- Reverb websocket proxy (wss://${WS_DOMAIN} → 127.0.0.1:8080) ----
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${WS_DOMAIN};
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 7d;
+        proxy_send_timeout 7d;
+    }
+}
+NGINX
+fi
 
 ln -sf "$VHOST" /etc/nginx/sites-enabled/primepos.conf
 rm -f /etc/nginx/sites-enabled/default
