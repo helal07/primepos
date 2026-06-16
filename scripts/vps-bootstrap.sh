@@ -220,18 +220,47 @@ nginx -t
 systemctl reload nginx
 
 # ---------------------------------------------------------------------------
-log "8/9  Firewall (UFW)"
+log "8/10 Firewall (UFW)"
 # ---------------------------------------------------------------------------
 ufw allow OpenSSH        >/dev/null || true
 ufw allow 'Nginx Full'   >/dev/null || true
+ufw allow 8080/tcp       >/dev/null || true   # Laravel Reverb (websocket)
 yes | ufw enable         >/dev/null || true
 
 # ---------------------------------------------------------------------------
-log "9/9  Laravel scheduler cron (runs as ${DEPLOY_USER})"
+log "9/10 Laravel scheduler cron (runs as ${DEPLOY_USER})"
 # ---------------------------------------------------------------------------
 CRON_LINE="* * * * * cd ${BACKEND_DIR} && php artisan schedule:run >> /dev/null 2>&1"
 ( crontab -u "${DEPLOY_USER}" -l 2>/dev/null | grep -vF "artisan schedule:run" ; echo "${CRON_LINE}" ) \
   | crontab -u "${DEPLOY_USER}" -
+
+# ---------------------------------------------------------------------------
+log "10/10 Reverb websocket supervisor"
+# ---------------------------------------------------------------------------
+REVERB_CONF="/etc/supervisor/conf.d/primepos-reverb.conf"
+cat > "$REVERB_CONF" <<SUPERVISOR
+[program:primepos-reverb]
+process_name=%(program_name)s
+command=php ${BACKEND_DIR}/artisan reverb:start --host=0.0.0.0 --port=8080
+autostart=true
+autorestart=true
+user=${DEPLOY_USER}
+redirect_stderr=true
+stdout_logfile=${BACKEND_DIR}/storage/logs/reverb.log
+stopwaitsecs=10
+SUPERVISOR
+
+supervisorctl reread >/dev/null || true
+supervisorctl update >/dev/null || true
+supervisorctl restart primepos-reverb >/dev/null 2>&1 || true
+
+# Grant the deploy user passwordless reload for the reverb supervisor entry
+# so the post-deploy SSH step can bounce it after a release.
+SUDO_REVERB="/etc/sudoers.d/${DEPLOY_USER}-reverb"
+cat > "${SUDO_REVERB}" <<SUDOERS
+${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart primepos-reverb
+SUDOERS
+chmod 0440 "${SUDO_REVERB}"
 
 cat <<DONE
 
@@ -252,5 +281,12 @@ cat <<DONE
 
    3. Push to main — GitHub Actions will build the SPA, install vendor,
       rsync both halves, run migrations, and reload php${PHP_VERSION}-fpm + nginx.
+
+   4. Realtime (Reverb): set REVERB_* env vars in ${BACKEND_DIR}/.env, then
+      front the websocket with nginx on a public hostname (e.g. ws.example.com)
+      pointing to http://127.0.0.1:8080 with the Upgrade/Connection headers
+      set. Set VITE_REVERB_HOST in your build env to that hostname.
+      Supervisor is already running 'php artisan reverb:start' as
+      'primepos-reverb' on port 8080.
 ============================================================
 DONE

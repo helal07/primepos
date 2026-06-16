@@ -355,3 +355,32 @@ cd backend && ./vendor/bin/phpunit --filter RestPermsTest --testdox
 ```
 
 **Next candidate (deferred):** Reverb realtime to drop the 30s `NotificationBell` polling.
+
+## Stage 20 ✅ — Reverb realtime for NotificationBell
+
+Goal: replace the 30s polling fallback with instant push over Laravel Reverb so new tenant notifications light up the bell + toast within ~100ms.
+
+**Backend**
+- `composer.json` now requires `laravel/reverb ^1.0`.
+- `backend/config/broadcasting.php` (new) — explicit `reverb` connection driven by `REVERB_APP_*` env. Default connection comes from `BROADCAST_CONNECTION`.
+- `backend/config/reverb.php` (new) — single-app config bound to `0.0.0.0:8080`, `allowed_origins: ['*']`, Redis scaling stubbed out for later horizontal scaling.
+- `backend/routes/channels.php` (new) — `tenant.{tenantId}` private channel: superadmin or `user.tenant_id === tenantId`.
+- `backend/bootstrap/app.php` — `withRouting(channels: …)` so Laravel auto-loads channel auth + `/broadcasting/auth` endpoint.
+- `app/Events/TenantNotificationCreated.php` — `ShouldBroadcast` on `PrivateChannel('tenant.{id}')`, broadcast name `.tenant.notification`, payload mirrors the row shape the SPA already renders.
+- `NotificationService::send()` now dispatches the event after persisting the row; failures are logged and swallowed (polling remains the safety net).
+- `backend/.env.example` — adds `BROADCAST_CONNECTION=reverb`, full `REVERB_*` block, and `VITE_REVERB_*` for the SPA build.
+
+**Frontend**
+- Added `laravel-echo` + `pusher-js`.
+- `src/lib/echo.ts` — lazy singleton `getEcho()` constructing the Reverb-broadcast Echo client. Returns `null` when `VITE_REVERB_APP_KEY` / `VITE_REVERB_HOST` are missing so the app degrades gracefully. Custom `authorizer` posts to `/broadcasting/auth` with `credentials: "include"` + `X-XSRF-TOKEN`, because the default axios authorizer doesn't forward the Sanctum session cross-origin.
+- `NotificationBell.tsx` — subscribes to `private(tenant.{tenant_id})` on mount, listens to `.tenant.notification`, and `qc.invalidateQueries(["my-notifications"])` on every push. Polling fallback bumped from 30s → 120s. Cleans up `stopListening` + `leave` on unmount / tenant change.
+
+**Infra**
+- `scripts/vps-bootstrap.sh` — opens UFW 8080/tcp; installs a `primepos-reverb` supervisor program running `php artisan reverb:start --host=0.0.0.0 --port=8080`; adds a `sudoers.d` entry letting `${DEPLOY_USER}` `supervisorctl restart primepos-reverb` passwordless. Final message documents fronting the websocket with an nginx `Upgrade`/`Connection` proxy on a public hostname.
+- `.github/workflows/deploy.yml` post-deploy SSH block now appends `sudo supervisorctl restart primepos-reverb` after the FPM + nginx reloads.
+
+**Verification**
+- `bunx tsc --noEmit` clean.
+- Backend test suite untouched (Reverb path is event-bus only; existing tests stay green).
+
+**Next candidates (deferred):** push Echo wiring into more surfaces (live sales dashboard, in-flight POS sync); add Redis scaling once a second app server is in play.
