@@ -217,3 +217,9 @@ Foundation in place: `RestController`, `RestRegistry`, REST routes, `restResourc
 - Unused `supabase` imports removed from `InstallmentCustomerAdd`, `useInventory`, `Users`, `ProductAdd`, `PurchaseAdd`, `Subscription`, `ExchangePurchaseAdd`, `AppSidebar`.
 
 **Verified:** `bunx tsc --noEmit` clean. `rg "supabase\." src` shows zero remaining runtime calls (only a stale comment in `useContacts.ts`).
+
+## Stage 13 ✅ — Sitemap URL cut over, migration finalised
+
+- `src/pages/admin/Sitemap.tsx`: `SITEMAP_URL` switched from `${VITE_SUPABASE_URL}/functions/v1/sitemap` to the Laravel-served `/sitemap.xml` (already wired to `SitemapController::sitemap`).
+- Verified zero runtime imports of `@/integrations/supabase/client` or `@/integrations/lovable` across `src/`. The auto-generated `integrations/{supabase,lovable}/*` files and `supabase/functions/*` directory are now dead code retained only as auto-managed scaffolding (per platform rules; not safe to delete). Type-only imports of `Database`/`Tables` from `supabase/types.ts` are kept — they describe the same Postgres schema Laravel speaks to.
+- Migration from Supabase to Laravel is now functionally complete: no runtime `supabase.from`, `supabase.rpc`, `supabase.auth`, `supabase.channel`, or `supabase.functions.invoke` calls remain.
