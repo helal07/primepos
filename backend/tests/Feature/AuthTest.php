@@ -20,12 +20,13 @@ class AuthTest extends TestCase
             'password' => Hash::make('secret-pass'),
         ]);
 
-        $this->postJson('/api/auth/login', [
-                'email'    => 'owner@example.test',
-                'password' => 'secret-pass',
+        $this->postJson('/api/auth/token', [
+                'identifier'  => 'owner@example.test',
+                'password'    => 'secret-pass',
+                'device_name' => 'phpunit',
             ])
             ->assertOk()
-            ->assertJsonStructure(['user' => ['id', 'email']]);
+            ->assertJsonStructure(['token', 'user' => ['id', 'email']]);
 
         $this->actingAs($user)
             ->getJson('/api/auth/me')
@@ -42,9 +43,10 @@ class AuthTest extends TestCase
             'password' => Hash::make('secret-pass'),
         ]);
 
-        $this->postJson('/api/auth/login', [
-                'email'    => 'owner2@example.test',
-                'password' => 'wrong',
+        $this->postJson('/api/auth/token', [
+                'identifier'  => 'owner2@example.test',
+                'password'    => 'wrong',
+                'device_name' => 'phpunit',
             ])
             ->assertStatus(422);
     }
