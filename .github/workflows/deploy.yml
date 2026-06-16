@@ -31,6 +31,19 @@ jobs:
             cp public/.htaccess dist/.htaccess
           fi
 
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, intl, bcmath, zip, gd, exif
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Laravel vendor (production)
+        working-directory: backend
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
       - name: Deploy to Hostinger via SSH (rsync with retry)
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -38,22 +51,57 @@ jobs:
           SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
           SSH_TARGET_DIR: ${{ secrets.SSH_TARGET_DIR }}
+          SSH_BACKEND_DIR: ${{ secrets.SSH_BACKEND_DIR }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-          for attempt in 1 2 3; do
-            echo "Deploy attempt $attempt of 3"
-            rsync -rltgoDzvO --delete --exclude='.well-known' \
-              -e "ssh -p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=2" \
-              dist/ "$SSH_USERNAME@$SSH_HOST:$SSH_TARGET_DIR" && exit 0
+          SSH_OPTS="-p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=2"
 
-            if [ "$attempt" -lt 3 ]; then
-              echo "SSH connection failed; retrying in 30 seconds..."
-              sleep 30
-            fi
+          # ---- Frontend (SPA dist) ----
+          for attempt in 1 2 3; do
+            echo "Frontend deploy attempt $attempt of 3"
+            rsync -rltgoDzvO --delete --exclude='.well-known' \
+              -e "ssh $SSH_OPTS" \
+              dist/ "$SSH_USERNAME@$SSH_HOST:$SSH_TARGET_DIR" && break
+            [ "$attempt" -lt 3 ] && { echo "Frontend SSH failed; retrying in 30s..."; sleep 30; } || {
+              echo "Frontend deploy failed."; exit 1;
+            }
           done
 
-          echo "Deployment failed because the SSH server did not respond. Check Hostinger SSH host, port, firewall, and server status."
-          exit 1
+          # ---- Backend (Laravel) ----
+          if [ -z "$SSH_BACKEND_DIR" ]; then
+            echo "SSH_BACKEND_DIR not set — skipping backend deploy."
+            exit 0
+          fi
+
+          for attempt in 1 2 3; do
+            echo "Backend deploy attempt $attempt of 3"
+            rsync -rltgoDzvO --delete \
+              --exclude='.env' \
+              --exclude='storage/app/public/*' \
+              --exclude='storage/app/private/*' \
+              --exclude='storage/logs/*' \
+              --exclude='storage/framework/cache/*' \
+              --exclude='storage/framework/sessions/*' \
+              --exclude='storage/framework/views/*' \
+              --exclude='.phpunit.cache' \
+              --exclude='tests' \
+              -e "ssh $SSH_OPTS" \
+              backend/ "$SSH_USERNAME@$SSH_HOST:$SSH_BACKEND_DIR" && break
+            [ "$attempt" -lt 3 ] && { echo "Backend SSH failed; retrying in 30s..."; sleep 30; } || {
+              echo "Backend deploy failed."; exit 1;
+            }
+          done
+
+          # ---- Post-deploy: migrate + cache warm ----
+          ssh $SSH_OPTS "$SSH_USERNAME@$SSH_HOST" bash -lc "'
+            cd $SSH_BACKEND_DIR &&
+            php artisan migrate --force &&
+            php artisan storage:link 2>/dev/null || true &&
+            php artisan optimize:clear &&
+            php artisan config:cache &&
+            php artisan route:cache &&
+            php artisan event:cache
+          '"
