@@ -1,0 +1,75 @@
+name: Import Supabase snapshot to MySQL
+
+# Manual, one-shot. Trigger from the GitHub Actions tab — choose whether to
+# truncate (default) or append. Uses the same SSH secrets as deploy.yml so no
+# extra setup is needed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'truncate (replace all rows) or append (keep existing rows)'
+        required: true
+        default: 'truncate'
+        type: choice
+        options: [truncate, append]
+      snapshot_path:
+        description: 'Path in the repo to the snapshot zip'
+        required: true
+        default: 'data-snapshots/supabase-export.zip'
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    environment: SSH_HOST
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify snapshot exists
+        run: |
+          test -f "${{ inputs.snapshot_path }}" \
+            || { echo "Snapshot not found at ${{ inputs.snapshot_path }}"; exit 1; }
+          ls -lh "${{ inputs.snapshot_path }}"
+
+      - name: Upload snapshot and run importer on VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_BACKEND_DIR: ${{ secrets.SSH_BACKEND_DIR }}
+          MODE: ${{ inputs.mode }}
+          SNAPSHOT_PATH: ${{ inputs.snapshot_path }}
+        run: |
+          if [ -z "$SSH_BACKEND_DIR" ]; then
+            echo "SSH_BACKEND_DIR not set — cannot import."; exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          SSH_OPTS="-p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30"
+
+          REMOTE_DIR="/tmp/supabase-import-$(date +%s)"
+
+          # 1. Upload snapshot
+          ssh $SSH_OPTS "$SSH_USERNAME@$SSH_HOST" "mkdir -p $REMOTE_DIR"
+          scp -P "$SSH_PORT" -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "$SNAPSHOT_PATH" "$SSH_USERNAME@$SSH_HOST:$REMOTE_DIR/snapshot.zip"
+
+          # 2. Unzip + run importer + clean up
+          APPEND_FLAG=""
+          if [ "$MODE" = "append" ]; then APPEND_FLAG="--append"; fi
+
+          ssh $SSH_OPTS "$SSH_USERNAME@$SSH_HOST" bash -lc "'
+            set -euo pipefail
+            cd $REMOTE_DIR
+            unzip -o snapshot.zip
+            SNAP_DIR=\$(ls -d $REMOTE_DIR/supabase-export 2>/dev/null || echo $REMOTE_DIR)
+            cd $SSH_BACKEND_DIR
+            echo \"--- Running app:import-supabase $APPEND_FLAG \$SNAP_DIR\"
+            php artisan app:import-supabase \"\$SNAP_DIR\" $APPEND_FLAG
+            echo \"--- Done. Cleaning up.\"
+            rm -rf $REMOTE_DIR
+          '"
