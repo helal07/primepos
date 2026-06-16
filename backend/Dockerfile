@@ -46,8 +46,10 @@ COPY backend/ /var/www/html/
 # Vendor from composer stage
 COPY --from=vendor /app/vendor /var/www/html/vendor
 
-# Frontend build → served from /var/www/html/public/app
-COPY --from=frontend /app/dist /var/www/html/public/app
+# Frontend build → merged into Laravel's public/ root so the SPA is served
+# at the domain root (e.g. /login). Laravel's index.php / .htaccess remain
+# intact; SpaController falls back to public/index.html for non-API routes.
+COPY --from=frontend /app/dist/ /var/www/html/public/
 
 # Re-run autoload + Laravel package discovery now that artisan exists
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev \
