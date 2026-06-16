@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { useToast } from "@/hooks/use-toast";
 import { rest } from "@/lib/restResource";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 function aliasStockRow<T extends Record<string, any>>(r: T): T {
@@ -72,6 +73,11 @@ export function useWarehouseMutations() {
 }
 
 export function useWarehouseStock(warehouseId?: string) {
+  // Any sale/purchase/stock-adjustment moves stock — refresh on those pings.
+  useTenantRealtime(
+    ["sales", "purchases", "stock_adjustments"],
+    [["warehouse_stock"]],
+  );
   return useQuery({
     queryKey: ["warehouse_stock", warehouseId ?? "all"],
     queryFn: async () => {
