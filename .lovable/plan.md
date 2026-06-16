@@ -310,3 +310,25 @@ Goal: every push verifies both stacks and ships the Laravel backend alongside th
 - `SSH_BACKEND_DIR` — absolute path on the Hostinger host to the Laravel root (the directory containing `artisan`).
 
 **Next candidates (deferred):** Reverb realtime, per-module CRUD tests, GitHub Actions matrix for PHP 8.2/8.3.
+
+## Stage 18 ✅ — PHP 8.4 cutover + VPS bootstrap script
+
+- Bumped CI, deploy workflow, and `backend/Dockerfile` from PHP 8.3 → **8.4** (composer.json `^8.3` already permits it; Laravel 12 + all deps officially support 8.4).
+- Deploy post-step now reloads `php8.4-fpm` and `nginx` via sudo (falls back to generic `php-fpm` if the unit is named differently).
+- Added **`scripts/vps-bootstrap.sh`** — idempotent provisioner for a fresh Ubuntu 22.04/24.04 or Debian 12 VPS:
+  - Installs PHP 8.4 (FPM + CLI + mysql/mbstring/intl/bcmath/zip/gd/curl/xml/redis/opcache), Composer 2, Nginx, MySQL/Redis clients, supervisor, cron, ufw.
+  - Creates a `deploy` user in the `www-data` group, authorises an SSH public key, and grants passwordless sudo limited to `systemctl reload php8.4-fpm` + `systemctl reload nginx`.
+  - Lays out `/var/www/primepos/{frontend,backend}` with correct ownership and storage perms.
+  - Writes an Nginx vhost with SPA fallback (`try_files … /index.html`) on `$DOMAIN` and a Laravel API server on `$API_DOMAIN` wired to the 8.4 FPM socket.
+  - Enables UFW (OpenSSH + Nginx Full) and registers the Laravel scheduler cron.
+  - Prints the exact GitHub Actions secrets to set (`SSH_HOST/PORT/USERNAME/PRIVATE_KEY/TARGET_DIR/BACKEND_DIR`).
+
+Run on the VPS as root:
+
+```bash
+DEPLOY_USER=deploy DOMAIN=app.example.com API_DOMAIN=api.example.com \
+  SSH_PUBLIC_KEY="ssh-ed25519 AAAA... you@laptop" \
+  bash scripts/vps-bootstrap.sh
+```
+
+**Next candidates (deferred):** Reverb realtime, per-module CRUD tests.
