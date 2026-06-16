@@ -11,3 +11,12 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('tenant.{tenantId}', function (User $user, string $tenantId) {
     return $user->isSuperadmin() || (string) $user->tenant_id === (string) $tenantId;
 });
+
+/*
+ * Per-user private channel for personal toasts (assignments, payments
+ * received, mentions, …). Only the user themselves — or a superadmin for
+ * support purposes — may subscribe.
+ */
+Broadcast::channel('user.{userId}', function (User $user, string $userId) {
+    return $user->isSuperadmin() || (string) $user->id === (string) $userId;
+});

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TenantNotification;
 use App\Events\TenantNotificationCreated;
+use App\Events\UserNotificationCreated;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -22,10 +23,12 @@ class NotificationService
         array $data = [],
         ?string $email = null,
         ?string $phone = null,
+        ?string $userId = null,
     ): TenantNotification {
         $notif = TenantNotification::query()->withoutGlobalScopes()->create([
             'id'        => (string) Str::uuid(),
             'tenant_id' => $tenantId,
+            'user_id'   => $userId,
             'type'      => $type,
             'title'     => $title,
             'message'   => $message,
@@ -33,9 +36,12 @@ class NotificationService
         ]);
 
         // Push the new row to any connected SPA listeners over Reverb.
-        // Failures are non-fatal — the SPA also has a 30s poll fallback.
+        // Failures are non-fatal — the SPA also has a poll fallback.
         try {
             event(new TenantNotificationCreated($notif));
+            if ($userId) {
+                event(new UserNotificationCreated($notif));
+            }
         } catch (\Throwable $e) {
             Log::warning('notification.broadcast_failed', ['err' => $e->getMessage()]);
         }

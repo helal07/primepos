@@ -92,20 +92,31 @@ export function NotificationBell() {
 
   // Subscribe to private tenant channel for instant push.
   useEffect(() => {
-    if (!user?.tenant_id) return;
+    if (!user?.tenant_id && !user?.id) return;
     const echo = getEcho();
     if (!echo) return;
-    const channelName = `tenant.${user.tenant_id}`;
-    const channel = echo.private(channelName);
     const handler = () => {
       qc.invalidateQueries({ queryKey: ["my-notifications"] });
     };
-    channel.listen(".tenant.notification", handler);
+
+    const subs: Array<{ name: string; event: string }> = [];
+    if (user?.tenant_id) {
+      const name = `tenant.${user.tenant_id}`;
+      echo.private(name).listen(".tenant.notification", handler);
+      subs.push({ name, event: ".tenant.notification" });
+    }
+    if (user?.id) {
+      const name = `user.${user.id}`;
+      echo.private(name).listen(".user.notification", handler);
+      subs.push({ name, event: ".user.notification" });
+    }
     return () => {
-      channel.stopListening(".tenant.notification");
-      echo.leave(channelName);
+      subs.forEach(({ name, event }) => {
+        try { echo.private(name).stopListening(event); } catch { /* noop */ }
+        echo.leave(name);
+      });
     };
-  }, [user?.tenant_id, qc]);
+  }, [user?.tenant_id, user?.id, qc]);
 
   const markRead = useMutation({
     mutationFn: async (id?: string) => {
