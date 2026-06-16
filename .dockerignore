@@ -1,0 +1,55 @@
+# Version control
+.git
+.github
+.gitignore
+
+# Node / Bun
+node_modules
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+
+# Build output (built inside container)
+dist
+build
+.next
+.cache
+.vite
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Tests / coverage
+coverage
+.nyc_output
+playwright-report
+test-results
+
+# Env (use Coolify env vars, not committed files)
+.env
+.env.*
+!.env.example
+
+# Backend dev artifacts (composer stage handles vendor; runtime copies source)
+backend/vendor
+backend/node_modules
+backend/.phpunit.cache
+backend/storage/logs/*
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/app/public/*
+backend/storage/app/private/*
+backend/bootstrap/cache/*.php
+
+# Lovable / misc
+.lovable
+supabase/.branches
+supabase/.temp
+*.log
+*.tmp
+*.swp
