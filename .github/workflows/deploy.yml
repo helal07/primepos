@@ -57,6 +57,21 @@ jobs:
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+          # Default SSH_PORT to 22 if secret is empty/unset
+          : "${SSH_PORT:=22}"
+
+          # Sanity checks (fail fast with a clear message)
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_USERNAME" ] || [ -z "$SSH_TARGET_DIR" ]; then
+            echo "Missing required secret: SSH_HOST / SSH_USERNAME / SSH_TARGET_DIR"
+            exit 1
+          fi
+          if [ ! -s ~/.ssh/deploy_key ]; then
+            echo "SSH_PRIVATE_KEY secret is empty"
+            exit 1
+          fi
+
+          echo "Using host=$SSH_HOST port=$SSH_PORT user=$SSH_USERNAME"
+
           SSH_OPTS="-p $SSH_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=2"
 
           # ---- Frontend (SPA dist) ----
