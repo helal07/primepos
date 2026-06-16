@@ -3,6 +3,7 @@ import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 
 /** Map Laravel singular relation names → plural Supabase shape expected by legacy UI. */
 function aliasInstallmentCustomer<T extends Record<string, any>>(row: T): T {
@@ -150,6 +151,10 @@ export function useAllSchedules() {
 
 // ── Installment Collections ──
 export function useInstallmentCollections(saleId?: string | null) {
+  useTenantRealtime(
+    ["installment_collections"],
+    [["installment_collections"], ["installment_schedules"]],
+  );
   return useQuery({
     queryKey: ["installment_collections", saleId],
     enabled: saleId !== undefined,
