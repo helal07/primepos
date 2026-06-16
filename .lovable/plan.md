@@ -433,3 +433,25 @@ Extended the Stage-21 broadcast hook into every transactional surface so each li
 **Verification:** `bunx tsc --noEmit` clean.
 
 **Next candidates (deferred):** per-user channels for personal toasts; Redis-backed scaling for multi-node Reverb; broadcast HRM attendance + warranty claims so those screens are live too.
+
+## Stage 23 ✅ — Reusable broadcast trait + HRM/Warranty live screens
+
+Goal: stop hand-writing observer broadcast blocks and extend live coverage to the HRM + Warranty modules.
+
+**Backend**
+- `App\Models\Concerns\BroadcastsTenantChanges` (new trait) — `boot…` hooks into `created/updated/deleted`, dispatches `TenantResourceChanged` on the `private(tenant.{id})` channel using a static `broadcastResource()` declared on the model. Failures are swallowed so the SPA's poll fallback still works.
+- Models now using the trait:
+  - `Attendance` → `attendance`
+  - `LeaveRequest` → `leave_requests`
+  - `Payroll` → `payroll`
+  - `WarrantyClaim` → `warranty_claims`
+  - `Warranty` → `warranties`
+
+**Frontend**
+- `useAttendance`, `useLeaveRequests`, `usePayroll` (in `useHRM.ts`) now call `useTenantRealtime` against their respective resources.
+- `useWarrantyClaims` subscribes to `warranty_claims`.
+- `Warranties.tsx` page subscribes to `warranties`.
+
+**Verification:** `bunx tsc --noEmit` clean.
+
+**Next candidates (deferred):** per-user channels (`user.{id}`) for personal toasts (assignment, mention, payment received); Redis-backed scaling for multi-node Reverb; broadcast tenant-admin events (subscription change, tenant suspend) so the superadmin dashboard goes live.
