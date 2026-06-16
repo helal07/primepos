@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import { toast } from "sonner";
 
 const aliasClaim = (c: any) => {
@@ -13,6 +14,7 @@ const aliasClaim = (c: any) => {
 };
 
 export function useWarrantyClaims() {
+  useTenantRealtime(["warranty_claims"], [["warranty_claims"]]);
   return useQuery({
     queryKey: ["warranty_claims"],
     queryFn: async () => {
