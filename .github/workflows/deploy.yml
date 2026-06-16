@@ -1,4 +1,4 @@
-name: Deploy to Hostinger via SSH
+name: Deploy to VPS via SSH
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
         run: |
           composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
-      - name: Deploy to Hostinger via SSH (rsync with retry)
+      - name: Deploy to VPS via SSH (rsync with retry)
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
