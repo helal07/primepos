@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import { toast } from "sonner";
 
 /** Alias singular Laravel relations → plural Supabase shape for legacy UI. */
@@ -50,6 +51,7 @@ export function useEmployeeMutations() {
 
 // ── Attendance ──
 export function useAttendance(date?: string) {
+  useTenantRealtime(["attendance"], [["attendance"]]);
   return useQuery({
     queryKey: ["attendance", date],
     queryFn: async () => {
@@ -89,6 +91,7 @@ export function useAttendanceMutations() {
 
 // ── Leave ──
 export function useLeaveRequests() {
+  useTenantRealtime(["leave_requests"], [["leave_requests"]]);
   return useQuery({
     queryKey: ["leave_requests"],
     queryFn: async () => {
@@ -123,6 +126,7 @@ export function useLeaveMutations() {
 
 // ── Payroll ──
 export function usePayroll(month?: number, year?: number) {
+  useTenantRealtime(["payroll"], [["payroll"]]);
   return useQuery({
     queryKey: ["payroll", month, year],
     queryFn: async () => {
