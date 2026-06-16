@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
+import { getEcho } from "@/lib/echo";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -55,7 +56,9 @@ export function NotificationBell() {
   const { data: items = [] } = useQuery({
     queryKey: ["my-notifications"],
     enabled: !!user,
-    refetchInterval: 30_000,
+    // Reverb pushes new rows in real time; keep a slow poll as a safety net
+    // in case the websocket is unavailable (no env, blocked port, idle tab).
+    refetchInterval: 120_000,
     queryFn: async () => {
       return await rest.all<NotifRow>("tenant_notifications", {
         filter: { channel: "push" },
@@ -86,6 +89,23 @@ export function NotificationBell() {
       });
     });
   }, [items]);
+
+  // Subscribe to private tenant channel for instant push.
+  useEffect(() => {
+    if (!user?.tenant_id) return;
+    const echo = getEcho();
+    if (!echo) return;
+    const channelName = `tenant.${user.tenant_id}`;
+    const channel = echo.private(channelName);
+    const handler = () => {
+      qc.invalidateQueries({ queryKey: ["my-notifications"] });
+    };
+    channel.listen(".tenant.notification", handler);
+    return () => {
+      channel.stopListening(".tenant.notification");
+      echo.leave(channelName);
+    };
+  }, [user?.tenant_id, qc]);
 
   const markRead = useMutation({
     mutationFn: async (id?: string) => {
