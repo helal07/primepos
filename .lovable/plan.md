@@ -290,3 +290,23 @@ Goal: remove orphaned Supabase edge-function scaffolding that has been fully rep
 - `supabase/migrations/*` — historical record of the schema; read-only.
 
 **Next candidates (deferred):** CI workflow, Reverb realtime, per-module CRUD tests.
+
+## Stage 17 ✅ — CI + Laravel auto-deploy
+
+Goal: every push verifies both stacks and ships the Laravel backend alongside the SPA.
+
+**Added — `.github/workflows/ci.yml`**
+- `frontend` job: `bun install` → `bunx tsc --noEmit` → `bunx vitest run`.
+- `backend` job: PHP 8.3 + composer cache → `composer install` → `php artisan key:generate` → `./vendor/bin/phpunit --testdox`.
+- Triggers: push to `main`, every PR, manual dispatch.
+
+**Updated — `.github/workflows/deploy.yml`**
+- Now installs Laravel vendor (`composer install --no-dev --optimize-autoloader`) after the Vite build.
+- Rsyncs `backend/` to `$SSH_BACKEND_DIR` (excluding `.env`, `storage/{app,logs,framework}/*`, `tests`, `.phpunit.cache`) with the same 3-attempt retry as the SPA.
+- Runs post-deploy over SSH: `artisan migrate --force` → `storage:link` → `optimize:clear` → `config:cache` → `route:cache` → `event:cache`.
+- Backward compatible: if `SSH_BACKEND_DIR` secret is unset, the backend step is skipped (SPA-only behaviour preserved).
+
+**Required new secret**
+- `SSH_BACKEND_DIR` — absolute path on the Hostinger host to the Laravel root (the directory containing `artisan`).
+
+**Next candidates (deferred):** Reverb realtime, per-module CRUD tests, GitHub Actions matrix for PHP 8.2/8.3.
