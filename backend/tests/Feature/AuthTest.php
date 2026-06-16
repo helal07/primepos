@@ -20,7 +20,7 @@ class AuthTest extends TestCase
             'password' => Hash::make('secret-pass'),
         ]);
 
-        $this->postJson('/api/auth/login', [
+        $this->withSession([])->postJson('/api/auth/login', [
                 'identifier' => 'owner@example.test',
                 'password'   => 'secret-pass',
             ])
@@ -42,7 +42,7 @@ class AuthTest extends TestCase
             'password' => Hash::make('secret-pass'),
         ]);
 
-        $this->postJson('/api/auth/login', [
+        $this->withSession([])->postJson('/api/auth/login', [
                 'identifier' => 'owner2@example.test',
                 'password'   => 'wrong',
             ])
