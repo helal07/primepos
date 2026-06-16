@@ -455,3 +455,19 @@ Goal: stop hand-writing observer broadcast blocks and extend live coverage to th
 **Verification:** `bunx tsc --noEmit` clean.
 
 **Next candidates (deferred):** per-user channels (`user.{id}`) for personal toasts (assignment, mention, payment received); Redis-backed scaling for multi-node Reverb; broadcast tenant-admin events (subscription change, tenant suspend) so the superadmin dashboard goes live.
+
+## Stage 24 ✅ — Per-user channel for personal toasts
+
+Goal: target a single recipient with an instant toast (assignment, payment received, mention) instead of broadcasting to every device on the tenant.
+
+**Backend**
+- `routes/channels.php` — new `user.{userId}` private channel authorising only the user themselves (or a superadmin for support).
+- `app/Events/UserNotificationCreated.php` (new) — `ShouldBroadcast` on `private(user.{user_id})`, broadcast name `.user.notification`, payload mirrors `TenantNotificationCreated` but adds `user_id`.
+- `NotificationService::send()` now accepts an optional `?string $userId`, persists it on the row (the column already existed), dispatches `TenantNotificationCreated` for tenant-wide listeners, and additionally dispatches `UserNotificationCreated` when a user is targeted. Broadcast failures stay non-fatal.
+
+**Frontend**
+- `NotificationBell.tsx` — subscription effect now opens both `private(tenant.{tenant_id})` (`.tenant.notification`) and `private(user.{id})` (`.user.notification`) channels, invalidating `["my-notifications"]` on either push. Cleanup leaves both. No-ops when Reverb env isn't configured.
+
+**Verification:** `bunx tsc --noEmit` clean.
+
+**Next candidates (deferred):** Redis-backed scaling for multi-node Reverb; broadcast tenant-admin events (subscription change, tenant suspend) for a live superadmin dashboard; wire concrete call-sites (sale assignment, payment received) to pass `userId` into `NotificationService::send`.
