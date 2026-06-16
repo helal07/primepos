@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const FREQS = ["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"];
-const SITEMAP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sitemap`;
+const SITEMAP_URL = "/sitemap.xml";
 const DEFAULT_BASE = "https://pos.itsheba.bd";
 
 export default function Sitemap() {
