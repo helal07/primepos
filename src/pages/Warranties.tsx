@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { rest } from "@/lib/restResource";
 import { toast } from "sonner";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ const empty = { name: "", description: "", duration: 1, duration_type: "months",
 
 export default function Warranties() {
   const qc = useQueryClient();
+  useTenantRealtime(["warranties"], [["warranties"]]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
