@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { useAuth } from "@/contexts/AuthContext";
 import { rest } from "@/lib/restResource";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import { toast } from "sonner";
 
 // Stage 9c — migrated to Laravel REST. Eloquent relations are returned
@@ -72,6 +73,7 @@ export interface SaleFormData {
 }
 
 export function useSales() {
+  useTenantRealtime(["sales"], [["sales"]]);
   return useQuery({
     queryKey: ["sales"],
     queryFn: async () => {
