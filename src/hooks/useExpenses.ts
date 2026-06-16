@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toFriendlyError } from "@/lib/friendlyError";
 import { rest } from "@/lib/restResource";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantRealtime } from "@/hooks/useTenantRealtime";
 import { toast } from "sonner";
 
 export interface ExpenseInput {
@@ -35,6 +36,7 @@ function aliasExpense<T extends Record<string, any>>(row: T): T {
 }
 
 export function useExpenses(filters?: { from?: string; to?: string; categoryId?: string; status?: string }) {
+  useTenantRealtime(["expenses"], [["expenses"]]);
   return useQuery({
     queryKey: ["expenses", filters],
     queryFn: async () => {
