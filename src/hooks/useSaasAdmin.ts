@@ -4,6 +4,7 @@ import { rest } from "@/lib/restResource";
 import { api } from "@/lib/apiClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSuperadminRealtime } from "@/hooks/useSuperadminRealtime";
 import { toast } from "sonner";
 
 // ─── Packages ────────────────────────────────────────────
@@ -43,6 +44,7 @@ export function usePackageMutations() {
 
 // ─── Tenants ─────────────────────────────────────────────
 export function useTenants() {
+  useSuperadminRealtime(["tenants"], [["tenants"], ["admin_sms_revenue"]]);
   return useQuery({
     queryKey: ["tenants"],
     queryFn: async () => {

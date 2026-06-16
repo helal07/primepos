@@ -25,7 +25,7 @@ export function useSuperadminRealtime(
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!user || user.role !== "superadmin") return;
+    if (!user || !user.roles?.includes("superadmin")) return;
     const echo = getEcho();
     if (!echo) return;
 
@@ -46,5 +46,5 @@ export function useSuperadminRealtime(
       channel.stopListening(".superadmin.event");
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, user?.role, resources.join(","), queryKeys.map((k) => (Array.isArray(k) ? k.join(":") : k)).join(",")]);
+  }, [user?.id, (user?.roles ?? []).join(","), resources.join(","), queryKeys.map((k) => (Array.isArray(k) ? k.join(":") : k)).join(",")]);
 }
