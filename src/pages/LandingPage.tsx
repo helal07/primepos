@@ -32,6 +32,13 @@ function getLucideIcon(name?: string) {
   return Icon || Icons.Sparkles;
 }
 
+/** API responses can be wrapped ({ data: [...] }) or null — always end up with an array. */
+function asArray<T = any>(value: any): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && Array.isArray(value.data)) return value.data as T[];
+  return [];
+}
+
 function useGlobalSetting<T = any>(key: string) {
   return useQuery({
     queryKey: ["business_settings", key, "global"],
@@ -74,11 +81,11 @@ export default function LandingPage() {
   const { data: seo } = useGlobalSetting<Record<string, string>>("cms_seo");
   const { data: promo } = useGlobalSetting<Record<string, string>>("cms_promo");
 
-  const { data: featuresList = [] } = useLandingFeatures();
-  const { data: reviewsList = [] } = useLandingReviews();
-  const { data: pricing = [] } = useLandingPricing();
+  const { data: featuresRaw } = useLandingFeatures();
+  const { data: reviewsRaw } = useLandingReviews();
+  const { data: pricingRaw } = useLandingPricing();
 
-  const { data: faqs = [] } = useQuery({
+  const { data: faqsRaw } = useQuery({
     queryKey: ["faq_entries_public"],
     queryFn: async () => {
       // Public read — use the unauthenticated public endpoint instead of Supabase.
@@ -89,6 +96,11 @@ export default function LandingPage() {
       }
     },
   });
+
+  const featuresList = asArray(featuresRaw);
+  const reviewsList = asArray(reviewsRaw);
+  const pricing = asArray(pricingRaw);
+  const faqs = asArray(faqsRaw);
 
   const brandName = branding?.brand_name || "Prime POS";
   const brandShort = branding?.brand_short || brandName.charAt(0);
