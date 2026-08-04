@@ -183,17 +183,17 @@ class RestPermsTest extends TestCase
 
         // installment_sales create
         $sale = $this->api()->postJson('/api/rest/installment_sales', [
-            'installment_customer_id' => $cust['id'],
-            'invoice_no'              => 'INST-1',
-            'sale_date'               => '2026-01-15',
-            'status'                  => 'active',
+            'customer_id'     => $cust['id'],
+            'invoice_number'  => 'INST-1',
+            'start_date'      => '2026-01-15',
+            'status'          => 'active',
         ])->assertStatus(201)
-            ->assertJsonPath('invoice_no', 'INST-1')
+            ->assertJsonPath('invoice_number', 'INST-1')
             ->json();
 
-        // list + filter by installment_customer_id
+        // list + filter by customer_id
         $this->api()
-            ->getJson('/api/rest/installment_sales?filter[installment_customer_id]=' . $cust['id'])
+            ->getJson('/api/rest/installment_sales?filter[customer_id]=' . $cust['id'])
             ->assertOk()
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.id', $sale['id']);
@@ -260,5 +260,17 @@ class RestPermsTest extends TestCase
             ->json('data');
 
         $this->assertSame('MINE-1', $rows[0]['invoice_number']);
+    }
+
+    // ===== Platform credential resources are superadmin-only ================
+
+    public function test_saas_grant_cannot_read_provider_credentials(): void
+    {
+        // Even a full saas module grant must not expose provider secrets.
+        $this->grant('saas', ['view', 'create', 'edit', 'delete']);
+
+        $this->api()->getJson('/api/rest/sms_providers')->assertStatus(403);
+        $this->api()->getJson('/api/rest/payment_gateway_credentials')->assertStatus(403);
+        $this->api()->postJson('/api/rest/sms_providers', ['name' => 'x'])->assertStatus(403);
     }
 }
