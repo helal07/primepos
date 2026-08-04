@@ -261,4 +261,16 @@ class RestPermsTest extends TestCase
 
         $this->assertSame('MINE-1', $rows[0]['invoice_number']);
     }
+
+    // ===== Platform credential resources are superadmin-only ================
+
+    public function test_saas_grant_cannot_read_provider_credentials(): void
+    {
+        // Even a full saas module grant must not expose provider secrets.
+        $this->grant('saas', ['view', 'create', 'edit', 'delete']);
+
+        $this->api()->getJson('/api/rest/sms_providers')->assertStatus(403);
+        $this->api()->getJson('/api/rest/payment_gateway_credentials')->assertStatus(403);
+        $this->api()->postJson('/api/rest/sms_providers', ['name' => 'x'])->assertStatus(403);
+    }
 }
