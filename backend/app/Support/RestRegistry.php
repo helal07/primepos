@@ -486,6 +486,7 @@ class RestRegistry
             'sms_providers' => [
                 'model'        => Models\SmsProvider::class,
                 'module'       => 'saas',
+                'superadmin'   => true,
                 'filters'      => ['is_active'],
                 'sort'         => ['name', 'created_at'],
                 'default_sort' => '-created_at',
@@ -511,6 +512,7 @@ class RestRegistry
             'payment_gateway_credentials' => [
                 'model'        => Models\PaymentGatewayCredential::class,
                 'module'       => 'saas',
+                'superadmin'   => true,
                 'filters'      => ['gateway_id'],
                 'sort'         => ['created_at'],
                 'default_sort' => '-created_at',
