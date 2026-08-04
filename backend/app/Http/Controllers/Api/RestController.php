@@ -24,6 +24,7 @@ class RestController extends Controller
     public function index(Request $request, string $resource)
     {
         [$cfg, $modelClass] = $this->resolve($resource);
+        $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'view');
 
         /** @var Builder $q */
@@ -55,6 +56,7 @@ class RestController extends Controller
     public function show(Request $request, string $resource, string $id)
     {
         [$cfg, $modelClass] = $this->resolve($resource);
+        $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'view');
 
         $q = $modelClass::query();
@@ -67,6 +69,7 @@ class RestController extends Controller
     public function store(Request $request, string $resource)
     {
         [$cfg, $modelClass] = $this->resolve($resource);
+        $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'create');
 
         $data = $request->all();
@@ -84,6 +87,7 @@ class RestController extends Controller
     public function update(Request $request, string $resource, string $id)
     {
         [$cfg, $modelClass] = $this->resolve($resource);
+        $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'edit');
 
         $row = $modelClass::query()->findOrFail($id);
@@ -98,6 +102,7 @@ class RestController extends Controller
     public function destroy(Request $request, string $resource, string $id)
     {
         [$cfg, $modelClass] = $this->resolve($resource);
+        $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'delete');
 
         $row = $modelClass::query()->findOrFail($id);
@@ -115,6 +120,22 @@ class RestController extends Controller
         $model = $cfg['model'];
         abort_unless(class_exists($model), 500, "Model not found for resource: {$resource}");
         return [$cfg, $model];
+    }
+
+    /**
+     * Platform-level resources (provider API keys, gateway credentials) are
+     * superadmin-only regardless of module permissions granted inside a tenant.
+     */
+    private function authorizeResource(Request $request, array $cfg): void
+    {
+        if (empty($cfg['superadmin'])) return;
+        $user = $request->user();
+        abort_unless($user, 401);
+        abort_unless(
+            method_exists($user, 'isSuperadmin') && $user->isSuperadmin(),
+            403,
+            'Forbidden: superadmin only'
+        );
     }
 
     private function authorizePerm(Request $request, string $module, string $action): void
