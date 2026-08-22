@@ -108,8 +108,10 @@ class AuthController extends Controller
 
     private function resolveUser(string $identifier): ?User
     {
+        $identifier = trim($identifier);
+
         return User::query()
-            ->where('email', $identifier)
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower($identifier)])
             ->orWhere('phone', $identifier)
             ->first();
     }

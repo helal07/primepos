@@ -7,9 +7,9 @@ if [ -z "$APP_KEY" ]; then
 fi
 
 php artisan storage:link || true
-php artisan migrate --force || true
-php artisan db:seed --class=Database\\Seeders\\SuperadminSeeder --force || true
-php artisan app:ensure-superadmin || true
+php artisan migrate --force
+php artisan db:seed --class=Database\\Seeders\\SuperadminSeeder --force
+php artisan app:ensure-superadmin --reset-password
 
 php artisan config:cache || true
 php artisan route:cache || true

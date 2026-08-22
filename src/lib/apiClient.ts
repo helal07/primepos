@@ -77,6 +77,15 @@ async function request<T = unknown>(method: string, path: string, body?: Body, o
   const isJson = contentType.includes("application/json");
   const data = isJson ? await res.json().catch(() => null) : await res.text();
 
+  if (!isJson) {
+    throw new ApiError(
+      "Laravel API returned a non-JSON response. Check VITE_API_URL and the VPS /api routing configuration.",
+      res.ok ? 502 : res.status,
+      undefined,
+      data,
+    );
+  }
+
   if (!res.ok) {
     const msg = (isJson && (data as any)?.message) || res.statusText || `HTTP ${res.status}`;
     throw new ApiError(msg, res.status, (data as any)?.errors, data);
