@@ -66,6 +66,24 @@ class AuthTest extends TestCase
             ->assertJsonPath('user.is_superadmin', true);
     }
 
+    public function test_login_normalizes_email_case_and_whitespace(): void
+    {
+        User::create([
+            'id'       => (string) \Str::uuid(),
+            'email'    => 'owner@example.test',
+            'name'     => 'Owner',
+            'password' => 'secret-pass',
+        ]);
+
+        $this->postJson('/api/auth/token', [
+                'identifier'  => ' OWNER@EXAMPLE.TEST ',
+                'password'    => 'secret-pass',
+                'device_name' => 'phpunit',
+            ])
+            ->assertOk()
+            ->assertJsonPath('user.email', 'owner@example.test');
+    }
+
     public function test_change_password_requires_current(): void
     {
         $user = User::create([
