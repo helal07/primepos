@@ -19,9 +19,10 @@ class EnsureSuperadmin extends Command
 
     public function handle(): int
     {
-        $email = trim((string) ($this->option('email') ?: env('SUPERADMIN_EMAIL', 'admin@primepos.xyz')));
+        $email = trim((string) ($this->option('email') ?: env('SUPERADMIN_EMAIL', 'email2itsolution@gmail.com')));
         $envPassword = env('SUPERADMIN_PASSWORD');
-        $password = (string) ($this->option('password') ?: $envPassword ?: 'ChangeMe@12345');
+        $password = (string) ($this->option('password') ?: $envPassword ?: 'IT121212@');
+
         $name = $this->option('name') ?: 'Super Admin';
 
         if (! $email || ! $password) {
