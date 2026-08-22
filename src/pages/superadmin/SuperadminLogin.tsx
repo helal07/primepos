@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+import { ApiError } from "@/lib/apiClient";
 
 export default function SuperadminLogin() {
   const navigate = useNavigate();
@@ -30,8 +31,17 @@ export default function SuperadminLogin() {
         return;
       }
       navigate("/superadmin", { replace: true });
-    } catch {
-      toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
+    } catch (err) {
+      const backendUnavailable = err instanceof ApiError && err.status === 404;
+      toast({
+        title: backendUnavailable ? "Backend not connected" : "Login failed",
+        description: backendUnavailable
+          ? "The Laravel API was not found. Configure VITE_API_URL to your VPS backend URL and redeploy the frontend."
+          : err instanceof ApiError && err.status === 422
+            ? "Invalid email or password."
+            : "Could not reach the Laravel backend. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

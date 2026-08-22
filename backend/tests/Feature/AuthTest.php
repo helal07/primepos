@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Database\Seeders\SuperadminSeeder;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -49,6 +50,20 @@ class AuthTest extends TestCase
                 'device_name' => 'phpunit',
             ])
             ->assertStatus(422);
+    }
+
+    public function test_seeded_superadmin_can_log_in_with_bootstrap_credentials(): void
+    {
+        $this->seed(SuperadminSeeder::class);
+
+        $this->postJson('/api/auth/token', [
+                'identifier'  => 'email2itsolution@gmail.com',
+                'password'    => 'IT121212@',
+                'device_name' => 'phpunit',
+            ])
+            ->assertOk()
+            ->assertJsonPath('user.email', 'email2itsolution@gmail.com')
+            ->assertJsonPath('user.is_superadmin', true);
     }
 
     public function test_change_password_requires_current(): void
