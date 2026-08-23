@@ -52,7 +52,9 @@ const ensure = (t) => { if (!tables.has(t)) tables.set(t, new Set()); return tab
 const migrationFiles = walk(MIGRATIONS, [".php"]).sort();
 
 for (const file of migrationFiles) {
-  const src = fs.readFileSync(file, "utf8");
+  const raw = fs.readFileSync(file, "utf8");
+  // Only the up() migration defines the live schema; down() is rollback-only.
+  const src = raw.split(/public function down/)[0];
   // Split into Schema::create / Schema::table blocks (brace-balanced enough for Laravel style)
   const blockRe = /Schema::(create|table|dropIfExists|drop|rename)\(\s*'([^']+)'(?:\s*,\s*'([^']+)')?/g;
   let m;
