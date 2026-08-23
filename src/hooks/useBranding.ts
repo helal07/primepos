@@ -35,6 +35,6 @@ export function useBranding() {
     branding: data ?? null,
     brandName,
     brandShort: data?.brand_short || brandName.charAt(0),
-    logoUrl: data?.logo_url || undefined,
+    logoUrl: normalizeStorageUrl(data?.logo_url) || undefined,
   };
 }
