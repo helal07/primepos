@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->text('address')->nullable();
             $table->string('designation')->nullable();
             $table->string('locale', 8)->default('en');
+            $table->string('company')->nullable();
             $table->json('preferences')->nullable();
             $table->timestamps();
 
