@@ -33,8 +33,8 @@ return new class extends Migration {
         }
         if (Schema::hasTable('attendance')) {
             Schema::table('attendance', function (Blueprint $table) {
-                if (! Schema::hasColumn('attendance', 'latitude')) { $table->decimal('latitude', 14, 2)->nullable(); }
-                if (! Schema::hasColumn('attendance', 'longitude')) { $table->decimal('longitude', 14, 2)->nullable(); }
+                if (! Schema::hasColumn('attendance', 'latitude')) { $table->decimal('latitude', 12, 8)->nullable(); }
+                if (! Schema::hasColumn('attendance', 'longitude')) { $table->decimal('longitude', 12, 8)->nullable(); }
                 if (! Schema::hasColumn('attendance', 'selfie_url')) { $table->text('selfie_url')->nullable(); }
             });
         }
