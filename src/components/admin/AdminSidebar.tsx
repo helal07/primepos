@@ -20,7 +20,6 @@ const platformItems = [
 
 const cmsItems = [
   { to: "/superadmin/cms", label: "Sections", icon: Globe, end: true },
-  { to: "/superadmin/cms/pages", label: "Pages", icon: FileText },
 ];
 
 const smsItems = [
