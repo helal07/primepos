@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/hooks/useBranding";
 
 const overviewItems = [
   { to: "/superadmin", label: "Dashboard", icon: LayoutDashboard, end: true },
