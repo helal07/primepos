@@ -16,6 +16,11 @@ class SaasPackage extends Model
 
     protected $casts = [
         'enabled_modules' => 'array',
+        'features' => 'array',
         'is_active' => 'boolean',
+        'is_popular' => 'boolean',
+        'show_on_landing' => 'boolean',
+        'max_business_location' => 'integer',
+        'max_invoice' => 'integer',
     ];
 }
