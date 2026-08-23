@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { normalizeStorageUrl } from "@/lib/storage";
+
 
 /** Public (unauthenticated) read of a global CMS setting managed by the superadmin. */
 export function useGlobalSetting<T = any>(key: string) {
