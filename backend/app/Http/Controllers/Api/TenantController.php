@@ -86,12 +86,129 @@ class TenantController extends Controller
     }
 
     /**
-     * Superadmin-only. Port of `admin-create-tenant`.
+     * Superadmin-only tenant creation from the admin panel.
+     * Contract (see src/lib/functions.ts adminCreateTenant):
+     *   admin_email, admin_password, admin_display_name?, choice, tenant{...}, payment{}?
      */
     public function adminCreate(Request $request): JsonResponse
     {
-        return $this->signup($request);
+        abort_unless($request->user()?->isSuperadmin(), 403, 'Only superadmins may create tenants.');
+
+        $data = $request->validate([
+            'admin_email'               => ['required', 'email', 'max:200', 'unique:users,email'],
+            'admin_password'            => ['required', 'string', 'min:6'],
+            'admin_display_name'        => ['nullable', 'string', 'max:120'],
+            'choice'                    => ['nullable', 'in:trial,paid,active'],
+            'tenant'                    => ['required', 'array'],
+            'tenant.name'               => ['required', 'string', 'max:200'],
+            'tenant.company_name'       => ['nullable', 'string', 'max:200'],
+            'tenant.slug'               => ['nullable', 'string', 'alpha_dash', 'max:80'],
+            'tenant.email'              => ['nullable', 'email', 'max:200'],
+            'tenant.phone'              => ['nullable', 'string', 'max:32'],
+            'tenant.address'            => ['nullable', 'string'],
+            'tenant.domain'             => ['nullable', 'string', 'max:200'],
+            'tenant.package_id'         => ['nullable', 'uuid'],
+            'tenant.subscription_type'  => ['nullable', 'string', 'max:32'],
+            'tenant.subscription_start' => ['nullable', 'date'],
+            'tenant.subscription_end'   => ['nullable', 'date'],
+            'tenant.status'             => ['nullable', 'string', 'max:32'],
+            'tenant.notes'              => ['nullable', 'string'],
+            'payment'                   => ['nullable', 'array'],
+            'payment.method'            => ['nullable', 'string', 'max:40'],
+            'payment.amount'            => ['nullable', 'numeric'],
+        ]);
+
+        $t       = $data['tenant'];
+        $choice  = $data['choice'] ?? 'trial';
+        $actorId = $request->user()->id;
+
+        return DB::transaction(function () use ($data, $t, $choice, $actorId) {
+            $package = ! empty($t['package_id']) ? SaasPackage::query()->withoutGlobalScopes()->find($t['package_id']) : null;
+
+            $status = $t['status'] ?? match ($choice) {
+                'active' => 'active',
+                'paid'   => 'pending_approval',
+                default  => 'trial',
+            };
+
+            $start = ! empty($t['subscription_start']) ? Carbon::parse($t['subscription_start']) : Carbon::today();
+            $end   = ! empty($t['subscription_end'])
+                ? Carbon::parse($t['subscription_end'])
+                : ($status === 'active' ? $start->copy()->addDays((int) ($package->duration_days ?? 30)) : null);
+
+            $tenant = Tenant::query()->withoutGlobalScopes()->create(array_filter([
+                'id'                 => (string) Str::uuid(),
+                'name'               => $t['name'],
+                'company_name'       => $t['company_name'] ?? null,
+                'slug'               => $this->uniqueSlug($t['slug'] ?? Str::slug($t['name'])),
+                'email'              => $t['email'] ?? $data['admin_email'],
+                'phone'              => $t['phone'] ?? null,
+                'address'            => $t['address'] ?? null,
+                'domain'             => ! empty($t['domain']) ? $t['domain'] : null,
+                'package_id'         => $package?->id,
+                'status'             => $status,
+                'subscription_type'  => $t['subscription_type'] ?? 'monthly',
+                'subscription_start' => $status === 'trial' ? null : $start->toDateString(),
+                'subscription_end'   => $end?->toDateString(),
+                'trial_ends_at'      => $status === 'trial'
+                    ? Carbon::today()->addDays((int) config('app.trial_days', 14))->toDateString()
+                    : null,
+                'notes'              => $t['notes'] ?? null,
+            ], fn ($v) => $v !== null));
+
+            $user = User::query()->withoutGlobalScopes()->create([
+                'id'        => (string) Str::uuid(),
+                'tenant_id' => $tenant->id,
+                'name'      => ($data['admin_display_name'] ?? null) ?: $t['name'],
+                'email'     => $data['admin_email'],
+                'phone'     => $t['phone'] ?? null,
+                // The User model casts `password` as hashed — never pre-hash here.
+                'password'  => $data['admin_password'],
+                'status'    => 'active',
+            ]);
+
+            $tenant->forceFill(['owner_user_id' => $user->id])->saveQuietly();
+
+            $role = Role::query()->withoutGlobalScopes()->create([
+                'id'         => (string) Str::uuid(),
+                'tenant_id'  => $tenant->id,
+                'name'       => 'tenant_admin',
+                'is_system'  => true,
+                'is_default' => true,
+            ]);
+
+            UserRole::query()->withoutGlobalScopes()->create([
+                'id'        => (string) Str::uuid(),
+                'user_id'   => $user->id,
+                'role_id'   => $role->id,
+                'tenant_id' => $tenant->id,
+            ]);
+
+            $amount = $data['payment']['amount'] ?? null;
+            if ($choice === 'active' && $amount !== null) {
+                DB::table('tenant_payments')->insert([
+                    'id'             => (string) Str::uuid(),
+                    'tenant_id'      => $tenant->id,
+                    'package_id'     => $package?->id,
+                    'amount'         => (float) $amount,
+                    'payment_method' => $data['payment']['method'] ?? 'manual',
+                    'status'         => 'approved',
+                    'paid_at'        => now(),
+                    'approved_at'    => now(),
+                    'approved_by'    => $actorId,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
+
+            return response()->json([
+                'tenant_id' => $tenant->id,
+                'user_id'   => $user->id,
+                'tenant'    => $tenant->refresh(),
+            ], 201);
+        });
     }
+
 
     /**
      * Superadmin-only. Hard-deletes a tenant and every row scoped to it.
