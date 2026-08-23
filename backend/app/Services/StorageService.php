@@ -64,11 +64,13 @@ class StorageService
         return $path;
     }
 
-    /** Public buckets -> direct CDN-style URL. Private -> short-lived signed API URL. */
+    /** Public buckets -> host-relative URL. Private -> short-lived signed API URL. */
     public function url(string $bucket, string $path, int $ttlMinutes = 10): string
     {
         if (self::isPublic($bucket)) {
-            return self::disk($bucket)->url($path);
+            // Host-relative on purpose: APP_URL may not match the host the app is
+            // actually served from (apex vs. subdomain), which would 404 the asset.
+            return '/storage/'.ltrim($path, '/');
         }
         return URL::temporarySignedRoute(
             'files.download',
@@ -76,6 +78,7 @@ class StorageService
             ['bucket' => $bucket, 'path' => $path]
         );
     }
+
 
     public function delete(string $bucket, string $path): bool
     {
