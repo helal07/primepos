@@ -5,7 +5,11 @@
  * - throws ApiError with normalized shape
  */
 
-export const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+// Coolify/VPS builds use VITE_API_BASE_URL. Keep the older VITE_API_URL as a
+// compatibility fallback; an empty value means Laravel is on the same origin.
+export const API_URL = (
+  import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL ?? ""
+).replace(/\/$/, "");
 
 const TOKEN_KEY = "pp_auth_token";
 export function getAuthToken(): string | null {
@@ -79,7 +83,7 @@ async function request<T = unknown>(method: string, path: string, body?: Body, o
 
   if (!isJson) {
     throw new ApiError(
-      "Laravel API returned a non-JSON response. Check VITE_API_URL and the VPS /api routing configuration.",
+      "Laravel API returned a non-JSON response. Check VITE_API_BASE_URL and the VPS /api routing configuration.",
       res.ok ? 502 : res.status,
       undefined,
       data,
