@@ -7,9 +7,27 @@
 
 // Coolify/VPS builds use VITE_API_BASE_URL. Keep the older VITE_API_URL as a
 // compatibility fallback; an empty value means Laravel is on the same origin.
-export const API_URL = (
-  import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL ?? ""
-).replace(/\/$/, "");
+// The Lovable preview/sandbox has no Laravel on its own origin, so fall back to
+// the deployed VPS API there.
+const PREVIEW_API_FALLBACK = "https://my.primepos.xyz";
+
+function resolveApiBase(): string {
+  const configured = (import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_API_URL ?? "").trim();
+  if (configured) return configured.replace(/\/$/, "");
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isPreview =
+      host.endsWith(".lovable.app") ||
+      host.endsWith(".lovableproject.com") ||
+      host === "localhost" ||
+      host === "127.0.0.1";
+    if (isPreview) return PREVIEW_API_FALLBACK;
+  }
+  return "";
+}
+
+export const API_URL = resolveApiBase();
+
 
 const TOKEN_KEY = "pp_auth_token";
 export function getAuthToken(): string | null {
