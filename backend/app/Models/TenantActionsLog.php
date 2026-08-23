@@ -13,5 +13,7 @@ class TenantActionsLog extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['payload' => 'array', 'details' => 'array'];
+    protected $casts = [
+        'details' => 'array',
+    ];
 }

@@ -15,5 +15,7 @@ class Employee extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
-    protected $casts = ['joining_date' => 'date'];
+    protected $casts = [
+        'joining_date' => 'date',
+    ];
 }

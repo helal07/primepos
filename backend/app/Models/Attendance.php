@@ -20,7 +20,11 @@ class Attendance extends Model
     protected $guarded = [];
     public $timestamps = false;
 
-    protected $casts = ['date' => 'date'];
+    protected $casts = [
+        'check_in' => 'datetime',
+        'check_out' => 'datetime',
+        'date' => 'date',
+    ];
 
     public function employee(): BelongsTo { return $this->belongsTo(Employee::class, 'employee_id'); }
 }

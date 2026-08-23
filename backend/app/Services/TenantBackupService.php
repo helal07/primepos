@@ -92,7 +92,7 @@ class TenantBackupService
         return TenantBackup::query()->withoutGlobalScopes()->create([
             'id'          => (string) Str::uuid(),
             'tenant_id'   => $tenantId,
-            'file_path'   => "backups/{$tenantId}/{$filename}",
+            'storage_path'   => "backups/{$tenantId}/{$filename}",
             'file_name'   => $filename,
             'size_bytes'  => $size,
             'sha256'      => $sha,
@@ -131,7 +131,7 @@ class TenantBackupService
             $this->importDump($absoluteFilePath);
         } catch (\Throwable $e) {
             // rollback — re-import the snapshot
-            $snapPath = storage_path('app/private/' . $snapshot->file_path);
+            $snapPath = storage_path('app/private/' . $snapshot->storage_path);
             $this->deleteTenantRows($tenantId);
             $this->importDump($snapPath);
             throw new RuntimeException('Restore failed, rolled back to snapshot: ' . $e->getMessage(), 0, $e);

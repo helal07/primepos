@@ -13,7 +13,7 @@ class TenantBackupSnapshot extends Command
     public function handle(TenantBackupService $svc): int
     {
         $backup = $svc->snapshot($this->argument('tenant_id'));
-        $this->info("Snapshot: storage/app/private/{$backup->file_path}");
+        $this->info("Snapshot: storage/app/private/{$backup->storage_path}");
         return self::SUCCESS;
     }
 }

@@ -14,6 +14,10 @@ class ExpenseCategory extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
     public $timestamps = false;
 
 }

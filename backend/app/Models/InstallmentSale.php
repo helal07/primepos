@@ -17,6 +17,10 @@ class InstallmentSale extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'sale_date' => 'date',
+    ];
+
     public function customer(): BelongsTo            { return $this->belongsTo(Customer::class, 'customer_id'); }
     public function product(): BelongsTo             { return $this->belongsTo(Product::class, 'product_id'); }
     public function installmentCustomer(): BelongsTo { return $this->belongsTo(InstallmentCustomer::class, 'installment_customer_id'); }

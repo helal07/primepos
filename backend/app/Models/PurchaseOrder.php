@@ -17,6 +17,11 @@ class PurchaseOrder extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'expected_date' => 'date',
+        'order_date' => 'date',
+    ];
+
     public function supplier(): BelongsTo { return $this->belongsTo(Supplier::class, 'supplier_id'); }
     public function items(): HasMany      { return $this->hasMany(PurchaseOrderItem::class, 'purchase_order_id'); }
 }

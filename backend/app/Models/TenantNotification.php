@@ -15,7 +15,9 @@ class TenantNotification extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['data' => 'array', 'read_at' => 'datetime'];
+    protected $casts = [
+        'read_at' => 'datetime',
+    ];
 
     public function tenant(): BelongsTo
     {

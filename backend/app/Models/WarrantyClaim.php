@@ -20,9 +20,8 @@ class WarrantyClaim extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'attachment_urls' => 'array',
-        'claim_date'      => 'date',
-        'resolved_date'   => 'date',
+        'claim_date' => 'date',
+        'resolved_date' => 'date',
     ];
 
     public function warranty(): BelongsTo

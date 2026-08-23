@@ -16,7 +16,7 @@ class Transaction extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'transaction_date' => 'datetime',
+        'transaction_date' => 'date',
     ];
 
     public function account(): \Illuminate\Database\Eloquent\Relations\BelongsTo

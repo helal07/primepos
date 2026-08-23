@@ -13,5 +13,7 @@ class SitemapEntry extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['last_modified' => 'datetime'];
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

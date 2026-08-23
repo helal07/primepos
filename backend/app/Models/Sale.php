@@ -16,6 +16,7 @@ class Sale extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'additional_expenses' => 'array',
         'sale_date' => 'datetime',
     ];
 

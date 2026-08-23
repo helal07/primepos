@@ -14,5 +14,9 @@ class PaymentGateway extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = [
+        'active' => 'boolean',
+        'config' => 'array',
+        'visible' => 'boolean',
+    ];
 }

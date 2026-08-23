@@ -20,8 +20,8 @@ class LeaveRequest extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'end_date' => 'date',
         'start_date' => 'date',
-        'end_date'   => 'date',
     ];
 
     public function employee(): BelongsTo { return $this->belongsTo(Employee::class, 'employee_id'); }

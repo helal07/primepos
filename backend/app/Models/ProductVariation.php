@@ -16,5 +16,9 @@ class ProductVariation extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function product(): BelongsTo { return $this->belongsTo(Product::class); }
 }

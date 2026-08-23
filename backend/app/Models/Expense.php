@@ -16,7 +16,8 @@ class Expense extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'expense_date' => 'date',
+        'expense_date' => 'datetime',
+        'recurring' => 'boolean',
     ];
 
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo

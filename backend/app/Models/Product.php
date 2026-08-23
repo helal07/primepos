@@ -17,6 +17,14 @@ class Product extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'gallery_urls' => 'array',
+        'has_warranty' => 'boolean',
+        'is_active' => 'boolean',
+        'serial_tracking' => 'boolean',
+        'show_on_website' => 'boolean',
+    ];
+
     public function category(): BelongsTo { return $this->belongsTo(Category::class); }
     public function brand(): BelongsTo    { return $this->belongsTo(Brand::class); }
     public function unit(): BelongsTo     { return $this->belongsTo(Unit::class); }

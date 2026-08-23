@@ -16,6 +16,10 @@ class InstallmentCollection extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'collected_at' => 'datetime',
+    ];
+
     public function schedule(): BelongsTo         { return $this->belongsTo(InstallmentSchedule::class, 'schedule_id'); }
     public function installmentSale(): BelongsTo  { return $this->belongsTo(InstallmentSale::class, 'installment_sale_id'); }
 }

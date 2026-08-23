@@ -15,5 +15,10 @@ class Branch extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_default' => 'boolean',
+    ];
+
 
 }

@@ -12,5 +12,7 @@ class PaymentGatewayCredential extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['config' => 'array'];
+    protected $casts = [
+        'config' => 'array',
+    ];
 }
