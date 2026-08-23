@@ -159,7 +159,7 @@ class TenantController extends Controller
             $user = User::query()->withoutGlobalScopes()->create([
                 'id'        => (string) Str::uuid(),
                 'tenant_id' => $tenant->id,
-                'name'      => $data['admin_display_name'] ?: $t['name'],
+                'name'      => ($data['admin_display_name'] ?? null) ?: $t['name'],
                 'email'     => $data['admin_email'],
                 'phone'     => $t['phone'] ?? null,
                 // The User model casts `password` as hashed — never pre-hash here.
