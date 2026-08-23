@@ -123,9 +123,6 @@ export default function Customers() {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between">
           <CardTitle className="text-base">All your Customers</CardTitle>
-          <Button onClick={() => navigate("/customers/add")} className="hidden sm:inline-flex">
-            <Plus className="mr-2 h-4 w-4" /> Add
-          </Button>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
