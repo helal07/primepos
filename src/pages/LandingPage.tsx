@@ -7,6 +7,7 @@ import { ArrowRight, CheckCircle2, Menu, X, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { normalizeStorageUrl } from "@/lib/storage";
 import {
   useLandingFeatures,
   useLandingReviews,
