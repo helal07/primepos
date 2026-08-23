@@ -339,9 +339,12 @@ export function AppSidebar() {
 
   const canSeeUrl = (url: string) => {
     if (isAdmin || isSuperadmin) return true;
+    // Permissions not loaded yet (or the request failed): don't blank the menu.
+    if (!permData) return true;
     const mod = URL_PERM_MODULE[url];
     if (!mod) return true;
-    return !!permData?.perms?.[mod]?.can_view;
+    return !!permData.perms?.[mod]?.can_view;
+
   };
   // Show every group; locked groups route to the upgrade page.
   const allGroups = menuGroups

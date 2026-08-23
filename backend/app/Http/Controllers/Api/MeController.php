@@ -8,28 +8,38 @@ use App\Models\RolePermissionGrant;
 use App\Models\Tenant;
 use App\Models\UserRole;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 /**
  * "Who am I" endpoints used by the SPA on every page load.
  * Returns enabled modules + the merged permission set for the current user.
+ *
+ * NOTE: these used to call Postgres helper functions (public.is_superadmin /
+ * public.is_tenant_manager_or_above) from the Supabase era. On MySQL those
+ * calls throw, which made /api/me/permissions fail and hid most of the sidebar.
+ * Everything is resolved in PHP now.
  */
 class MeController extends Controller
 {
+    /** Role names that get full access inside their tenant. */
+    private const ADMIN_ROLES = ['tenant_admin', 'owner', 'admin', 'manager'];
+
+    private function isAdminUser($user): bool
+    {
+        if ($user->isSuperadmin()) {
+            return true;
+        }
+        return $user->hasRole(...self::ADMIN_ROLES);
+    }
+
     public function modules(Request $request)
     {
         $user = $request->user();
 
-        $isSuper = (bool) DB::selectOne('select public.is_superadmin(?) as ok', [$user->id])->ok ?? false;
-        if ($isSuper) {
+        if ($user->isSuperadmin() || ! $user->tenant_id) {
             return response()->json(['modules' => null, 'all' => true]);
         }
 
-        if (! $user->tenant_id) {
-            return response()->json(['modules' => null, 'all' => true]);
-        }
-
-        $tenant = Tenant::with('package')->find($user->tenant_id);
+        $tenant = Tenant::withoutGlobalScopes()->with('package')->find($user->tenant_id);
         $fromTenant = $tenant?->enabled_modules ?? null;
         $fromPackage = $tenant?->package?->enabled_modules ?? null;
         $list = (is_array($fromTenant) && count($fromTenant)) ? $fromTenant : $fromPackage;
@@ -44,17 +54,17 @@ class MeController extends Controller
     {
         $user = $request->user();
 
-        $tm = (bool) DB::selectOne('select public.is_tenant_manager_or_above(?) as ok', [$user->id])->ok ?? false;
-        if ($tm) {
+        if ($this->isAdminUser($user)) {
             return response()->json(['isAdmin' => true, 'perms' => (object) [], 'keys' => []]);
         }
 
-        $roleIds = UserRole::query()->where('user_id', $user->id)->pluck('role_id')->all();
+        $roleIds = UserRole::query()->withoutGlobalScopes()
+            ->where('user_id', $user->id)->pluck('role_id')->all();
         if (! $roleIds) {
             return response()->json(['isAdmin' => false, 'perms' => (object) [], 'keys' => []]);
         }
 
-        $rps = RolePermission::query()->whereIn('role_id', $roleIds)
+        $rps = RolePermission::query()->withoutGlobalScopes()->whereIn('role_id', $roleIds)
             ->get(['module', 'can_view', 'can_create', 'can_edit', 'can_delete']);
 
         $perms = [];
@@ -69,7 +79,8 @@ class MeController extends Controller
             ];
         }
 
-        $keys = RolePermissionGrant::query()->whereIn('role_id', $roleIds)->pluck('permission_key')->all();
+        $keys = RolePermissionGrant::query()->withoutGlobalScopes()
+            ->whereIn('role_id', $roleIds)->pluck('permission_key')->all();
 
         return response()->json([
             'isAdmin' => false,
