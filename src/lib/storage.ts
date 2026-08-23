@@ -39,6 +39,18 @@ export function publicUrl(bucket: string, path: string): string {
   return `${API_URL}/storage/${bucket}/${path.replace(/^\//, "")}`;
 }
 
+/**
+ * Older records stored absolute /storage URLs built from APP_URL, which can point
+ * at a different host than the one serving the app. Rewrite those to same-origin.
+ */
+export function normalizeStorageUrl(url?: string | null): string {
+  if (!url) return "";
+  const i = url.indexOf("/storage/");
+  if (i === -1) return url;
+  return `${API_URL}${url.slice(i)}`;
+}
+
+
 /** Public bucket -> direct URL. Private bucket -> short-lived signed URL via API. */
 export async function fileUrl(bucket: string, path: string, ttlMinutes = 10): Promise<string> {
   if (!path) return "";

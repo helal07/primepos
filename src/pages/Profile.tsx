@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, Save, KeyRound, User as UserIcon, Upload, FileText, Loader2, X } from "lucide-react";
-import { uploadFile, deleteFile, signedUrl } from "@/lib/storage";
+import { uploadFile, deleteFile, signedUrl, normalizeStorageUrl } from "@/lib/storage";
 import { toast } from "sonner";
 import { compressImage, compressIfImage } from "@/lib/compressImage";
 
@@ -55,21 +55,28 @@ export default function ProfilePage() {
     const next = { ...profile, ...patch };
     setProfile(next);
     const payload = { ...next, user_id: user.id };
+    const findExisting = async () =>
+      (await rest.all<{ id: string }>("profiles", { filter: { user_id: user.id }, perPage: 1 }))[0];
     try {
-      const existing = await rest.all<{ id: string }>("profiles", {
-        filter: { user_id: user.id },
-        perPage: 1,
-      });
-      if (existing[0]) {
-        await rest.update("profiles", existing[0].id, payload);
+      const existing = await findExisting();
+      if (existing) {
+        await rest.update("profiles", existing.id, payload);
       } else {
-        await rest.create("profiles", payload);
+        try {
+          await rest.create("profiles", payload);
+        } catch {
+          // A row may already exist (created in a parallel request) — update it.
+          const again = await findExisting();
+          if (!again) throw new Error("Could not save profile");
+          await rest.update("profiles", again.id, payload);
+        }
       }
       return { error: null as any };
     } catch (e: any) {
       return { error: { message: e?.message ?? "Failed to save" } };
     }
   };
+
 
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const original = e.target.files?.[0];
@@ -188,7 +195,7 @@ export default function ProfilePage() {
         <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 p-6">
           <div className="relative">
             <Avatar className="h-24 w-24">
-              {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
+              {profile.avatar_url && <AvatarImage src={normalizeStorageUrl(profile.avatar_url)} />}
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">{initials}</AvatarFallback>
             </Avatar>
             <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer hover:opacity-90 shadow-md">
