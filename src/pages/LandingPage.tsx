@@ -104,7 +104,7 @@ export default function LandingPage() {
 
   const brandName = branding?.brand_name || "Prime POS";
   const brandShort = branding?.brand_short || brandName.charAt(0);
-  const logoUrl = branding?.logo_url;
+  const logoUrl = normalizeStorageUrl(branding?.logo_url);
 
   useEffect(() => {
     if (seo?.title) document.title = seo.title;
