@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, EyeOff, Save, KeyRound, User as UserIcon, Upload, FileText, Loader2, X } from "lucide-react";
-import { uploadFile, deleteFile, signedUrl } from "@/lib/storage";
+import { uploadFile, deleteFile, signedUrl, normalizeStorageUrl } from "@/lib/storage";
 import { toast } from "sonner";
 import { compressImage, compressIfImage } from "@/lib/compressImage";
 
