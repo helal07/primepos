@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn, Boxes, ScanBarcode, BarChart3, Store } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { ApiError } from "@/lib/apiClient";
+import { useBranding } from "@/hooks/useBranding";
+
 
 export default function Login() {
   const navigate = useNavigate();
