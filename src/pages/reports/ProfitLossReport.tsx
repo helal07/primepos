@@ -38,7 +38,7 @@ export default function ProfitLossReport() {
         rest.all<any>("purchases", { filter: purchasesFilter, perPage: 5000 }),
         productsPromise,
         hasInstallments
-          ? rest.all<any>("installment_sales", { filter: { sale_date: { gte: from, lte: to } }, with: ["product"], perPage: 5000 })
+          ? rest.all<any>("installment_sales", { filter: { start_date: { gte: from, lte: to } }, with: ["product"], perPage: 5000 })
           : Promise.resolve([] as any[]),
         hasInstallments
           ? rest.all<any>("installment_collections", { filter: { collected_at: { gte: from, lte: to + "T23:59:59" } }, perPage: 5000 })

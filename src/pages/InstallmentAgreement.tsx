@@ -55,7 +55,7 @@ export default function InstallmentAgreement() {
           <h1 className="text-2xl font-bold">Prime POS</h1>
           <p className="text-sm text-gray-600">Installment Sale Agreement</p>
           <p className="text-sm font-medium mt-1">Invoice: {sale.invoice_no}</p>
-          <p className="text-sm text-gray-500">Date: {sale.sale_date}</p>
+          <p className="text-sm text-gray-500">Date: {sale.start_date}</p>
         </div>
 
         {/* Customer & Product */}
