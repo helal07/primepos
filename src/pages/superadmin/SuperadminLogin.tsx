@@ -32,11 +32,11 @@ export default function SuperadminLogin() {
       }
       navigate("/superadmin", { replace: true });
     } catch (err) {
-      const backendUnavailable = err instanceof ApiError && err.status === 404;
+      const backendUnavailable = err instanceof ApiError && (err.status === 404 || err.status === 502);
       toast({
         title: backendUnavailable ? "Backend not connected" : "Login failed",
         description: backendUnavailable
-          ? "The Laravel API was not found. Configure VITE_API_URL to your VPS backend URL and redeploy the frontend."
+          ? "The Laravel API was not found. Configure VITE_API_BASE_URL to your VPS backend URL and redeploy the frontend."
           : err instanceof ApiError && err.status === 422
             ? "Invalid email or password."
             : "Could not reach the Laravel backend. Please try again.",
