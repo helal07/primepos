@@ -195,7 +195,7 @@ export default function ProfilePage() {
         <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 p-6">
           <div className="relative">
             <Avatar className="h-24 w-24">
-              {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
+              {profile.avatar_url && <AvatarImage src={normalizeStorageUrl(profile.avatar_url)} />}
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl">{initials}</AvatarFallback>
             </Avatar>
             <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer hover:opacity-90 shadow-md">
