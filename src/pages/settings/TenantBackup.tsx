@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/apiClient";
+import { API_URL, api, getAuthToken } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,10 +93,10 @@ export default function TenantBackup() {
         headers: { Accept: "application/octet-stream" },
       }).catch(async () => {
         // Fall back to JSON response (api wraps JSON); use raw fetch for blob
-        const r = await fetch(`${import.meta.env.VITE_API_URL}/api/tenant-backups`, {
+        const token = getAuthToken();
+        const r = await fetch(`${API_URL}/api/tenant-backups`, {
           method: "POST",
-          credentials: "include",
-          headers: { "X-XSRF-TOKEN": decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? "") },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!r.ok) throw new Error(`Export failed (${r.status})`);
         return await r.blob();
