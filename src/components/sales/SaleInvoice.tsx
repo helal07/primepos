@@ -1,3 +1,4 @@
+import { normalizeStorageUrl } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import { computeSaleTotals } from "@/lib/saleTotals";
