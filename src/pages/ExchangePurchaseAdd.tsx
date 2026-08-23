@@ -59,12 +59,13 @@ export default function ExchangePurchaseAdd() {
       toast.error("Seller name, device and price are required");
       return;
     }
-    if (form.imei.trim()) {
-      const ok = await checkImeiUniqueness(form.imei.trim());
-      if (!ok) return;
-    }
     setSaving(true);
     try {
+      if (form.imei.trim()) {
+        const ok = await checkImeiUniqueness(form.imei.trim());
+        if (!ok) return;
+      }
+
       // 1. Insert exchange purchase
       const ex = await rest.create<any>("exchange_purchases", {
         ...form,

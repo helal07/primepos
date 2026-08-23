@@ -165,7 +165,7 @@ class RestRegistry
             'purchase_items' => [
                 'model'        => Models\PurchaseItem::class,
                 'module'       => 'purchases',
-                'filters'      => ['purchase_id', 'product_id', 'variation_id'],
+                'filters'      => ['purchase_id', 'product_id', 'variation_id', 'serial_number'],
                 'sort'         => ['purchase_id'],
                 'default_sort' => 'purchase_id',
                 'with'         => ['product', 'variation'],
@@ -555,7 +555,7 @@ class RestRegistry
             'exchange_purchases' => [
                 'model'        => Models\ExchangePurchase::class,
                 'module'       => 'purchases',
-                'filters'      => ['supplier_customer_id', 'product_id', 'status', 'purchase_date', 'updated_at', 'imei_serial', 'sale_id'],
+                'filters'      => ['supplier_customer_id', 'linked_product_id', 'status', 'purchase_date', 'updated_at', 'imei', 'linked_sale_id', 'reference_no', 'seller_phone'],
                 'sort'         => ['created_at', 'purchase_date'],
                 'default_sort' => '-created_at',
                 'with'         => [],
