@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Save, Upload } from "lucide-react";
-import { uploadFile } from "@/lib/storage";
+import { uploadFile, normalizeStorageUrl } from "@/lib/storage";
 import { useLandingCms, useLandingCmsMutation } from "@/hooks/useSaasAdmin";
 import { toast } from "sonner";
 import { toFriendlyError } from "@/lib/friendlyError";
@@ -52,7 +52,7 @@ function UploadField({
       </div>
       {value && (
         <div className="flex items-center gap-3 pt-1">
-          <img src={value} alt={label} className="h-12 w-12 object-contain border border-border rounded bg-muted/30" />
+          <img src={normalizeStorageUrl(value)} alt={label} className="h-12 w-12 object-contain border border-border rounded bg-muted/30" />
           <span className="text-xs text-muted-foreground truncate max-w-md">{value}</span>
         </div>
       )}

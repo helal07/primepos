@@ -7,6 +7,7 @@ import { ArrowRight, CheckCircle2, Menu, X, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { normalizeStorageUrl } from "@/lib/storage";
 import {
   useLandingFeatures,
   useLandingReviews,
@@ -104,7 +105,7 @@ export default function LandingPage() {
 
   const brandName = branding?.brand_name || "Prime POS";
   const brandShort = branding?.brand_short || brandName.charAt(0);
-  const logoUrl = branding?.logo_url;
+  const logoUrl = normalizeStorageUrl(branding?.logo_url);
 
   useEffect(() => {
     if (seo?.title) document.title = seo.title;

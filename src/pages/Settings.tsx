@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings, useSaveSetting } from "@/hooks/useSettings";
 import { ThemePicker } from "@/components/settings/ThemePicker";
-import { uploadFile } from "@/lib/storage";
+import { uploadFile, normalizeStorageUrl } from "@/lib/storage";
 import { toast } from "sonner";
 import { Upload, Loader2, Smartphone, Building2, Receipt, Percent, Bell, Palette, Package, Users, ShoppingCart, ShoppingBag, CreditCard, LayoutDashboard, Settings as SettingsIcon, Hash, Mail, MessageSquare, Tag } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
@@ -60,7 +60,7 @@ function BusinessTab() {
           <div className="flex items-center gap-4">
             <div className="h-20 w-20 rounded-md border bg-muted/40 flex items-center justify-center overflow-hidden">
               {form.logo_url ? (
-                <img src={form.logo_url} alt="Logo" className="h-full w-full object-contain" />
+                <img src={normalizeStorageUrl(form.logo_url)} alt="Logo" className="h-full w-full object-contain" />
               ) : (
                 <span className="text-xs text-muted-foreground">No logo</span>
               )}
