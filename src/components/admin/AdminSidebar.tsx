@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/hooks/useBranding";
 
 const overviewItems = [
   { to: "/superadmin", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -46,6 +47,8 @@ interface Props {
 export function AdminSidebar({ onNavigate }: Props) {
   const { signOut } = useAuth();
   const location = useLocation();
+  const { brandName, brandShort, logoUrl } = useBranding();
+  const [logoError, setLogoError] = useState(false);
   const smsActive = location.pathname.startsWith("/superadmin/sms");
   const [smsOpen, setSmsOpen] = useState(smsActive);
   const cmsActive = location.pathname.startsWith("/superadmin/cms");
@@ -86,12 +89,21 @@ export function AdminSidebar({ onNavigate }: Props) {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md">
-          <ShieldCheck className="h-5 w-5" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-md">
+          {logoUrl && !logoError ? (
+            <img
+              src={logoUrl}
+              alt={brandName}
+              className="h-full w-full object-contain"
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <span className="text-sm font-bold">{brandShort}</span>
+          )}
         </div>
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold">Super Admin</div>
-          <div className="truncate text-[11px] text-sidebar-foreground/60">SaaS Control Panel</div>
+          <div className="truncate text-[11px] text-sidebar-foreground/60">{brandName}</div>
         </div>
       </div>
 
