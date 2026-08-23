@@ -55,21 +55,28 @@ export default function ProfilePage() {
     const next = { ...profile, ...patch };
     setProfile(next);
     const payload = { ...next, user_id: user.id };
+    const findExisting = async () =>
+      (await rest.all<{ id: string }>("profiles", { filter: { user_id: user.id }, perPage: 1 }))[0];
     try {
-      const existing = await rest.all<{ id: string }>("profiles", {
-        filter: { user_id: user.id },
-        perPage: 1,
-      });
-      if (existing[0]) {
-        await rest.update("profiles", existing[0].id, payload);
+      const existing = await findExisting();
+      if (existing) {
+        await rest.update("profiles", existing.id, payload);
       } else {
-        await rest.create("profiles", payload);
+        try {
+          await rest.create("profiles", payload);
+        } catch {
+          // A row may already exist (created in a parallel request) — update it.
+          const again = await findExisting();
+          if (!again) throw new Error("Could not save profile");
+          await rest.update("profiles", again.id, payload);
+        }
       }
       return { error: null as any };
     } catch (e: any) {
       return { error: { message: e?.message ?? "Failed to save" } };
     }
   };
+
 
   const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const original = e.target.files?.[0];
