@@ -20,16 +20,14 @@ use Illuminate\Http\Request;
  */
 class MeController extends Controller
 {
-    /** Role names that get full access inside their tenant. */
-    private const ADMIN_ROLES = ['tenant_admin', 'owner', 'admin', 'manager'];
+    /** Tenant admin roles live on App\Models\User::ADMIN_ROLES. */
+
 
     private function isAdminUser($user): bool
     {
-        if ($user->isSuperadmin()) {
-            return true;
-        }
-        return $user->hasRole(...self::ADMIN_ROLES);
+        return $user->isTenantAdmin();
     }
+
 
     public function modules(Request $request)
     {

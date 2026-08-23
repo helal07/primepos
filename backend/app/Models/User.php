@@ -71,13 +71,26 @@ class User extends Authenticatable
         return false;
     }
 
+    /** Role names that get full access inside their own tenant. */
+    public const ADMIN_ROLES = ['tenant_admin', 'owner', 'admin', 'manager'];
+
+    /**
+     * True when the user is a tenant-level administrator (full access inside
+     * their tenant). Mirrors MeController::isAdminUser so the sidebar and the
+     * REST guards agree.
+     */
+    public function isTenantAdmin(): bool
+    {
+        return $this->isSuperadmin() || $this->hasRole(...self::ADMIN_ROLES);
+    }
+
     /**
      * Module-action permission check.
      * action ∈ view|create|edit|delete
      */
     public function canModule(string $module, string $action = 'view'): bool
     {
-        if ($this->isSuperadmin()) return true;
+        if ($this->isTenantAdmin()) return true;
         $col = match ($action) {
             'view'   => 'can_view',
             'create' => 'can_create',
@@ -100,7 +113,7 @@ class User extends Authenticatable
      */
     public function hasPerm(string $key): bool
     {
-        if ($this->isSuperadmin()) return true;
+        if ($this->isTenantAdmin()) return true;
         $roleIds = $this->userRoles()->pluck('role_id');
         if ($roleIds->isEmpty()) return false;
         return RolePermissionGrant::query()
@@ -109,6 +122,7 @@ class User extends Authenticatable
             ->where('permission_key', $key)
             ->exists();
     }
+
 
     public function sellScope(): string
     {
