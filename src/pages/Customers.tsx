@@ -29,48 +29,13 @@ export default function Customers() {
   const { data: customers, isLoading } = useCustomers();
   const { data: customerGroups } = useCustomerGroups();
   const { create, update, remove } = useCustomerMutations();
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [perPage, setPerPage] = useState("25");
-  const [form, setForm] = useState(defaultForm);
 
-  const resetForm = () => { setForm(defaultForm); setEditId(null); };
+  const handleEdit = (c: any) => navigate(`/customers/${c.id}/edit`);
 
-  const handleSubmit = () => {
-    const payload = {
-      name: form.name,
-      phone: form.phone || null,
-      email: form.email || null,
-      address: form.address || null,
-      company: form.company || null,
-      tax_number: form.tax_number || null,
-      credit_limit: form.credit_limit === "" ? null : Number(form.credit_limit),
-      customer_group_id: form.customer_group_id === NONE ? null : form.customer_group_id,
-      notes: form.notes || null,
-      is_active: form.is_active,
-    };
-    if (editId) {
-      update.mutate({ id: editId, ...payload }, { onSuccess: () => { setOpen(false); resetForm(); } });
-    } else {
-      create.mutate(payload, { onSuccess: () => { setOpen(false); resetForm(); } });
-    }
-  };
-
-  const handleEdit = (c: any) => {
-    setEditId(c.id);
-    setForm({
-      name: c.name, phone: c.phone || "", email: c.email || "",
-      address: c.address || "", company: c.company || "",
-      tax_number: c.tax_number || "",
-      credit_limit: c.credit_limit == null ? "" : String(c.credit_limit),
-      customer_group_id: c.customer_group_id || NONE,
-      notes: c.notes || "", is_active: c.is_active,
-    });
-    setOpen(true);
-  };
 
   const filtered = (customers ?? []).filter((c: any) => {
     const q = search.toLowerCase();
