@@ -16,7 +16,7 @@ export default function InstallmentSales() {
 
   const filtered = data?.filter((s: any) => {
     const term = search.toLowerCase();
-    return s.invoice_no?.toLowerCase().includes(term) || s.customers?.name?.toLowerCase().includes(term);
+    return s.invoice_number?.toLowerCase().includes(term) || s.customers?.name?.toLowerCase().includes(term);
   });
 
   const statusColor = (s: string) => s === "completed" ? "default" : s === "defaulted" ? "destructive" : "secondary";
@@ -55,7 +55,7 @@ export default function InstallmentSales() {
               <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No sales found</TableCell></TableRow>
             ) : filtered.map((s: any) => (
               <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.invoice_no}</TableCell>
+                <TableCell className="font-medium">{s.invoice_number}</TableCell>
                 <TableCell>{s.customers?.name || "—"}</TableCell>
                 <TableCell>{s.products?.name || "—"}</TableCell>
                 <TableCell className="text-right">{Number(s.total_amount).toFixed(2)}</TableCell>

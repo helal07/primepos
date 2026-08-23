@@ -29,7 +29,7 @@ export default function InstallmentReport() {
 
   const exportData = useMemo(() => ({
     columns: ["Invoice", "Date", "Customer", "Status", "Total", "Down Payment", "Remaining"],
-    rows: (data?.sales ?? []).map((s: any) => [s.invoice_no, s.sale_date, s.customers?.name || "-", s.status, fmt(Number(s.total_amount)), fmt(Number(s.down_payment)), fmt(Number(s.remaining_amount))]),
+    rows: (data?.sales ?? []).map((s: any) => [s.invoice_number, s.start_date, s.customers?.name || "-", s.status, fmt(Number(s.total_amount)), fmt(Number(s.down_payment)), fmt(Number(s.remaining_amount))]),
     filename: "installment-report",
     title: "Installment Sale Report",
   }), [data]);
@@ -49,7 +49,7 @@ export default function InstallmentReport() {
             <Card><CardContent className="pt-4">
               <Table><TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead>Customer</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Down Payment</TableHead><TableHead className="text-right">Remaining</TableHead></TableRow></TableHeader>
               <TableBody>{data.sales.map((s: any) => (
-                <TableRow key={s.id}><TableCell className="font-mono text-sm">{s.invoice_no}</TableCell><TableCell>{s.sale_date}</TableCell><TableCell>{s.customers?.name || "-"}</TableCell><TableCell><Badge variant={statusColor[s.status] as any || "secondary"}>{s.status}</Badge></TableCell><TableCell className="text-right">৳ {fmt(Number(s.total_amount))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.down_payment))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.remaining_amount))}</TableCell></TableRow>
+                <TableRow key={s.id}><TableCell className="font-mono text-sm">{s.invoice_number}</TableCell><TableCell>{s.start_date}</TableCell><TableCell>{s.customers?.name || "-"}</TableCell><TableCell><Badge variant={statusColor[s.status] as any || "secondary"}>{s.status}</Badge></TableCell><TableCell className="text-right">৳ {fmt(Number(s.total_amount))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.down_payment))}</TableCell><TableCell className="text-right">৳ {fmt(Number(s.remaining_amount))}</TableCell></TableRow>
               ))}{data.sales.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No installment sales</TableCell></TableRow>}</TableBody></Table>
             </CardContent></Card>
           </>

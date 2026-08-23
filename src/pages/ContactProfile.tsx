@@ -83,7 +83,7 @@ export default function ContactProfile({ kind }: { kind: ContactKind }) {
     enabled: !!id,
     queryFn: async () => {
       return await rest.all<any>("activity_log", {
-        filter: { entity_type: kind, entity_id: id! },
+        filter: { subject_type: kind, subject_id: id! },
         sort: "-created_at",
         perPage: 100,
       });

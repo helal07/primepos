@@ -130,7 +130,7 @@ export function useInstallmentSchedules(saleId: string | null) {
     queryFn: async () => {
       return await rest.all<any>("installment_schedules", {
         filter: { installment_sale_id: saleId! },
-        sort: "serial_no", perPage: 2000,
+        sort: "installment_no", perPage: 2000,
       });
     },
   });
