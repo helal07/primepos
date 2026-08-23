@@ -74,9 +74,9 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
   const businessEmail = business.email || settings?.business_email || "";
   const businessWebsite = business.website || "";
   const businessTax = business.tax_number || "";
-  const businessLogo =
+  const businessLogo = normalizeStorageUrl(
     business.logo_url || settings?.business_logo || settings?.logo_url ||
-    branding.logo_url || "";
+    branding.logo_url || "");
   const terms = tpl.terms || settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
