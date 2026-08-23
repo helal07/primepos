@@ -19,6 +19,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const { brandName, brandShort, logoUrl } = useBranding();
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
