@@ -12,5 +12,7 @@ class SmsPlan extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 }

@@ -14,5 +14,7 @@ class ActivityLog extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['data' => 'array'];
+    protected $casts = [
+        'details' => 'array',
+    ];
 }

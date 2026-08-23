@@ -16,7 +16,9 @@ class JournalEntry extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
-    protected $casts = ['entry_date' => 'date'];
+    protected $casts = [
+        'entry_date' => 'date',
+    ];
 
     public function lines(): HasMany { return $this->hasMany(JournalEntryLine::class, 'journal_entry_id'); }
 }

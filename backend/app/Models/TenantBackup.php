@@ -14,5 +14,7 @@ class TenantBackup extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['row_counts' => 'array'];
+    protected $casts = [
+        'row_counts' => 'array',
+    ];
 }

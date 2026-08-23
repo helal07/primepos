@@ -14,5 +14,7 @@ class PaymentAttempt extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['payload' => 'array'];
+    protected $casts = [
+        'raw_payload' => 'array',
+    ];
 }

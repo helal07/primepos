@@ -16,7 +16,8 @@ class TenantPayment extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'gateway_response' => 'array',
-        'paid_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'ends_on' => 'date',
+        'starts_on' => 'date',
     ];
 }

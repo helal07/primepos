@@ -18,5 +18,7 @@ class BusinessSetting extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['value' => 'array'];
+    protected $casts = [
+        'value' => 'array',
+    ];
 }

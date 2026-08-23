@@ -13,7 +13,9 @@ class SmsPurchase extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
-    protected $casts = ['purchased_at' => 'datetime'];
+    protected $casts = [
+        'purchased_at' => 'datetime',
+    ];
 
     public function plan(): BelongsTo
     {

@@ -14,6 +14,10 @@ class ExpensePayment extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected $casts = [
+        'paid_on' => 'datetime',
+    ];
     public $timestamps = false;
 
 }

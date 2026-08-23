@@ -16,6 +16,13 @@ class Shipment extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'courier_payload' => 'array',
+        'delivered_at' => 'datetime',
+        'expected_delivery' => 'date',
+        'shipped_at' => 'datetime',
+    ];
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);

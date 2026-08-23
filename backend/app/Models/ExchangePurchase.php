@@ -15,5 +15,10 @@ class ExchangePurchase extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'goods_photos' => 'array',
+        'purchase_date' => 'date',
+    ];
+
 
 }

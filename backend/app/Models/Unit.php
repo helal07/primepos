@@ -15,5 +15,9 @@ class Unit extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
 
 }

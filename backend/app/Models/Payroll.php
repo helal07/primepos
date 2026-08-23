@@ -19,7 +19,9 @@ class Payroll extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
-    protected $casts = ['paid_date' => 'date'];
+    protected $casts = [
+        'paid_date' => 'date',
+    ];
 
     public function employee(): BelongsTo { return $this->belongsTo(Employee::class, 'employee_id'); }
 }

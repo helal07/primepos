@@ -20,8 +20,7 @@ class Warranty extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date'   => 'date',
+        'is_active' => 'boolean',
     ];
 
     public function product(): BelongsTo

@@ -18,6 +18,7 @@ class InstallmentSchedule extends Model
 
     protected $casts = [
         'due_date' => 'date',
+        'paid_date' => 'date',
     ];
 
     public function installmentSale(): BelongsTo { return $this->belongsTo(InstallmentSale::class, 'installment_sale_id'); }
