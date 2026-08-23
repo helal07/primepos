@@ -1,1 +1,0 @@
-ALTER TABLE public.saas_packages ADD COLUMN IF NOT EXISTS is_trial boolean NOT NULL DEFAULT false;

@@ -1,1 +1,0 @@
-CREATE POLICY "sitemap_public_select" ON public.sitemap_entries FOR SELECT TO anon USING (is_active = true);

@@ -1,2 +1,0 @@
-UPDATE public.tenants SET subscription_end = '2027-05-15', subscription_start = '2026-05-15', updated_at = now() WHERE id = '31002d68-cdc6-4360-a4a0-85ee5fd856a6';
-UPDATE public.tenant_payments SET starts_on = '2026-05-15', ends_on = '2027-05-15' WHERE id = 'b802fb50-020b-4042-b17e-00a03408fdb7';
