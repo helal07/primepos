@@ -4,6 +4,20 @@
 # ---------------------------------------------------------------------------
 FROM oven/bun:1.1 AS frontend
 WORKDIR /app
+
+# Vite reads these only while the SPA is compiled. Declaring them as Docker
+# build arguments makes Coolify/VPS --build-arg values available to Vite.
+ARG VITE_API_BASE_URL=""
+ARG VITE_REVERB_APP_KEY=""
+ARG VITE_REVERB_HOST=""
+ARG VITE_REVERB_PORT="443"
+ARG VITE_REVERB_SCHEME="https"
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL} \
+    VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY} \
+    VITE_REVERB_HOST=${VITE_REVERB_HOST} \
+    VITE_REVERB_PORT=${VITE_REVERB_PORT} \
+    VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
+
 COPY package.json bun.lockb* bun.lock* package-lock.json* ./
 RUN bun install --frozen-lockfile || bun install
 COPY . .
