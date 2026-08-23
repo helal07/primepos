@@ -165,22 +165,76 @@ const feEnsure = (r) => {
   return feUsage.get(r);
 };
 
+const FILTER_OPS = new Set([
+  "eq","neq","in","nin","like","ilike","gt","gte","lt","lte","null","notnull",
+]);
+
+/** Return the substring of `s` starting at the opening bracket at `i` up to its match. */
+function balanced(s, i) {
+  const open = s[i];
+  const close = open === "{" ? "}" : open === "[" ? "]" : ")";
+  let depth = 0;
+  for (let j = i; j < s.length; j++) {
+    if (s[j] === open) depth++;
+    else if (s[j] === close) { depth--; if (depth === 0) return s.slice(i, j + 1); }
+  }
+  return s.slice(i);
+}
+
+/** Top-level `key:` names inside an object literal body (ignores nested objects/arrays). */
+function topLevelKeys(objBody) {
+  const inner = objBody.slice(1, -1);
+  const keys = [];
+  let depth = 0, i = 0;
+  let segStart = 0;
+  const segs = [];
+  for (; i < inner.length; i++) {
+    const c = inner[i];
+    if ("{[(".includes(c)) depth++;
+    else if ("}])".includes(c)) depth--;
+    else if (c === "," && depth === 0) { segs.push(inner.slice(segStart, i)); segStart = i + 1; }
+  }
+  segs.push(inner.slice(segStart));
+  for (const seg of segs) {
+    const m = seg.match(/^\s*(?:\.\.\.)?\s*["']?([A-Za-z0-9_$]+)["']?\s*:/);
+    if (m) keys.push(m[1]);
+  }
+  return keys;
+}
+
 for (const file of walk(SRC, [".ts", ".tsx"])) {
   const src = fs.readFileSync(file, "utf8");
   const rel = path.relative(ROOT, file);
-  for (const m of src.matchAll(/rest\.(list|all|get|create|update|remove)(?:<[^>]*>)?\(\s*["'`]([a-z0-9_]+)["'`]([\s\S]{0,600})/g)) {
-    const [, , resource, tail] = m;
+  for (const m of src.matchAll(/rest\.(list|all|get|create|update|remove)(?:<[^>]*>)?\(/g)) {
+    const argsStart = m.index + m[0].length - 1;
+    const args = balanced(src, argsStart);
+    const resM = args.match(/^\(\s*["'`]([a-z0-9_]+)["'`]/);
+    if (!resM) continue;
+    const resource = resM[1];
     const u = feEnsure(resource);
     u.files.add(rel);
-    // only look at the argument object that immediately follows
-    const scope = tail.split(/\n\s*\}\s*\)\s*;/)[0];
-    const filterBlock = scope.match(/filter\s*:\s*\{([\s\S]*?)\}/);
-    if (filterBlock) for (const f of filterBlock[1].matchAll(/(?:^|[\s{,])["']?([a-z0-9_]+)["']?\s*:/g)) u.filters.add(f[1]);
-    for (const s of scope.matchAll(/sort\s*:\s*["'`]([^"'`]+)["'`]/g)) s[1].split(",").forEach((x) => u.sorts.add(x.trim().replace(/^-/, "")));
-    const withBlock = scope.match(/with\s*:\s*\[([^\]]*)\]/);
-    if (withBlock) for (const w of withBlock[1].matchAll(/["']([a-z0-9_.]+)["']/g)) u.withs.add(w[1]);
+
+    const objIdx = args.indexOf("{");
+    if (objIdx < 0) continue;
+    const optBody = balanced(args, objIdx);
+
+    // filter: { col: v, col2: { gte: v } }
+    const fIdx = optBody.search(/\bfilter\s*:\s*\{/);
+    if (fIdx >= 0) {
+      const fObj = balanced(optBody, optBody.indexOf("{", fIdx));
+      for (const k of topLevelKeys(fObj)) if (!FILTER_OPS.has(k)) u.filters.add(k);
+    }
+    for (const s of optBody.matchAll(/\bsort\s*:\s*["'`]([^"'`]+)["'`]/g)) {
+      s[1].split(",").forEach((x) => u.sorts.add(x.trim().replace(/^-/, "")));
+    }
+    const wIdx = optBody.search(/\bwith\s*:\s*\[/);
+    if (wIdx >= 0) {
+      const wArr = balanced(optBody, optBody.indexOf("[", wIdx));
+      for (const w of wArr.matchAll(/["']([a-z0-9_.]+)["']/g)) u.withs.add(w[1]);
+    }
   }
 }
+
 
 /* ------------------------------------------------------------------ 5. report */
 
