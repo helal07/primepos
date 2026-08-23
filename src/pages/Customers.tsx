@@ -5,13 +5,10 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -21,56 +18,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Can } from "@/components/Can";
 
-const NONE = "__none__";
-const defaultForm = { name: "", phone: "", email: "", address: "", company: "", tax_number: "", credit_limit: "", customer_group_id: NONE, notes: "", is_active: true };
 
 export default function Customers() {
   const navigate = useNavigate();
   const { data: customers, isLoading } = useCustomers();
   const { data: customerGroups } = useCustomerGroups();
   const { create, update, remove } = useCustomerMutations();
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [perPage, setPerPage] = useState("25");
-  const [form, setForm] = useState(defaultForm);
 
-  const resetForm = () => { setForm(defaultForm); setEditId(null); };
+  const handleEdit = (c: any) => navigate(`/customers/${c.id}/edit`);
 
-  const handleSubmit = () => {
-    const payload = {
-      name: form.name,
-      phone: form.phone || null,
-      email: form.email || null,
-      address: form.address || null,
-      company: form.company || null,
-      tax_number: form.tax_number || null,
-      credit_limit: form.credit_limit === "" ? null : Number(form.credit_limit),
-      customer_group_id: form.customer_group_id === NONE ? null : form.customer_group_id,
-      notes: form.notes || null,
-      is_active: form.is_active,
-    };
-    if (editId) {
-      update.mutate({ id: editId, ...payload }, { onSuccess: () => { setOpen(false); resetForm(); } });
-    } else {
-      create.mutate(payload, { onSuccess: () => { setOpen(false); resetForm(); } });
-    }
-  };
-
-  const handleEdit = (c: any) => {
-    setEditId(c.id);
-    setForm({
-      name: c.name, phone: c.phone || "", email: c.email || "",
-      address: c.address || "", company: c.company || "",
-      tax_number: c.tax_number || "",
-      credit_limit: c.credit_limit == null ? "" : String(c.credit_limit),
-      customer_group_id: c.customer_group_id || NONE,
-      notes: c.notes || "", is_active: c.is_active,
-    });
-    setOpen(true);
-  };
 
   const filtered = (customers ?? []).filter((c: any) => {
     const q = search.toLowerCase();
@@ -113,7 +73,7 @@ export default function Customers() {
     <div className="space-y-6">
       <PageHeader title="Customers" description="Manage your Customers" actions={
         <Can module="customers" action="create">
-          <Button onClick={() => { resetForm(); setOpen(true); }}>
+          <Button onClick={() => navigate("/customers/add")}>
             <Plus className="mr-2 h-4 w-4" /> Add Customer
           </Button>
         </Can>
@@ -159,82 +119,11 @@ export default function Customers() {
         </CardContent>
       </Card>
 
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) resetForm(); }}>
-          <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{editId ? "Edit" : "Add"} Customer</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Name *</Label>
-                  <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Customer name" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+880..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="email@example.com" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Company</Label>
-                  <Input value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} placeholder="Company name" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tax Number</Label>
-                  <Input value={form.tax_number} onChange={e => setForm({ ...form, tax_number: e.target.value })} placeholder="TIN / VAT" />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Credit Limit</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={form.credit_limit}
-                    onChange={e => setForm({ ...form, credit_limit: e.target.value })}
-                    placeholder="e.g. 50000"
-                  />
-                  <p className="text-xs text-muted-foreground">Keep blank for no limit</p>
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Customer Group</Label>
-                  <Select value={form.customer_group_id} onValueChange={v => setForm({ ...form, customer_group_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NONE}>None (default price)</SelectItem>
-                      {customerGroups?.filter(g => g.is_active).map(g => (
-                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">Determines which selling price tier applies at POS / Sale.</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Full address" rows={2} />
-              </div>
-              <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Internal notes" rows={2} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.is_active} onCheckedChange={v => setForm({ ...form, is_active: v })} />
-                <Label>Active</Label>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={handleSubmit} disabled={!form.name || create.isPending || update.isPending}>
-                {editId ? "Update" : "Create"} Customer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between">
           <CardTitle className="text-base">All your Customers</CardTitle>
-          <Button onClick={() => { resetForm(); setOpen(true); }} className="hidden sm:inline-flex">
+          <Button onClick={() => navigate("/customers/add")} className="hidden sm:inline-flex">
             <Plus className="mr-2 h-4 w-4" /> Add
           </Button>
         </CardHeader>
