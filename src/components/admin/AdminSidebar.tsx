@@ -47,6 +47,8 @@ interface Props {
 export function AdminSidebar({ onNavigate }: Props) {
   const { signOut } = useAuth();
   const location = useLocation();
+  const { brandName, brandShort, logoUrl } = useBranding();
+  const [logoError, setLogoError] = useState(false);
   const smsActive = location.pathname.startsWith("/superadmin/sms");
   const [smsOpen, setSmsOpen] = useState(smsActive);
   const cmsActive = location.pathname.startsWith("/superadmin/cms");
