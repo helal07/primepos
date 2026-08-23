@@ -537,7 +537,7 @@ class RestRegistry
             'shipments' => [
                 'model'        => Models\Shipment::class,
                 'module'       => 'sales',
-                'filters'      => ['sale_id', 'customer_id', 'status', 'courier'],
+                'filters'      => ['sale_id', 'status', 'courier'],
                 'sort'         => ['created_at', 'status'],
                 'default_sort' => '-created_at',
                 'search'       => ['tracking_id', 'recipient_name', 'recipient_phone'],

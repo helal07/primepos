@@ -22,7 +22,7 @@ export default function Sitemap() {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<any>({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" });
+  const [form, setForm] = useState<any>({ url: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" });
   const [baseUrl, setBaseUrl] = useState<string>(DEFAULT_BASE);
   const [generatedXml, setGeneratedXml] = useState<string>("");
   const [generating, setGenerating] = useState(false);
@@ -82,15 +82,15 @@ export default function Sitemap() {
   const { data = [], isLoading } = useQuery({
     queryKey: ["sitemap_entries"],
     queryFn: async () => {
-      return await rest.all<any>("sitemap_entries", { sort: "path", perPage: 500 });
+      return await rest.all<any>("sitemap_entries", { sort: "url", perPage: 500 });
     },
   });
 
   const save = useMutation({
     mutationFn: async () => {
-      const path = String(form.path || "").trim();
-      if (!path.startsWith("/")) throw new Error("Path must start with /, for example /about");
-      const payload = { ...form, path, priority: Number(form.priority) };
+      const url = String(form.url || "").trim();
+      if (!url.startsWith("/")) throw new Error("Path must start with /, for example /about");
+      const payload = { ...form, url, priority: Number(form.priority) };
       if (editId) {
         await rest.update("sitemap_entries", editId, payload);
       } else {
@@ -106,7 +106,7 @@ export default function Sitemap() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["sitemap_entries"] }); toast({ title: "Deleted" }); },
   });
 
-  const openNew = () => { setForm({ path: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" }); setEditId(null); setOpen(true); };
+  const openNew = () => { setForm({ url: "/", priority: 0.5, changefreq: "monthly", is_active: true, notes: "" }); setEditId(null); setOpen(true); };
   const openEdit = (row: any) => { setForm(row); setEditId(row.id); setOpen(true); };
 
   const submitEntry = (event: FormEvent<HTMLFormElement>) => {
@@ -182,7 +182,7 @@ export default function Sitemap() {
             <Card key={e.id}>
               <CardContent className="p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm truncate">{e.path}</p>
+                  <p className="font-mono text-sm truncate">{e.url}</p>
                   <p className="text-xs text-muted-foreground">priority {e.priority} · {e.changefreq}</p>
                 </div>
                 <Badge variant={e.is_active ? "default" : "secondary"}>{e.is_active ? "On" : "Off"}</Badge>
@@ -204,7 +204,7 @@ export default function Sitemap() {
             <DialogDescription>Add a public URL path to include in sitemap.xml.</DialogDescription>
           </DialogHeader>
           <form onSubmit={submitEntry} className="space-y-3">
-            <div><Label>Path</Label><Input value={form.path} onChange={(ev) => setForm({ ...form, path: ev.target.value })} placeholder="/about" /></div>
+            <div><Label>Path</Label><Input value={form.url} onChange={(ev) => setForm({ ...form, url: ev.target.value })} placeholder="/about" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Priority (0–1)</Label><Input type="number" step="0.1" min="0" max="1" value={form.priority} onChange={(ev) => setForm({ ...form, priority: ev.target.value })} /></div>
               <div>

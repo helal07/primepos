@@ -91,7 +91,7 @@ export default function InstallmentSchedule() {
               <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No pending schedules</TableCell></TableRow>
             ) : filtered.map((s: any) => (
               <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.installment_sales?.invoice_no || "—"}</TableCell>
+                <TableCell className="font-medium">{s.installment_sales?.invoice_number || "—"}</TableCell>
                 <TableCell>{s.installment_sales?.customers?.name || "—"}</TableCell>
                 <TableCell>{s.installment_sales?.customers?.phone || "—"}</TableCell>
                 <TableCell>{s.installment_sales?.products?.name || "—"}</TableCell>

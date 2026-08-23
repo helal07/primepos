@@ -11,7 +11,7 @@ export function useAvailableSerials(productId: string | null) {
           filter: { product_id: productId! }, perPage: 2000,
         }),
         rest.all<{ imei: string | null }>("exchange_purchases", {
-          filter: { linked_product_id: productId!, status: "in_stock" }, perPage: 2000,
+          filter: { product_id: productId!, status: "in_stock" }, perPage: 2000,
         }),
         rest.all<{ serial_number: string | null }>("sale_items", {
           filter: { product_id: productId! }, perPage: 2000,
