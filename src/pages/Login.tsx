@@ -54,17 +54,77 @@ export default function Login() {
         <meta property="og:description" content="Sign in to your Prime POS account to manage point-of-sale, inventory, accounting, HRM, warranty and BI for your business." />
         <meta property="og:url" content="https://primepos.lovable.app/login" />
       </Helmet>
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg">
-            P
-          </div>
-          <CardTitle className="text-2xl">Prime POS</CardTitle>
-          <CardDescription>Sign in to manage your business</CardDescription>
-        </CardHeader>
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      {/* Classic ledger grid + modern gradient wash */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse at 50% 0%, black 30%, transparent 75%)",
+        }}
+      />
+      <div aria-hidden className="pointer-events-none absolute -top-40 -left-32 h-[28rem] w-[28rem] rounded-full bg-primary/20 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-40 -right-24 h-[26rem] w-[26rem] rounded-full bg-info/15 blur-3xl" />
 
-        <form onSubmit={handleLogin}>
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-2">
+        {/* Brand / value column */}
+        <section className="hidden lg:flex flex-col gap-8">
+          <div className="flex items-center gap-3">
+            {logoUrl ? (
+              <img src={logoUrl} alt={`${brandName} logo`} className="h-12 w-12 rounded-xl object-contain bg-card p-1 shadow-card" />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground text-lg font-bold shadow-elevated">
+                {brandShort}
+              </div>
+            )}
+            <span className="text-xl font-semibold tracking-tight">{brandName}</span>
+          </div>
+
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold leading-tight tracking-tight">
+              Inventory &amp; retail management,<br />
+              <span className="bg-gradient-primary bg-clip-text text-transparent">built for busy counters</span>
+            </h1>
+            <p className="max-w-md text-muted-foreground">
+              Stock control, barcode POS billing, warehouses, purchases and profit reporting — one platform for every outlet you run.
+            </p>
+          </div>
+
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {[
+              { icon: Boxes, label: "Live stock & warehouses" },
+              { icon: ScanBarcode, label: "Barcode POS billing" },
+              { icon: Store, label: "Multi-outlet retail" },
+              { icon: BarChart3, label: "Profit & BI reports" },
+            ].map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-3 rounded-lg border border-border/70 glass-card px-3 py-2.5 shadow-card">
+                <Icon className="h-4 w-4 text-primary" />
+                <span className="text-sm text-foreground/90">{label}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Login column */}
+        <div className="flex justify-center">
+          <Card className="w-full max-w-md glass-card border-border/70 shadow-elevated">
+            <CardHeader className="text-center">
+              {logoUrl ? (
+                <img src={logoUrl} alt={`${brandName} logo`} className="mx-auto mb-2 h-14 w-14 rounded-xl object-contain bg-card p-1" />
+              ) : (
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground font-bold text-lg">
+                  {brandShort}
+                </div>
+              )}
+              <CardTitle className="text-2xl">{brandName}</CardTitle>
+              <CardDescription>Sign in to manage your inventory &amp; retail operations</CardDescription>
+            </CardHeader>
+
+            <form onSubmit={handleLogin}>
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
@@ -90,9 +150,12 @@ export default function Login() {
                   <Link to="/register" className="text-primary hover:underline">Register your business</Link>
                 </p>
               </CardFooter>
-        </form>
-      </Card>
+            </form>
+          </Card>
+        </div>
+      </div>
     </div>
+
     </>
   );
 }
