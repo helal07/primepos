@@ -45,6 +45,7 @@ const SalesOrderAdd = lazy(() => import("./pages/SalesOrderAdd"));
 const SaleView = lazy(() => import("./pages/SaleView"));
 const POS = lazy(() => import("./pages/POS"));
 const Customers = lazy(() => import("./pages/Customers"));
+const CustomerAdd = lazy(() => import("./pages/CustomerAdd"));
 const Suppliers = lazy(() => import("./pages/Suppliers"));
 const ContactProfile = lazy(() => import("./pages/ContactProfile"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
@@ -239,6 +240,8 @@ const App = () => (
                         <Route path="/purchase-orders/add" element={<ModuleGate module="purchases"><PermissionGate module="purchases" action="create"><PurchaseOrderAdd /></PermissionGate></ModuleGate>} />
                         <Route path="/purchases/returns" element={<ModuleGate module="purchases"><PlaceholderPage title="Purchase Returns" /></ModuleGate>} />
                         <Route path="/customers" element={<ModuleGate module="contacts"><PermissionGate module="contacts" action="view"><Customers /></PermissionGate></ModuleGate>} />
+                        <Route path="/customers/add" element={<ModuleGate module="contacts"><PermissionGate module="contacts" action="create"><CustomerAdd /></PermissionGate></ModuleGate>} />
+                        <Route path="/customers/:id/edit" element={<ModuleGate module="contacts"><PermissionGate module="contacts" action="edit"><CustomerAdd /></PermissionGate></ModuleGate>} />
                         <Route path="/customers/:id" element={<ModuleGate module="contacts"><PermissionGate module="contacts" action="view"><ContactProfile kind="customer" /></PermissionGate></ModuleGate>} />
                         <Route path="/suppliers" element={<ModuleGate module="contacts"><PermissionGate module="contacts" action="view"><Suppliers /></PermissionGate></ModuleGate>} />
                         <Route path="/suppliers/:id" element={<ModuleGate module="contacts"><PermissionGate module="contacts" action="view"><ContactProfile kind="supplier" /></PermissionGate></ModuleGate>} />
