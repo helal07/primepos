@@ -56,7 +56,7 @@ class TenantBackupController extends Controller
         $backup = TenantBackup::query()->withoutGlobalScopes()->findOrFail($backupId);
         if (! $auth->isSuperadmin() && $backup->tenant_id !== $auth->tenant_id) abort(403);
 
-        $abs = storage_path('app/private/' . $backup->file_path);
+        $abs = storage_path('app/private/' . $backup->storage_path);
         $this->svc->restore($backup->tenant_id, $abs, $auth->id);
 
         return response()->json(['ok' => true, 'restored_from' => $backup->id]);
@@ -85,7 +85,7 @@ class TenantBackupController extends Controller
         $backup = TenantBackup::query()->withoutGlobalScopes()->create([
             'id'         => (string) \Illuminate\Support\Str::uuid(),
             'tenant_id'  => $tenantId,
-            'file_path'  => "backups/{$tenantId}/{$filename}",
+            'storage_path'  => "backups/{$tenantId}/{$filename}",
             'file_name'  => $filename,
             'size_bytes' => $size,
             'sha256'     => hash_file('sha256', $path) ?: null,
@@ -101,7 +101,7 @@ class TenantBackupController extends Controller
     public function download(string $backupId): BinaryFileResponse
     {
         $backup = TenantBackup::query()->withoutGlobalScopes()->findOrFail($backupId);
-        $abs = storage_path('app/private/' . $backup->file_path);
+        $abs = storage_path('app/private/' . $backup->storage_path);
         abort_unless(is_file($abs), 404, 'Backup file missing.');
 
         return response()->download($abs, $backup->file_name, [

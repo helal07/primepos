@@ -13,11 +13,11 @@ class StockAdjustmentObserver
     public function created(StockAdjustment $a): void
     {
         if (! $a->warehouse_id) return;
-        $sign = $a->adjustment_type === 'increase' ? 1 : -1;
+        $sign = $a->type === 'increase' ? 1 : -1;
         $this->stock->applyDelta(
             $a->tenant_id, $a->warehouse_id,
             $a->product_id, $a->variation_id,
-            $sign * (float) $a->quantity
+            $sign * (float) $a->quantity_change
         );
         $this->broadcast($a, 'created');
     }
@@ -25,11 +25,11 @@ class StockAdjustmentObserver
     public function deleted(StockAdjustment $a): void
     {
         if (! $a->warehouse_id) return;
-        $sign = $a->adjustment_type === 'increase' ? -1 : 1; // reverse
+        $sign = $a->type === 'increase' ? -1 : 1; // reverse
         $this->stock->applyDelta(
             $a->tenant_id, $a->warehouse_id,
             $a->product_id, $a->variation_id,
-            $sign * (float) $a->quantity
+            $sign * (float) $a->quantity_change
         );
         $this->broadcast($a, 'deleted');
     }

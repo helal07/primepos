@@ -504,8 +504,8 @@ class RestRegistry
             'payment_gateways' => [
                 'model'        => Models\PaymentGateway::class,
                 'module'       => 'saas',
-                'filters'      => ['is_active', 'code'],
-                'sort'         => ['sort_order', 'name'],
+                'filters'      => ['active', 'code'],
+                'sort'         => ['sort_order', 'display_name'],
                 'default_sort' => 'sort_order',
                 'max_per_page' => 200,
             ],

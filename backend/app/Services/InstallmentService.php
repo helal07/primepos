@@ -15,8 +15,8 @@ class InstallmentService
         $row = InstallmentSchedule::query()->withoutGlobalScopes()->find($scheduleId);
         if (! $row) return;
 
-        $paid = (float) ($row->amount_paid ?? 0) + $newlyPaid;
-        $due  = (float) ($row->amount_due ?? 0);
+        $paid = (float) ($row->paid_amount ?? 0) + $newlyPaid;
+        $due  = (float) ($row->amount ?? 0);
 
         $status = 'pending';
         if ($paid <= 0)         $status = 'pending';
@@ -24,7 +24,7 @@ class InstallmentService
         elseif ($paid >= $due)  $status = 'paid';
 
         $row->forceFill([
-            'amount_paid' => $paid,
+            'paid_amount' => $paid,
             'status'      => $status,
         ])->saveQuietly();
     }

@@ -27,7 +27,7 @@ class ExpenseObserver
 
     public function updated(Expense $e): void
     {
-        if ($e->wasChanged(['amount', 'expense_date', 'payment_method', 'notes', 'reference_no'])) {
+        if ($e->wasChanged(['total_amount', 'expense_date', 'payment_method', 'expense_note', 'reference_no'])) {
             $this->syncTransaction($e);
         }
         $this->broadcast($e, 'updated');
@@ -59,14 +59,14 @@ class ExpenseObserver
 
         $data = [
             'tenant_id'        => $e->tenant_id,
-            'reference_no'     => $e->reference_no,
+            'reference'        => $e->reference_no,
             'transaction_date' => $e->expense_date,
             'type'             => 'expense',
-            'amount'           => $e->amount,
+            'amount'           => $e->total_amount,
             'payment_method'   => $e->payment_method,
             'source_type'      => 'expense',
             'source_id'        => $e->id,
-            'description'      => $e->notes,
+            'description'      => $e->expense_note,
             'created_by'       => $e->created_by,
         ];
 
