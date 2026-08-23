@@ -337,4 +337,4 @@ return new class extends Migration {
         'trial_reminders_log' => ['recipient' => 'email', 'error_message' => 'error'],
     ];
 
-}
+};
