@@ -288,6 +288,14 @@ for (const [name, u] of feUsage) {
 
 const unused = [...resources.keys()].filter((r) => !feUsage.has(r));
 
+const dumpIdx = process.argv.indexOf("--table");
+if (dumpIdx > -1) {
+  for (const t of process.argv.slice(dumpIdx + 1)) {
+    console.log(`\n${t}: ${tables.has(t) ? [...tables.get(t)].join(" ") : "NO MIGRATION"}`);
+  }
+  process.exit(0);
+}
+
 if (process.argv.includes("--json")) {
   console.log(JSON.stringify({ errors, warns, tables: tables.size, resources: resources.size, unused }, null, 2));
 } else {
