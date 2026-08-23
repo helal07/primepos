@@ -74,10 +74,14 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev \
 
 # Nginx + supervisord + entrypoint
 COPY backend/docker/nginx.conf       /etc/nginx/nginx.conf
+COPY backend/docker/php-uploads.ini  /usr/local/etc/php/conf.d/zz-uploads.ini
 COPY backend/docker/supervisord.conf /etc/supervisord.conf
 COPY backend/docker/entrypoint.sh    /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
-    && mkdir -p /run/nginx /var/log/nginx
+    && mkdir -p /run/nginx /var/log/nginx \
+       /tmp/nginx/client_body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/scgi /tmp/nginx/uwsgi \
+    && chown -R www-data:www-data /tmp/nginx /run/nginx
+
 
 EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
