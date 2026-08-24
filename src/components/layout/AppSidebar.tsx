@@ -402,7 +402,7 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         asChild
                         size="lg"
-                        className="h-11 gap-3 rounded-xl px-3 text-[15px] group-data-[collapsible=icon]:!h-10"
+                        className="h-12 gap-3 rounded-xl px-3 text-base group-data-[collapsible=icon]:!h-10"
                         tooltip={locked ? "Upgrade your plan to access" : item.title}
                       >
                         <NavLink
@@ -410,20 +410,21 @@ export function AppSidebar() {
                           end={item.url === "/"}
                           className={({ isActive }) =>
                             [
-                              "transition-colors font-medium",
+                              "relative transition-colors",
                               isActive
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-                                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                ? "bg-sidebar-accent text-sidebar-accent-foreground font-bold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-sidebar-primary hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                : "font-semibold text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                               locked ? "opacity-60" : "",
                             ].join(" ")
                           }
                         >
-                          <item.icon className="h-5 w-5 shrink-0" />
+                          <item.icon className="h-[22px] w-[22px] shrink-0" />
                           {!collapsed && <span className="flex-1">{item.title}</span>}
                           {!collapsed && locked && <Lock className="h-3.5 w-3.5 ml-auto opacity-70" />}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+
                   ))}
                 </SidebarMenu>
 
