@@ -69,54 +69,97 @@ export default function Customers() {
     toast.success("CSV exported");
   };
 
+  const activeFilterCount = (groupFilter !== "all" ? 1 : 0) + (statusFilter !== "all" ? 1 : 0);
+
+  const FilterFields = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="space-y-1">
+        <Label className="text-xs">Customer Group</Label>
+        <Select value={groupFilter} onValueChange={setGroupFilter}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All groups</SelectItem>
+            {customerGroups?.map((g: any) => (
+              <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Status</Label>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1 sm:col-span-2">
+        <Label className="text-xs">Search</Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Name, phone, email, company..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <PageHeader title="Customers" description="Manage your Customers" actions={
-        <Can module="customers" action="create">
-          <Button onClick={() => navigate("/customers/add")}>
-            <Plus className="mr-2 h-4 w-4" /> Add Customer
-          </Button>
-        </Can>
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="md:hidden relative h-9 px-3">
+                <Filter className="h-4 w-4" />
+                <span className="ml-1.5 text-xs">Filter</span>
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-2xl">
+              <SheetHeader className="text-left mb-4">
+                <SheetTitle className="flex items-center gap-2 text-base">
+                  <Filter className="h-4 w-4 text-primary" /> Filters
+                </SheetTitle>
+              </SheetHeader>
+              {FilterFields}
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setGroupFilter("all"); setStatusFilter("all"); setSearch(""); }}>
+                  Reset
+                </Button>
+                <SheetClose asChild>
+                  <Button className="flex-1">Apply</Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Can module="customers" action="create">
+            <Button size="sm" className="h-9 px-3" onClick={() => navigate("/customers/add")}>
+              <Plus className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Add Customer</span>
+              <span className="ml-1.5 md:hidden text-xs">Add</span>
+            </Button>
+          </Can>
+        </div>
       } />
 
-      <Card>
+      <div className="relative md:hidden">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-11 rounded-full bg-muted/50" />
+      </div>
+
+      <Card className="hidden md:block">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Filter className="h-4 w-4 text-primary" /> Filters
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Customer Group</Label>
-            <Select value={groupFilter} onValueChange={setGroupFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All groups</SelectItem>
-                {customerGroups?.map((g: any) => (
-                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Status</Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs">Search</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Name, phone, email, company..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-          </div>
-        </CardContent>
+        <CardContent>{FilterFields}</CardContent>
       </Card>
 
 
@@ -125,7 +168,7 @@ export default function Customers() {
           <CardTitle className="text-base">All your Customers</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <div className="hidden md:flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Show</span>
               <Select value={perPage} onValueChange={setPerPage}>
@@ -152,6 +195,36 @@ export default function Customers() {
               </div>
             </div>
           </div>
+
+          <div className="md:hidden space-y-2">
+            {isLoading ? Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            )) : filtered.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8 text-sm">No customers found</p>
+            ) : filtered.slice(0, Number(perPage)).map((c: any) => (
+              <div key={c.id} className="rounded-lg border p-3 flex items-start justify-between gap-2">
+                <Link to={`/customers/${c.id}`} className="min-w-0">
+                  <p className="font-semibold truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{c.phone || c.email || contactId(c)}</p>
+                  <p className="text-xs mt-1">Due: <span className="font-medium">৳{Number(c.balance || 0).toLocaleString()}</span></p>
+                </Link>
+                <div className="flex flex-col items-end gap-1.5">
+                  <Badge variant={c.is_active ? "default" : "secondary"} className="text-[10px]">{c.is_active ? "Active" : "Inactive"}</Badge>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => navigate(`/customers/${c.id}?action=pay`)}>
+                      <CreditCard className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(c)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block">
+
 
           <div className="border rounded-lg overflow-x-auto">
             <Table>
