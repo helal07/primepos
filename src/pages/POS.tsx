@@ -245,13 +245,23 @@ export default function POS() {
     toast.error("No product or IMEI found");
   };
 
+  // Live IMEI / serial matches from purchases + exchange stock
+  const { data: serialMatches } = useSerialSearch(search);
+  const serialProductIds = useMemo(
+    () => new Set((serialMatches ?? []).map((m) => m.product_id)),
+    [serialMatches],
+  );
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     let filtered = products as any[];
     const q = search.toLowerCase();
     if (q) {
       filtered = filtered.filter((p: any) =>
-        p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q) ||
+        serialProductIds.has(p.id)
       );
     }
     if (filterType === "category" && selectedCategory !== "all") {
@@ -261,7 +271,8 @@ export default function POS() {
       filtered = filtered.filter((p: any) => p.brand_id === selectedBrand);
     }
     return filtered;
-  }, [search, products, filterType, selectedCategory, selectedBrand]);
+  }, [search, products, filterType, selectedCategory, selectedBrand, serialProductIds]);
+
 
   const suggestions = useMemo(() => {
     const q = search.trim().toLowerCase();
