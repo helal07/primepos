@@ -317,10 +317,12 @@ export default function Customers() {
               </TableBody>
             </Table>
           </div>
+          </div>
 
-          <div className="text-sm text-muted-foreground mt-3">
+          <div className="text-xs md:text-sm text-muted-foreground mt-3">
             Showing 1 to {Math.min(Number(perPage), filtered.length)} of {filtered.length} entries
           </div>
+
         </CardContent>
       </Card>
     </div>
