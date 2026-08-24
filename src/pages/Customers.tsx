@@ -113,9 +113,9 @@ export default function Customers() {
         <div className="flex items-center gap-2">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="md:hidden relative h-9 px-3">
+              <Button variant="outline" size="sm" className="md:hidden relative h-8 px-2.5 text-xs border-primary/60 text-primary hover:bg-primary/10 hover:text-primary bg-primary/5">
                 <Filter className="h-4 w-4" />
-                <span className="ml-1.5 text-xs">Filter</span>
+                <span className="ml-1.5">Filter</span>
                 {activeFilterCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                     {activeFilterCount}
@@ -141,9 +141,9 @@ export default function Customers() {
             </SheetContent>
           </Sheet>
           <Can module="customers" action="create">
-            <Button size="sm" className="h-9 px-3" onClick={() => navigate("/customers/add")}>
-              <Plus className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Add Customer</span>
-              <span className="ml-1.5 md:hidden text-xs">Add</span>
+            <Button size="sm" className="h-8 px-2.5 text-xs" onClick={() => navigate("/customers/add")}>
+              <Plus className="h-4 w-4 md:mr-1.5" /> <span className="hidden md:inline">Add Customer</span>
+              <span className="md:hidden">Add</span>
             </Button>
           </Can>
         </div>

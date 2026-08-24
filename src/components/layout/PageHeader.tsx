@@ -12,8 +12,8 @@ export function PageHeader({ title, description, subtitle, actions, children }: 
   const desc = description || subtitle;
   const acts = actions || children;
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-5 md:mb-6">
-      <div className="min-w-0">
+    <div className="flex flex-row items-start justify-between gap-2 sm:items-end sm:gap-3 mb-5 md:mb-6">
+      <div className="min-w-0 flex-1">
         <h1 className="text-xl md:text-3xl font-semibold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
           {title}
         </h1>
@@ -22,7 +22,7 @@ export function PageHeader({ title, description, subtitle, actions, children }: 
         )}
       </div>
       {acts && (
-        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2 sm:shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:shrink-0">
           {acts}
         </div>
       )}
