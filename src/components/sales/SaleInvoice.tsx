@@ -382,8 +382,13 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [], pre
 
               )}
             </div>
+            {/* Amount in words, under the balance */}
+            <div style={{ background: BAND_BG, padding: "6px 10px", fontSize: "11px", textAlign: "center", marginTop: "6px" }}>
+              {numberToWords(total)}
+            </div>
           </div>
         </div>
+
 
         {/* Terms */}
         <div style={{ marginTop: "12px" }}>
