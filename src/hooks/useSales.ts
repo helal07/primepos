@@ -126,6 +126,86 @@ export function useSalePayments(saleId: string | null) {
   });
 }
 
+export interface OutstandingSale {
+  id: string;
+  invoice_number?: string;
+  sale_date?: string;
+  total: number;
+  paid: number;
+  due: number;
+}
+
+export interface PreviousDueResult {
+  total: number;
+  sales: OutstandingSale[];
+}
+
+/**
+ * Outstanding amount from the customer's OTHER sales (excluding `excludeSaleId`).
+ * Oldest first, so surplus payments can be allocated in order.
+ */
+export function usePreviousDue(customerId?: string | null, excludeSaleId?: string | null) {
+  return useQuery<PreviousDueResult>({
+    queryKey: ["previous_due", customerId ?? null, excludeSaleId ?? null],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const rows = await rest.all<AnyRec>("sales", {
+        filter: {
+          customer_id: customerId!,
+          payment_status: { in: "due,partial,unpaid,pending" },
+        },
+        with: ["payments"],
+        sort: "sale_date",
+        perPage: 500,
+      });
+      const sales: OutstandingSale[] = rows
+        .filter((s) => s.id !== excludeSaleId)
+        .map((s) => {
+          const total = Number(s.total_amount) || 0;
+          const paid = (s.payments ?? []).reduce(
+            (t: number, p: AnyRec) => t + (Number(p?.amount) || 0),
+            0,
+          );
+          return {
+            id: s.id as string,
+            invoice_number: s.invoice_number,
+            sale_date: s.sale_date,
+            total,
+            paid,
+            due: Math.max(0, total - paid),
+          };
+        })
+        .filter((s) => s.due > 0.001)
+        .sort((a, b) => String(a.sale_date ?? "").localeCompare(String(b.sale_date ?? "")));
+      return { total: sales.reduce((t, s) => t + s.due, 0), sales };
+    },
+  });
+}
+
+/**
+ * Split a received amount between the current sale and the customer's older dues
+ * (oldest first). Anything left over stays on the current sale as advance.
+ */
+export function allocateReceivedAmount(
+  received: number,
+  currentSaleTotal: number,
+  outstanding: OutstandingSale[],
+): { toCurrent: number; allocations: { saleId: string; amount: number }[] } {
+  const toCurrent = Math.min(received, currentSaleTotal);
+  let surplus = received - toCurrent;
+  const allocations: { saleId: string; amount: number }[] = [];
+  for (const s of outstanding) {
+    if (surplus <= 0.001) break;
+    const amount = Math.min(surplus, s.due);
+    if (amount > 0.001) {
+      allocations.push({ saleId: s.id, amount: Number(amount.toFixed(2)) });
+      surplus -= amount;
+    }
+  }
+  return { toCurrent: Number(toCurrent.toFixed(2)) + Number(surplus.toFixed(2)), allocations };
+}
+
+
 export function useSaleMutations() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
