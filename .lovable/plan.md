@@ -49,7 +49,10 @@ Where the extra money lands: the current sale is capped at paid = its own total 
 
 - `src/lib/saleTotals.ts`: extend `computeSaleTotals` to accept an optional `previousDue` and return `receivable`, `paidToday`, and `totalBalance` while keeping the existing fields, so current callers keep working.
 - New hook `usePreviousDue(customerId, excludeSaleId)` in `src/hooks/useSales.ts`: fetches the customer's `sales` with `payment_status in (due, partial, unpaid)` plus their `sale_payments`, sums the outstanding amounts, excludes the current sale.
+- `src/components/payments/PaymentDialog.tsx`: new optional `previousDue` prop; ceiling = `totalAmount + previousDue`; change-return math and the summary rows use that ceiling; validation blocks amounts above it.
+- New helper (e.g. `src/lib/allocatePayments.ts` + a mutation in `useSales.ts`): split the received amount into "this sale" and "old dues", then create `sale_payments` rows against the oldest outstanding sales for the surplus.
 - `src/components/sales/SaleInvoice.tsx`: accept `previousDue` prop, rewrite the Amounts rows in the order above with conditional rendering; amount-in-words continues to use the invoice Total.
-- `src/pages/POS.tsx`: store `lastPayments`, reset the cart on success, pass `payments` + `previousDue` to `SaleInvoice`, add the auto-print effect.
+- `src/pages/POS.tsx`: store `lastPayments`, pass `previousDue` into the payment dialog and invoice, reset the cart on success, add the auto-print effect.
 - `src/pages/SaleView.tsx`: pass `previousDue` to `SaleInvoice` and mirror the new row order in the on-page totals card.
 - Frontend/presentation only — no database or Laravel changes.
+
