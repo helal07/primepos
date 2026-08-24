@@ -486,10 +486,6 @@ export function AppSidebar() {
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </CollapsibleContent>
-
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
               </SidebarGroup>
             </Collapsible>
           );
