@@ -123,7 +123,11 @@ export default function POS() {
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [lastPayments, setLastPayments] = useState<{ amount: number; payment_method: string; payment_note: string }[]>([]);
+  const [lastPreviousDue, setLastPreviousDue] = useState(0);
+  const [printedSaleId, setPrintedSaleId] = useState<string | null>(null);
   const [lastInvoice, setLastInvoice] = useState("");
+
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
