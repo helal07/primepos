@@ -44,6 +44,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
+import { useSerialSearch } from "@/hooks/useSerialSearch";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
 import { useProductStockMap } from "@/hooks/useWarehouses";
