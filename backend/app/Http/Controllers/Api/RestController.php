@@ -203,6 +203,16 @@ class RestController extends Controller
         }
     }
 
+    /**
+     * MySQL/MariaDB has no ILIKE operator (its LIKE is already case-insensitive
+     * for the default collations), so map ilike -> like outside Postgres.
+     */
+    private function likeOperator(Builder $q): string
+    {
+        $driver = $q->getModel()->getConnection()->getDriverName();
+        return $driver === 'pgsql' ? 'ilike' : 'like';
+    }
+
     private function applyOp(Builder $q, string $col, string $op, $val): void
     {
         switch ($op) {
@@ -211,7 +221,7 @@ class RestController extends Controller
             case 'in':      $q->whereIn($col, is_array($val) ? $val : explode(',', (string)$val)); break;
             case 'nin':     $q->whereNotIn($col, is_array($val) ? $val : explode(',', (string)$val)); break;
             case 'like':    $q->where($col, 'like', "%{$val}%"); break;
-            case 'ilike':   $q->where($col, 'ilike', "%{$val}%"); break;
+            case 'ilike':   $q->where($col, $this->likeOperator($q), "%{$val}%"); break;
             case 'gt':      $q->where($col, '>',  $val); break;
             case 'gte':     $q->where($col, '>=', $val); break;
             case 'lt':      $q->where($col, '<',  $val); break;
@@ -227,12 +237,14 @@ class RestController extends Controller
         if ($term === '') return;
         $cols = $cfg['search'] ?? [];
         if (!$cols) return;
-        $q->where(function (Builder $sub) use ($cols, $term) {
+        $like = $this->likeOperator($q);
+        $q->where(function (Builder $sub) use ($cols, $term, $like) {
             foreach ($cols as $c) {
-                $sub->orWhere($c, 'ilike', "%{$term}%");
+                $sub->orWhere($c, $like, "%{$term}%");
             }
         });
     }
+
 
     private function applySort(Builder $q, array $cfg, Request $request): void
     {

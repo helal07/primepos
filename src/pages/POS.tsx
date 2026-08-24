@@ -44,6 +44,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { searchImeiInPurchases } from "@/hooks/useImeiValidation";
+import { useSerialSearch } from "@/hooks/useSerialSearch";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
 import { useProductStockMap } from "@/hooks/useWarehouses";
@@ -234,6 +235,18 @@ export default function POS() {
         return;
       }
     }
+    // 2b. Partial serial match from the live IMEI search
+    const partial = (serialMatches ?? [])[0];
+    if (partial && (serialMatches ?? []).length === 1) {
+      const product = (products as any[]).find((p: any) => p.id === partial.product_id);
+      if (product) {
+        addSerialToCart(partial.product_id, partial.serial_number);
+        toast.success(`Added IMEI: ${partial.serial_number} (${product.name})`);
+        setSearch("");
+        return;
+      }
+    }
+
     // 3. Fuzzy fallback (starts-with > contains > token match) on name/SKU/barcode
     const fuzzy = fuzzyFindProduct(products as any[], q);
     if (fuzzy) {
@@ -245,13 +258,23 @@ export default function POS() {
     toast.error("No product or IMEI found");
   };
 
+  // Live IMEI / serial matches from purchases + exchange stock
+  const { data: serialMatches } = useSerialSearch(search);
+  const serialProductIds = useMemo(
+    () => new Set((serialMatches ?? []).map((m) => m.product_id)),
+    [serialMatches],
+  );
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     let filtered = products as any[];
     const q = search.toLowerCase();
     if (q) {
       filtered = filtered.filter((p: any) =>
-        p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q) || p.barcode?.toLowerCase().includes(q)
+        p.name.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q) ||
+        serialProductIds.has(p.id)
       );
     }
     if (filterType === "category" && selectedCategory !== "all") {
@@ -261,7 +284,8 @@ export default function POS() {
       filtered = filtered.filter((p: any) => p.brand_id === selectedBrand);
     }
     return filtered;
-  }, [search, products, filterType, selectedCategory, selectedBrand]);
+  }, [search, products, filterType, selectedCategory, selectedBrand, serialProductIds]);
+
 
   const suggestions = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -561,10 +585,43 @@ export default function POS() {
                 />
                 {showSuggestions && search.trim().length >= 3 && (
                   <div className="absolute z-50 left-0 right-0 top-full mt-1 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg">
-                    {suggestions.length === 0 ? (
+                    {(serialMatches ?? []).map((m) => {
+                      const prod = (products as any[])?.find((p: any) => p.id === m.product_id);
+                      return (
+                        <button
+                          key={`serial-${m.serial_number}`}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            addSerialToCart(m.product_id, m.serial_number);
+                            setSearch("");
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-accent flex items-center justify-between gap-2 border-b"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">
+                              {prod?.name ?? "Product"}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground truncate">
+                              IMEI/Serial: {m.serial_number}
+                              {m.source === "exchange" ? " • exchange stock" : ""}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-semibold">
+                              {prod ? Number(prod.selling_price).toFixed(2) : ""}
+                            </div>
+                            <div className="text-[10px] text-emerald-600">Available</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {suggestions.length === 0 && (serialMatches ?? []).length === 0 ? (
                       <div className="px-3 py-3 text-sm text-muted-foreground">No products found</div>
                     ) : (
                       suggestions.map((p: any) => {
+
                         const stockQty = getStock(p);
                         const inStock = stockQty > 0;
                         return (
