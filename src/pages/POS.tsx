@@ -176,6 +176,29 @@ export default function POS() {
   const previousDue = previousDueInfo?.total ?? 0;
   const outstandingSales = previousDueInfo?.sales ?? [];
 
+  // Payments shown on the receipt: prefer the checkout rows (they include the
+  // amount adjusted against old dues) unless persisted rows total more.
+  const receiptPayments = useMemo(() => {
+    const persisted = (lastSalePayments ?? []) as any[];
+    const persistedSum = persisted.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const enteredSum = lastPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    if (enteredSum > persistedSum + 0.001) return lastPayments;
+    return persisted.length ? persisted : lastPayments;
+  }, [lastSalePayments, lastPayments]);
+
+  // Auto-print the invoice once the sale data is ready — no second confirmation
+  useEffect(() => {
+    if (!showReceipt || !lastSaleId || printedSaleId === lastSaleId) return;
+    if (!lastSaleData || !lastSaleItems) return;
+    const t = setTimeout(() => {
+      setPrintedSaleId(lastSaleId);
+      printInvoiceArea({ title: `Invoice ${lastInvoice}`, settings: settings || {} });
+    }, 350);
+    return () => clearTimeout(t);
+  }, [showReceipt, lastSaleId, printedSaleId, lastSaleData, lastSaleItems, lastInvoice, settings]);
+
+
+
 
 
   const dateStr = format(saleDate, "dd/MM/yyyy");
