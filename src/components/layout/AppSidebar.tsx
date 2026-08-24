@@ -366,7 +366,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold overflow-hidden shrink-0">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground text-lg font-bold overflow-hidden shrink-0">
             {logoUrl ? (
               <img src={logoUrl} alt={companyName} className="h-full w-full object-contain" />
             ) : (
@@ -374,12 +374,13 @@ export function AppSidebar() {
             )}
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-accent-foreground truncate">
+            <span className="min-w-0 flex-1 text-lg font-bold text-sidebar-accent-foreground truncate">
               {settingsLoading ? "..." : companyName}
             </span>
           )}
         </div>
       </SidebarHeader>
+
 
       <SidebarContent className="px-2">
         {allGroups.map((group) => {
