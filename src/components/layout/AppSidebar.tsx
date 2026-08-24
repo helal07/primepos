@@ -62,6 +62,8 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings } from "@/hooks/useSettings";
+import { normalizeStorageUrl } from "@/lib/storage";
 import {
   Sidebar,
   SidebarContent,
