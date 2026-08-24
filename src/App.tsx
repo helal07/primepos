@@ -261,6 +261,8 @@ const App = () => (
                         <Route path="/leave" element={<ModuleGate module="hrm"><LeaveManagement /></ModuleGate>} />
                         <Route path="/payroll" element={<ModuleGate module="hrm"><PayrollPage /></ModuleGate>} />
                         <Route path="/warranty-claims" element={<ModuleGate module="warranty"><WarrantyClaims /></ModuleGate>} />
+                        <Route path="/warranty-checking" element={<ModuleGate module="warranty"><WarrantyChecking /></ModuleGate>} />
+
                         <Route path="/exchange" element={<ModuleGate module="exchange"><Exchange /></ModuleGate>} />
                         <Route path="/exchange/purchases" element={<ModuleGate module="exchange"><ExchangePurchases /></ModuleGate>} />
                         <Route path="/exchange/purchases/add" element={<ModuleGate module="exchange"><ExchangePurchaseAdd /></ModuleGate>} />

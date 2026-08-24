@@ -262,6 +262,14 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
                         {item.serials.join(", ")}
                       </div>
                     )}
+                    {item.products?.has_warranty && Number(item.products?.warranty_duration) > 0 && (
+                      <div style={{ fontSize: "11px", color: "#4b5563", marginTop: "2px" }}>
+                        Warranty: {Number(item.products.warranty_duration)} month
+                        {Number(item.products.warranty_duration) > 1 ? "s" : ""}
+                        {item.products?.warranty_type ? ` (${item.products.warranty_type})` : ""}
+                      </div>
+                    )}
+
                   </td>
                   <td style={{ padding: "8px" }}>{item.products?.sku || item.products?.barcode || "-"}</td>
                   <td style={{ padding: "8px", textAlign: "center" }}>{item.quantity}</td>
