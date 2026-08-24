@@ -573,10 +573,43 @@ export default function POS() {
                 />
                 {showSuggestions && search.trim().length >= 3 && (
                   <div className="absolute z-50 left-0 right-0 top-full mt-1 max-h-72 overflow-y-auto rounded-md border bg-popover shadow-lg">
-                    {suggestions.length === 0 ? (
+                    {(serialMatches ?? []).map((m) => {
+                      const prod = (products as any[])?.find((p: any) => p.id === m.product_id);
+                      return (
+                        <button
+                          key={`serial-${m.serial_number}`}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            addSerialToCart(m.product_id, m.serial_number);
+                            setSearch("");
+                            setShowSuggestions(false);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-accent flex items-center justify-between gap-2 border-b"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium truncate">
+                              {prod?.name ?? "Product"}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground truncate">
+                              IMEI/Serial: {m.serial_number}
+                              {m.source === "exchange" ? " • exchange stock" : ""}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-semibold">
+                              {prod ? Number(prod.selling_price).toFixed(2) : ""}
+                            </div>
+                            <div className="text-[10px] text-emerald-600">Available</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {suggestions.length === 0 && (serialMatches ?? []).length === 0 ? (
                       <div className="px-3 py-3 text-sm text-muted-foreground">No products found</div>
                     ) : (
                       suggestions.map((p: any) => {
+
                         const stockQty = getStock(p);
                         const inStock = stockQty > 0;
                         return (
