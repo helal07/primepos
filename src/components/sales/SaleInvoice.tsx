@@ -9,7 +9,10 @@ interface SaleInvoiceProps {
   settings: Record<string, any>;
   onPrint: () => void;
   payments?: any[];
+  /** Outstanding amount from the customer's earlier invoices. */
+  previousDue?: number;
 }
+
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
