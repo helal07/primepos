@@ -170,9 +170,8 @@ export default function POS() {
   // Previous due of the currently selected customer (for the live cart)
   const { data: previousDueInfo } = usePreviousDue(customerId || null, null);
   const previousDue = previousDueInfo?.total ?? 0;
-  // Previous due snapshot used on the printed invoice (excludes the new sale)
-  const { data: receiptDueInfo } = usePreviousDue(lastSaleCustomerId, lastSaleId);
-  const receiptPreviousDue = receiptDueInfo?.total ?? 0;
+  const outstandingSales = previousDueInfo?.sales ?? [];
+
 
 
   const dateStr = format(saleDate, "dd/MM/yyyy");
