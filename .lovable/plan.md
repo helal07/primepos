@@ -32,11 +32,27 @@ Total Balance      (Receivable - Today's Payment; shown as Due, Advance, or Paid
 
 Previous Due comes from the customer's other unpaid/partial sales (excluding the current invoice): sum of `total_amount - paid` across those sales. Walk-in sales (no customer) show no Previous Due. When there is no previous due, the invoice reads exactly as today (Sub Total → Discount → Total → Payment → Balance).
 
+## Problem 4 — Allow receiving more than the invoice total when previous due exists
+
+Today the payment dialog treats anything above the invoice total as "change return" and the sale is simply marked paid; extra money is not credited against the customer's old dues.
+
+New rule:
+- Walk-in / no previous due: the receivable ceiling stays the invoice total — extra beyond it is still shown as change return, not as a payment.
+- Customer with previous due: the ceiling becomes **Receivable = Invoice Total + Previous Due**. Amounts above the invoice total (up to the ceiling) are accepted as real payment and reduce the customer's ledger balance; only money above the ceiling is treated as change return.
+- The dialog shows Invoice Total, Previous Due, Receivable Amount, Paying now, Adjusted to old dues, and Remaining balance so the cashier sees exactly what is happening. Cash and multi-pay both follow this rule.
+- The invoice's Today's Payment / Total Balance rows reflect the full received amount, so the printed bill matches image 2's layout (Receivable − Today's Payment = Total Balance).
+
+Where the extra money lands: the current sale is capped at paid = its own total (payment status stays correct), and the surplus is recorded as payments applied to the customer's oldest outstanding sales (oldest first), so due reports, contact profile balance and the customer's ledger all update from a single source of truth. If a surplus remains after all old dues are cleared, it stays as advance on the current sale.
+
+
 ## Technical notes
 
 - `src/lib/saleTotals.ts`: extend `computeSaleTotals` to accept an optional `previousDue` and return `receivable`, `paidToday`, and `totalBalance` while keeping the existing fields, so current callers keep working.
 - New hook `usePreviousDue(customerId, excludeSaleId)` in `src/hooks/useSales.ts`: fetches the customer's `sales` with `payment_status in (due, partial, unpaid)` plus their `sale_payments`, sums the outstanding amounts, excludes the current sale.
+- `src/components/payments/PaymentDialog.tsx`: new optional `previousDue` prop; ceiling = `totalAmount + previousDue`; change-return math and the summary rows use that ceiling; validation blocks amounts above it.
+- New helper (e.g. `src/lib/allocatePayments.ts` + a mutation in `useSales.ts`): split the received amount into "this sale" and "old dues", then create `sale_payments` rows against the oldest outstanding sales for the surplus.
 - `src/components/sales/SaleInvoice.tsx`: accept `previousDue` prop, rewrite the Amounts rows in the order above with conditional rendering; amount-in-words continues to use the invoice Total.
-- `src/pages/POS.tsx`: store `lastPayments`, reset the cart on success, pass `payments` + `previousDue` to `SaleInvoice`, add the auto-print effect.
+- `src/pages/POS.tsx`: store `lastPayments`, pass `previousDue` into the payment dialog and invoice, reset the cart on success, add the auto-print effect.
 - `src/pages/SaleView.tsx`: pass `previousDue` to `SaleInvoice` and mirror the new row order in the on-page totals card.
 - Frontend/presentation only — no database or Laravel changes.
+
