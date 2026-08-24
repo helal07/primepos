@@ -366,7 +366,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold overflow-hidden shrink-0">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground text-lg font-bold overflow-hidden shrink-0">
             {logoUrl ? (
               <img src={logoUrl} alt={companyName} className="h-full w-full object-contain" />
             ) : (
@@ -374,12 +374,13 @@ export function AppSidebar() {
             )}
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-accent-foreground truncate">
+            <span className="min-w-0 flex-1 text-lg font-bold text-sidebar-accent-foreground truncate">
               {settingsLoading ? "..." : companyName}
             </span>
           )}
         </div>
       </SidebarHeader>
+
 
       <SidebarContent className="px-2">
         {allGroups.map((group) => {
@@ -401,7 +402,7 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         asChild
                         size="lg"
-                        className="h-11 gap-3 rounded-xl px-3 text-[15px] group-data-[collapsible=icon]:!h-10"
+                        className="h-12 gap-3 rounded-xl px-3 text-base group-data-[collapsible=icon]:!h-10"
                         tooltip={locked ? "Upgrade your plan to access" : item.title}
                       >
                         <NavLink
@@ -409,20 +410,21 @@ export function AppSidebar() {
                           end={item.url === "/"}
                           className={({ isActive }) =>
                             [
-                              "transition-colors font-medium",
+                              "relative transition-colors",
                               isActive
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-                                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                ? "bg-sidebar-accent text-sidebar-accent-foreground font-bold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-sidebar-primary hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                : "font-semibold text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                               locked ? "opacity-60" : "",
                             ].join(" ")
                           }
                         >
-                          <item.icon className="h-5 w-5 shrink-0" />
+                          <item.icon className="h-[22px] w-[22px] shrink-0" />
                           {!collapsed && <span className="flex-1">{item.title}</span>}
                           {!collapsed && locked && <Lock className="h-3.5 w-3.5 ml-auto opacity-70" />}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+
                   ))}
                 </SidebarMenu>
 
@@ -440,8 +442,9 @@ export function AppSidebar() {
               <SidebarGroup>
                 <SidebarGroupLabel
                   asChild
-                  className={`text-sidebar-foreground/60 text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground transition-colors ${locked ? "opacity-60" : ""}`}
+                  className={`text-sidebar-foreground/70 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground transition-colors ${locked ? "opacity-60" : ""}`}
                 >
+
                   <CollapsibleTrigger className="flex w-full items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       {group.label}
@@ -460,7 +463,7 @@ export function AppSidebar() {
                           <SidebarMenuButton
                             asChild
                             size="lg"
-                            className="h-11 gap-3 rounded-xl px-3 text-[15px] group-data-[collapsible=icon]:!h-10"
+                            className="h-12 gap-3 rounded-xl px-3 text-base group-data-[collapsible=icon]:!h-10"
                             tooltip={locked ? "Upgrade your plan to access" : item.title}
                           >
                             <NavLink
@@ -468,20 +471,21 @@ export function AppSidebar() {
                               end={item.url === "/"}
                               className={({ isActive }) =>
                                 [
-                                  "transition-colors font-medium",
+                                  "relative transition-colors",
                                   isActive
-                                    ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-                                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-bold before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-sidebar-primary hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                    : "font-semibold text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                                   locked ? "opacity-60" : "",
                                 ].join(" ")
                               }
                             >
-                              <item.icon className="h-5 w-5 shrink-0" />
+                              <item.icon className="h-[22px] w-[22px] shrink-0" />
                               {!collapsed && <span className="flex-1">{item.title}</span>}
                               {!collapsed && locked && <Lock className="h-3.5 w-3.5 ml-auto opacity-70" />}
                             </NavLink>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
+
                       ))}
                     </SidebarMenu>
                   </SidebarGroupContent>
