@@ -1183,6 +1183,8 @@ export default function POS() {
             <SaleInvoice
               sale={lastSaleData}
               items={lastSaleItems}
+              payments={receiptPayments}
+              previousDue={lastPreviousDue}
               settings={settings || {}}
               onPrint={() => {
                 printInvoiceArea({ title: `Invoice ${lastInvoice}`, settings: settings || {} });
@@ -1192,13 +1194,14 @@ export default function POS() {
             <div className="text-center py-8">
               <div className="text-4xl mb-2">✅</div>
               <p className="text-muted-foreground">Invoice: <strong>{lastInvoice}</strong></p>
-              <p className="text-lg font-bold">৳{totalAmount.toFixed(2)}</p>
+              <p className="text-lg font-bold">Preparing invoice…</p>
             </div>
           )}
           <DialogFooter className="flex-col gap-2">
             <Button onClick={handleNewSale} className="w-full">New Sale</Button>
             <Button variant="outline" onClick={() => navigate("/sales")} className="w-full">View Sales</Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
