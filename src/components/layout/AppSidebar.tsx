@@ -365,8 +365,8 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm overflow-hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold overflow-hidden shrink-0">
             {logoUrl ? (
               <img src={logoUrl} alt={companyName} className="h-full w-full object-contain" />
             ) : (
@@ -380,6 +380,7 @@ export function AppSidebar() {
           )}
         </div>
       </SidebarHeader>
+
       <SidebarContent className="px-2">
         {allGroups.map((group) => {
           const locked = isLocked(group);
