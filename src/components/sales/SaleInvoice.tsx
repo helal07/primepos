@@ -233,7 +233,7 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [], pre
             <div style={{ fontWeight: 600, fontSize: "12px", color: "#374151", borderBottom: `1px solid ${ACCENT}`, paddingBottom: "2px", marginBottom: "4px" }}>Invoice Details</div>
             <p style={{ margin: "2px 0", fontSize: "12px" }}>Invoice No.: {sale.invoice_number}</p>
             <p style={{ margin: "2px 0", fontSize: "12px" }}>Date: {saleDate.toLocaleDateString()}</p>
-            <p style={{ margin: "2px 0", fontSize: "12px" }}>Time: {saleDate.toLocaleTimeString()}</p>
+            <p style={{ margin: "2px 0", fontSize: "12px" }}>Time: {new Date(sale.created_at || sale.sale_date).toLocaleTimeString()}</p>
           </div>
         </div>
 
