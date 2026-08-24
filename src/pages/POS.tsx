@@ -235,6 +235,18 @@ export default function POS() {
         return;
       }
     }
+    // 2b. Partial serial match from the live IMEI search
+    const partial = (serialMatches ?? [])[0];
+    if (partial && (serialMatches ?? []).length === 1) {
+      const product = (products as any[]).find((p: any) => p.id === partial.product_id);
+      if (product) {
+        addSerialToCart(partial.product_id, partial.serial_number);
+        toast.success(`Added IMEI: ${partial.serial_number} (${product.name})`);
+        setSearch("");
+        return;
+      }
+    }
+
     // 3. Fuzzy fallback (starts-with > contains > token match) on name/SKU/barcode
     const fuzzy = fuzzyFindProduct(products as any[], q);
     if (fuzzy) {
