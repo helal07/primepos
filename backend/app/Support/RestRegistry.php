@@ -126,7 +126,7 @@ class RestRegistry
             'sales' => [
                 'model'        => Models\Sale::class,
                 'module'       => 'sales',
-                'filters'      => ['customer_id', 'status', 'payment_status', 'payment_method', 'warehouse_id', 'sale_date', 'created_at'],
+                'filters'      => ['customer_id', 'status', 'payment_status', 'payment_method', 'warehouse_id', 'invoice_number', 'sale_date', 'created_at'],
                 'sort'         => ['created_at', 'sale_date', 'total_amount', 'invoice_number'],
                 'default_sort' => '-created_at',
                 'search'       => ['invoice_number', 'order_no', 'notes'],
