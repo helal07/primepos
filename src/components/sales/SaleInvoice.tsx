@@ -81,7 +81,9 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
   const terms = tpl.terms || settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
-  const { total, paid, balance } = computeSaleTotals(sale, payments);
+  const { total, paid, previousDue: prevDue, receivable, totalBalance } =
+    computeSaleTotals(sale, payments, previousDue);
+
 
   const merged = mergeItems(items);
   const totalQty = merged.reduce((s, r) => s + Number(r.quantity || 0), 0);
