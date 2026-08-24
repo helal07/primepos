@@ -444,13 +444,29 @@ export default function POS() {
       total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
       payment_status: paymentStatus, items: expandedItems,
     });
-    await createSalePayments.mutateAsync({ saleId: result.id, payments });
+    await createSalePayments.mutateAsync({
+      saleId: result.id,
+      payments,
+      saleTotal: totalAmount,
+      outstanding: outstandingSales,
+    });
     setLastInvoice(result.invoice_number);
     setLastSaleId(result.id);
+    setLastPayments(payments.map((p) => ({ ...p, payment_note: p.payment_note || "" })));
+    setLastPreviousDue(previousDue);
+    setPrintedSaleId(null);
     setShowPayment(false);
     setShowMobileCart(false);
     setShowReceipt(true);
+    // Clear the POS screen right away so the next sale starts fresh
+    setCart([]);
+    setCustomerId("");
+    setDiscountValue(0);
+    setShippingCost(0);
+    setSearch("");
+    setSaleDate(new Date());
   };
+
 
   const handleQuickCash = async () => {
     if (cart.length === 0) {
