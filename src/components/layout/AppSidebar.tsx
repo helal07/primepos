@@ -128,8 +128,10 @@ const URL_PERM_MODULE: Record<string, string> = {
   "/attendance": "hrm",
   "/leave": "hrm",
   "/payroll": "hrm",
-  "/warranties": "warranty",
+  "/warranties": "products",
   "/warranty-claims": "warranty",
+  "/warranty-checking": "warranty",
+
   "/users": "users",
   "/roles": "roles",
   "/settings": "settings",
