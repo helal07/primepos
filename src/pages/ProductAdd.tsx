@@ -65,6 +65,7 @@ export default function ProductAdd() {
     setGroupPriceRows(map);
   }, [productGroupPrices]);
 
+  const { data: warrantyTypes = [] } = useWarrantyTypes();
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -429,10 +430,36 @@ export default function ProductAdd() {
                 <CardTitle className="text-base">Warranty & Guarantee</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-2">
+                    <Label>Warranty Period</Label>
+                    <Select
+                      value={form.warranty_id || "custom"}
+                      onValueChange={v => {
+                        if (v === "custom") { set("warranty_id", ""); return; }
+                        const w = warrantyTypes.find(x => x.id === v);
+                        setForm(f => ({
+                          ...f,
+                          warranty_id: v,
+                          warranty_duration: w ? String(warrantyToMonths(w.duration, w.duration_type)) : f.warranty_duration,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select warranty" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="custom">Custom (manual months)</SelectItem>
+                        {warrantyTypes.filter(w => w.is_active !== false).map(w => (
+                          <SelectItem key={w.id} value={w.id}>{warrantyLabel(w)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Manage periods in Product → Warranties.
+                    </p>
+                  </div>
                   <div className="space-y-2">
                     <Label>Duration (months)</Label>
-                    <Input type="number" value={form.warranty_duration} onChange={e => set("warranty_duration", e.target.value)} />
+                    <Input type="number" value={form.warranty_duration} onChange={e => { set("warranty_duration", e.target.value); set("warranty_id", ""); }} />
                   </div>
                   <div className="space-y-2">
                     <Label>Type</Label>
@@ -447,6 +474,7 @@ export default function ProductAdd() {
                   </div>
                 </div>
               </CardContent>
+
             </Card>
           )}
 
