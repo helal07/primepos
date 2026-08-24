@@ -62,6 +62,8 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSettings } from "@/hooks/useSettings";
+import { normalizeStorageUrl } from "@/lib/storage";
 import {
   Sidebar,
   SidebarContent,
@@ -297,7 +299,14 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { user } = useAuth();
+  const { data: settings, isLoading: settingsLoading } = useSettings();
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+
+  const business = settings?.business ?? {};
+  const tenantName = user?.tenant?.name || "Prime POS";
+  const companyName = business.company_name || tenantName;
+  const logoUrl = normalizeStorageUrl(business.logo_url || "");
+  const nameInitial = companyName.charAt(0).toUpperCase();
 
   // Find which group is active based on current route
   const activeGroupLabel = menuGroups.find((group) =>
@@ -357,12 +366,16 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-            P
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm overflow-hidden">
+            {logoUrl ? (
+              <img src={logoUrl} alt={companyName} className="h-full w-full object-contain" />
+            ) : (
+              nameInitial
+            )}
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-accent-foreground">
-              Prime POS
+            <span className="text-lg font-bold text-sidebar-accent-foreground truncate">
+              {settingsLoading ? "..." : companyName}
             </span>
           )}
         </div>
