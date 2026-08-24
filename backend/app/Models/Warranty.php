@@ -21,7 +21,13 @@ class Warranty extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'duration' => 'integer',
     ];
+
+    protected $attributes = [
+        'duration_type' => 'months',
+    ];
+
 
     public function product(): BelongsTo
     {

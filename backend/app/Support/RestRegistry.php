@@ -136,12 +136,14 @@ class RestRegistry
             'sale_items' => [
                 'model'        => Models\SaleItem::class,
                 'module'       => 'sales',
-                'filters'      => ['sale_id', 'product_id', 'variation_id', 'created_at'],
+                'filters'      => ['sale_id', 'product_id', 'variation_id', 'serial_number', 'created_at'],
                 'sort'         => ['sale_id', 'created_at'],
                 'default_sort' => 'sale_id',
-                'with'         => ['product', 'variation'],
+                'search'       => ['serial_number'],
+                'with'         => ['product', 'variation', 'sale', 'sale.customer'],
                 'max_per_page' => 1000,
             ],
+
             'sale_payments' => [
                 'model'        => Models\SalePayment::class,
                 'module'       => 'sales',
@@ -410,16 +412,20 @@ class RestRegistry
                 'with'         => ['customer', 'product', 'warranty'],
                 'max_per_page' => 500,
             ],
+            // Warranty DEFINITIONS live with product setup, so they use the
+            // inventory module permission and are available to every tenant
+            // (the paid "warranty" module only covers claims/servicing).
             'warranties' => [
                 'model'        => Models\Warranty::class,
-                'module'       => 'warranty',
-                'filters'      => ['product_id', 'customer_id', 'status', 'imei_serial', 'warranty_no', 'is_active'],
-                'sort'         => ['created_at', 'end_date'],
+                'module'       => 'inventory',
+                'filters'      => ['product_id', 'customer_id', 'status', 'imei_serial', 'warranty_no', 'is_active', 'duration_type'],
+                'sort'         => ['created_at', 'end_date', 'name', 'duration'],
                 'default_sort' => '-created_at',
-                'search'       => ['warranty_no', 'imei_serial'],
+                'search'       => ['name', 'warranty_no', 'imei_serial'],
                 'with'         => ['product', 'customer'],
                 'max_per_page' => 500,
             ],
+
 
             // ===== SaaS Admin (Stage 9h) =====
             'saas_packages' => [
