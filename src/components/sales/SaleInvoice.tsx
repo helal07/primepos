@@ -296,49 +296,42 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [], pre
           </tbody>
         </table>
 
-        {/* Payments breakdown */}
-        {payments.length > 0 && (
-          <div style={{ marginBottom: "12px" }}>
-            <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Payments</div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
-              <thead>
-                <tr style={{ background: BAND_BG }}>
-                  <th style={{ padding: "6px 8px", textAlign: "center", width: "32px" }}>#</th>
-                  <th style={{ padding: "6px 8px", textAlign: "left" }}>Date</th>
-                  <th style={{ padding: "6px 8px", textAlign: "left" }}>Method</th>
-                  <th style={{ padding: "6px 8px", textAlign: "left" }}>Note</th>
-                  <th style={{ padding: "6px 8px", textAlign: "right" }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((p: any, idx: number) => (
-                  <tr key={p.id ?? idx} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                    <td style={{ padding: "6px 8px", textAlign: "center" }}>{idx + 1}</td>
-                    <td style={{ padding: "6px 8px" }}>{p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}</td>
-                    <td style={{ padding: "6px 8px", textTransform: "capitalize" }}>{p.payment_method || "—"}</td>
-                    <td style={{ padding: "6px 8px", color: "#4b5563" }}>{p.payment_note || "—"}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "right" }}>৳ {Number(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  </tr>
-                ))}
-                <tr style={{ background: "#f9fafb", fontWeight: "bold" }}>
-                  <td style={{ padding: "6px 8px" }} colSpan={4}>Received</td>
-                  <td style={{ padding: "6px 8px", textAlign: "right" }}>৳ {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Words band + Amounts band side-by-side headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "8px" }}>
+        {/* Payments (left) + Amounts (right) side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "8px", alignItems: "start" }}>
           <div>
-            <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Invoice Amount In Words:</div>
-            <div style={{ background: BAND_BG, padding: "8px 10px", fontSize: "12px", minHeight: "40px" }}>
-              {numberToWords(total)}
-            </div>
+            {payments.length > 0 && (
+              <>
+                <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Payments</div>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                  <thead>
+                    <tr style={{ background: BAND_BG }}>
+                      <th style={{ padding: "6px 8px", textAlign: "center", width: "32px" }}>#</th>
+                      <th style={{ padding: "6px 8px", textAlign: "left" }}>Date</th>
+                      <th style={{ padding: "6px 8px", textAlign: "left" }}>Method</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right" }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments.map((p: any, idx: number) => (
+                      <tr key={p.id ?? idx} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                        <td style={{ padding: "6px 8px", textAlign: "center" }}>{idx + 1}</td>
+                        <td style={{ padding: "6px 8px" }}>{p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}</td>
+                        <td style={{ padding: "6px 8px", textTransform: "capitalize" }}>{p.payment_method || "—"}</td>
+                        <td style={{ padding: "6px 8px", textAlign: "right" }}>৳ {Number(p.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                    <tr style={{ background: "#f9fafb", fontWeight: "bold" }}>
+                      <td style={{ padding: "6px 8px" }} colSpan={3}>Received</td>
+                      <td style={{ padding: "6px 8px", textAlign: "right" }}>৳ {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
           <div>
             <div style={{ background: ACCENT, color: "#fff", padding: "6px 10px", fontSize: "12px", fontWeight: 600 }}>Amounts</div>
+
             <div style={{ padding: "0", fontSize: "12px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
                 <span>Sub Total</span><span>৳ {Number(sale.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
