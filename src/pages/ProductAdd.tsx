@@ -31,7 +31,8 @@ const defaultForm = {
   purchase_price: "0", selling_price: "0", tax_percent: "0",
   stock_quantity: "0", alert_quantity: "5",
   is_active: true, has_warranty: false,
-  warranty_duration: "", warranty_type: "",
+  warranty_duration: "", warranty_type: "", warranty_id: "",
+
   serial_tracking: false, product_type: "general",
   show_on_website: true, image_url: "",
 };
