@@ -299,7 +299,14 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { user } = useAuth();
+  const { data: settings, isLoading: settingsLoading } = useSettings();
   const [isSuperadmin, setIsSuperadmin] = useState(false);
+
+  const business = settings?.business ?? {};
+  const tenantName = user?.tenant?.name || "Prime POS";
+  const companyName = business.company_name || tenantName;
+  const logoUrl = normalizeStorageUrl(business.logo_url || user?.tenant?.logo_url || "");
+  const nameInitial = companyName.charAt(0).toUpperCase();
 
   // Find which group is active based on current route
   const activeGroupLabel = menuGroups.find((group) =>
