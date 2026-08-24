@@ -305,7 +305,7 @@ export function AppSidebar() {
   const business = settings?.business ?? {};
   const tenantName = user?.tenant?.name || "Prime POS";
   const companyName = business.company_name || tenantName;
-  const logoUrl = normalizeStorageUrl(business.logo_url || user?.tenant?.logo_url || "");
+  const logoUrl = normalizeStorageUrl(business.logo_url || "");
   const nameInitial = companyName.charAt(0).toUpperCase();
 
   // Find which group is active based on current route
