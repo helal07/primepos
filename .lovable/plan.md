@@ -1,33 +1,32 @@
-# Fix warranty navigation, eligibility, and Laravel schema
+# Warranty split: open warranty types, gated warranty management
 
 ## Goal
-Make warranty setup part of the Products menu while preserving Warranty Manager as a separately licensed capability, and repair the Laravel/MySQL schema mismatch that prevents warranty creation.
+Warranty *definitions* (name + period like 1 year / 3 months / 3 weeks) belong to product setup and must be available to every retailer. Only *warranty management* (claim receiving, warranty checking, servicing) stays behind the paid Warranty module. Also fix the database error that currently blocks creating a warranty.
 
 ## Changes
 
-1. **Navigation and route entitlement**
-   - Move the **Warranties** link from the standalone Warranty Manager group into the **Product** group.
-   - Keep that individual menu item gated by the `warranty` entitlement even though its visual location is under Products.
-   - Leave **Warranty Claims** in the separate Warranty Manager group and keep its existing module gate.
-   - Preserve the `/warranties` route’s `ModuleGate module="warranty"` protection so direct URLs cannot bypass plan eligibility.
+1. **Warranties becomes part of Products, open to all**
+   - Move the **Warranties** item from the "Warranty Manager" group into the **Product** group in the sidebar.
+   - Remove the warranty module gate from the `/warranties` route and from that menu item, so all tenants can define warranty types. Access still follows normal role permissions (products/inventory).
+   - Product add/edit keeps the "Has Warranty" toggle for everyone.
 
-2. **Product warranty controls**
-   - Read the tenant’s enabled modules in the product add/edit page.
-   - Render and submit `has_warranty`, `warranty_duration`, and `warranty_type` only when the Warranty module is enabled.
-   - For ineligible tenants, hide the warranty toggle/details and force warranty values to disabled/null in submitted product data, preventing stale or crafted UI state from enabling the feature.
-   - Add the equivalent Laravel-side entitlement enforcement for product warranty fields so direct API calls cannot bypass the UI.
+2. **Product warranty selection uses defined warranty types**
+   - In the product form, when warranty is enabled, replace the free-typed months/type inputs with a dropdown of the tenant's saved warranty types (name + duration), plus a quick link to create one.
+   - Store the selected warranty on the product, keeping the existing duration/type columns in sync so older data and reports keep working.
 
-3. **Warranty table contract repair**
-   - Add a focused Laravel migration that converts the legacy `warranties` table from issued-warranty requirements to the warranty-type contract used by the current page:
-     - make legacy issuance fields such as `warranty_no`, `start_date`, and `end_date` nullable;
-     - retain/add `name`, `description`, `duration`, `duration_type`, and `is_active` with appropriate defaults/nullability.
-   - Align the Warranty model casts/default behavior and REST registry search/sort/filter fields with the actual warranty-type UI.
-   - Keep the migration idempotent and safe for existing MySQL data.
+3. **Warranty period shows on the invoice**
+   - Sale line items carry the product's warranty name and period; the invoice/print view shows the warranty period per item when present.
 
-4. **Regression coverage and verification**
-   - Add backend tests for successful warranty creation and denial when the Warranty module is unavailable.
-   - Verify frontend type/build status and run focused Laravel tests.
-   - Check the live preview’s Products navigation and product form visibility for the available auth state.
+4. **Warranty Manager module keeps the gate**
+   - The gated group covers management only: Warranty Claims, Warranty Checking (search by IMEI/serial or invoice number), and Servicing entries — matching the reference screens.
+   - Add the Warranty Checking screen: search by IMEI/serial number or invoice number, then show the matched sale, product, warranty type and remaining coverage.
+   - These routes stay behind the warranty module gate and redirect ineligible tenants to the upgrade page.
 
-## Technical note
-The current page creates warranty definitions (`name`, `duration`, `duration_type`), but the original Laravel table requires issued-warranty fields (`warranty_no`, `start_date`, `end_date`). The repair preserves existing columns/data while making the schema compatible with the implemented definition workflow.
+5. **Fix the warranty save error**
+   - Add a Laravel migration making the legacy issued-warranty columns on `warranties` (`warranty_no`, `start_date`, `end_date`) nullable, and ensure the warranty-type columns (`name`, `description`, `duration`, `duration_type`, `is_active`) exist with sensible defaults. This resolves the `Field 'warranty_no' doesn't have a default value` error.
+   - Align the Warranty model and the REST resource config (allowed filters, sort, search) with the warranty-type fields the page actually uses.
+   - Add backend tests covering warranty type create/update and warranty lookup by IMEI/invoice.
+
+## Technical notes
+- The `warranties` table was originally created for issued warranties, while the current page saves warranty *definitions*; the migration keeps both shapes valid without dropping data.
+- Duration types supported: days, weeks, months, years — used to compute coverage end dates for invoice display and warranty checking.
