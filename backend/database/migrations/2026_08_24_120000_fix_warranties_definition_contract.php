@@ -61,7 +61,21 @@ return new class extends Migration {
                 $table->uuid('warranty_id')->nullable()->index();
             });
         }
+
+        // Claims are created directly against a product/customer in the UI, so
+        // the legacy required claim_no / warranty_id must not block inserts.
+        if (Schema::hasTable('warranty_claims')) {
+            Schema::table('warranty_claims', function (Blueprint $table) {
+                if (Schema::hasColumn('warranty_claims', 'claim_no')) {
+                    $table->string('claim_no')->nullable()->change();
+                }
+                if (Schema::hasColumn('warranty_claims', 'warranty_id')) {
+                    $table->uuid('warranty_id')->nullable()->change();
+                }
+            });
+        }
     }
+
 
     public function down(): void
     {
