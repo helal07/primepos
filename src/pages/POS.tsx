@@ -1210,8 +1210,10 @@ export default function POS() {
         open={showPayment}
         onOpenChange={setShowPayment}
         totalAmount={totalAmount}
+        previousDue={previousDue}
         onFinalize={handleCompleteWithPayments}
         isPending={createSale.isPending}
+
       />
 
       {/* Quick Add Customer */}
