@@ -442,8 +442,9 @@ export function AppSidebar() {
               <SidebarGroup>
                 <SidebarGroupLabel
                   asChild
-                  className={`text-sidebar-foreground/60 text-[11px] font-semibold uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground transition-colors ${locked ? "opacity-60" : ""}`}
+                  className={`text-sidebar-foreground/70 text-xs font-bold uppercase tracking-wider cursor-pointer hover:text-sidebar-foreground transition-colors ${locked ? "opacity-60" : ""}`}
                 >
+
                   <CollapsibleTrigger className="flex w-full items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       {group.label}
