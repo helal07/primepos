@@ -166,6 +166,14 @@ export default function POS() {
   // Fetch last sale for invoice printing
   const { data: lastSaleData } = useSale(lastSaleId);
   const { data: lastSaleItems } = useSaleItems(lastSaleId);
+  const { data: lastSalePayments } = useSalePayments(lastSaleId);
+  // Previous due of the currently selected customer (for the live cart)
+  const { data: previousDueInfo } = usePreviousDue(customerId || null, null);
+  const previousDue = previousDueInfo?.total ?? 0;
+  // Previous due snapshot used on the printed invoice (excludes the new sale)
+  const { data: receiptDueInfo } = usePreviousDue(lastSaleCustomerId, lastSaleId);
+  const receiptPreviousDue = receiptDueInfo?.total ?? 0;
+
 
   const dateStr = format(saleDate, "dd/MM/yyyy");
   const timeStr = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
