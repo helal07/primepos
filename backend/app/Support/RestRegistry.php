@@ -405,7 +405,7 @@ class RestRegistry
             'warranty_claims' => [
                 'model'        => Models\WarrantyClaim::class,
                 'module'       => 'warranty',
-                'filters'      => ['warranty_id', 'status', 'claim_date'],
+                'filters'      => ['warranty_id', 'product_id', 'customer_id', 'sale_id', 'status', 'claim_date'],
                 'sort'         => ['created_at', 'claim_date'],
                 'default_sort' => '-created_at',
                 'search'       => ['claim_no', 'issue_description'],
