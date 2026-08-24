@@ -106,6 +106,20 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
           </div>
         </div>
 
+        {prevDue > 0 && (
+          <div className="rounded-lg border bg-muted/40 p-3 space-y-1 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Invoice Total</span><span>৳{totalAmount.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Previous Due</span><span className="text-destructive">+ ৳{prevDue.toFixed(2)}</span></div>
+            <div className="flex justify-between font-semibold border-t pt-1"><span>Receivable Amount</span><span>৳{receivable.toFixed(2)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Paying Now</span><span className="text-primary">৳{Math.min(totalPaying, receivable).toFixed(2)}</span></div>
+            {adjustedToOldDues > 0 && (
+              <div className="flex justify-between"><span className="text-muted-foreground">Adjusted to Old Dues</span><span className="text-emerald-600">৳{adjustedToOldDues.toFixed(2)}</span></div>
+            )}
+            <div className="flex justify-between font-semibold border-t pt-1"><span>Remaining Balance</span><span className={remainingLedger > 0 ? "text-destructive" : "text-emerald-600"}>৳{remainingLedger.toFixed(2)}</span></div>
+          </div>
+        )}
+
+
         <Separator />
 
         {/* Payment Rows */}
