@@ -66,7 +66,7 @@ function mergeItems(items: any[]) {
   return Array.from(map.values());
 }
 
-export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: SaleInvoiceProps) {
+export function SaleInvoice({ sale, items, settings, onPrint, payments = [], previousDue = 0 }: SaleInvoiceProps) {
   const business = settings?.business || {};
   const branding = settings?.cms_branding || {};
   const tpl = settings?.invoice || {};
