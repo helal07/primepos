@@ -16,6 +16,8 @@ import { ArrowLeft, Upload, X, ImageIcon, Save, Plus, Pencil, Trash2 } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { useSellingPriceGroups, useProductGroupPrices, useProductGroupPriceMutations } from "@/hooks/usePriceGroups";
 import { QuickAddDialog } from "@/components/inventory/QuickAddDialog";
+import { useWarrantyTypes, warrantyLabel, warrantyToMonths } from "@/hooks/useWarranties";
+
 
 const PRODUCT_TYPES = [
   { value: "general", label: "General" },
@@ -86,7 +88,9 @@ export default function ProductAdd() {
           tax_percent: String(p.tax_percent), stock_quantity: String(p.stock_quantity),
           alert_quantity: String(p.alert_quantity), is_active: p.is_active,
           has_warranty: p.has_warranty, warranty_duration: p.warranty_duration ? String(p.warranty_duration) : "",
-          warranty_type: p.warranty_type || "", serial_tracking: p.serial_tracking,
+          warranty_type: p.warranty_type || "", warranty_id: (p as any).warranty_id || "",
+          serial_tracking: p.serial_tracking,
+
           product_type: (p as any).product_type || "general",
           show_on_website: (p as any).show_on_website !== false,
           image_url: p.image_url || "",
@@ -155,6 +159,8 @@ export default function ProductAdd() {
       is_active: form.is_active, has_warranty: form.has_warranty,
       warranty_duration: form.warranty_duration ? parseInt(form.warranty_duration) : null,
       warranty_type: form.warranty_type || null,
+      warranty_id: form.has_warranty ? (form.warranty_id || null) : null,
+
       serial_tracking: form.serial_tracking,
       product_type: form.product_type,
       show_on_website: form.show_on_website,
