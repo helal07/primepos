@@ -468,7 +468,119 @@ export default function TenantManagement() {
 
   const handlePrint = () => window.print();
 
+  if (open) {
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title={editId ? "Edit Tenant" : "Add New Client"}
+          subtitle={editId ? "Update tenant business & subscription details" : "Create a tenant with its admin account"}
+        >
+          <Button variant="outline" size="sm" className="border-border text-foreground/90 hover:bg-muted" onClick={() => setOpen(false)}>
+            Back to list
+          </Button>
+        </PageHeader>
+
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 md:p-6 space-y-5">
+            {!editId && (
+              <>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-semibold text-primary flex items-center gap-2"><KeyRound className="h-4 w-4" /> Admin Account</h4>
+                  <p className="text-xs text-muted-foreground">Create the admin user for this tenant</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div><Label className="text-foreground/90">Display Name</Label><Input className="bg-muted border-border text-foreground" value={form.admin_display_name} onChange={(e) => setForm({ ...form, admin_display_name: e.target.value })} placeholder="Admin name" /></div>
+                  <div><Label className="text-foreground/90">Email *</Label><Input className="bg-muted border-border text-foreground" type="email" value={form.admin_email} onChange={(e) => setForm({ ...form, admin_email: e.target.value })} placeholder="admin@example.com" /></div>
+                  <div><Label className="text-foreground/90">Password *</Label><Input className="bg-muted border-border text-foreground" type="password" value={form.admin_password} onChange={(e) => setForm({ ...form, admin_password: e.target.value })} placeholder="Min 6 chars" /></div>
+                </div>
+                <Separator className="bg-muted" />
+              </>
+            )}
+
+            <div className="space-y-1"><h4 className="text-sm font-semibold text-primary">Business Information</h4></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div><Label className="text-foreground/90">Business Name *</Label><Input className="bg-muted border-border text-foreground" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Company Name</Label><Input className="bg-muted border-border text-foreground" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Phone</Label><Input className="bg-muted border-border text-foreground" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Email</Label><Input className="bg-muted border-border text-foreground" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Address</Label><Input className="bg-muted border-border text-foreground" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">Domain</Label><Input className="bg-muted border-border text-foreground" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="shop.example.com" /></div>
+            </div>
+
+            <Separator className="bg-muted" />
+
+            <div className="space-y-1"><h4 className="text-sm font-semibold text-primary">Subscription</h4></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-foreground/90">Package</Label>
+                <Select value={form.package_id} onValueChange={(v) => setForm({ ...form, package_id: v })}>
+                  <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue placeholder="Select package" /></SelectTrigger>
+                  <SelectContent className="bg-muted border-border">
+                    {packages?.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} — ৳{p.price}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-foreground/90">Subscription Type</Label>
+                <Select value={form.subscription_type} onValueChange={(v) => setForm({ ...form, subscription_type: v })}>
+                  <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-muted border-border">
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                    <SelectItem value="free_trial">Free Trial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-foreground/90">Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-muted border-border">
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="trial">Trial</SelectItem>
+                    <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-foreground/90">Start Date</Label><Input className="bg-muted border-border text-foreground" type="date" value={form.subscription_start} onChange={(e) => setForm({ ...form, subscription_start: e.target.value })} /></div>
+              <div><Label className="text-foreground/90">End Date</Label><Input className="bg-muted border-border text-foreground" type="date" value={form.subscription_end} onChange={(e) => setForm({ ...form, subscription_end: e.target.value })} /></div>
+            </div>
+
+            <Separator className="bg-muted" />
+
+            <div className="space-y-1"><h4 className="text-sm font-semibold text-primary">Payment</h4></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-foreground/90">Payment Method</Label>
+                <Select value={form.payment_method} onValueChange={(v) => setForm({ ...form, payment_method: v })}>
+                  <SelectTrigger className="bg-muted border-border text-foreground"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-muted border-border">
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="manual">Manual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-foreground/90">Amount</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.payment_amount} onChange={(e) => setForm({ ...form, payment_amount: e.target.value })} placeholder="0" /></div>
+            </div>
+
+            <div><Label className="text-foreground/90">Notes</Label><Textarea className="bg-muted border-border text-foreground" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
+
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <Button variant="outline" className="border-border text-foreground/90 hover:bg-muted" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={saving || !form.name || (!editId && (!form.admin_email || !form.admin_password))}>
+                {saving ? "Saving..." : editId ? "Update" : "Create Tenant"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
+
     <div className="space-y-4">
       <PageHeader title="Tenant Management" subtitle="Manage all business tenants & subscriptions">
         <div className="flex items-center gap-2 flex-wrap">
