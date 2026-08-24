@@ -246,23 +246,73 @@ export function useSaleMutations() {
   });
 
   const createSalePayments = useMutation({
-    mutationFn: async ({ saleId, payments }: { saleId: string; payments: { amount: number; payment_method: string; payment_note: string }[] }) => {
+    mutationFn: async ({
+      saleId,
+      payments,
+      saleTotal,
+      outstanding,
+    }: {
+      saleId: string;
+      payments: { amount: number; payment_method: string; payment_note: string }[];
+      /** When provided together with `outstanding`, surplus is applied to older dues. */
+      saleTotal?: number;
+      outstanding?: OutstandingSale[];
+    }) => {
       if (payments.length === 0) return;
-      await Promise.all(
-        payments.map((p) =>
-          rest.create("sale_payments", {
-            sale_id: saleId,
-            amount: p.amount,
-            payment_method: p.payment_method,
-            payment_note: p.payment_note || null,
-          }),
-        ),
+      const received = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+      const canAllocate =
+        typeof saleTotal === "number" &&
+        (outstanding?.length ?? 0) > 0 &&
+        received > saleTotal + 0.001;
+
+      if (!canAllocate) {
+        await Promise.all(
+          payments.map((p) =>
+            rest.create("sale_payments", {
+              sale_id: saleId,
+              amount: p.amount,
+              payment_method: p.payment_method,
+              payment_note: p.payment_note || null,
+            }),
+          ),
+        );
+        return;
+      }
+
+      const { toCurrent, allocations } = allocateReceivedAmount(
+        received,
+        saleTotal!,
+        outstanding!,
       );
+      const method = payments[0]?.payment_method || "cash";
+      const note = payments[0]?.payment_note || null;
+
+      // Payment against the current invoice (capped at its own total + leftover advance)
+      if (toCurrent > 0.001) {
+        await rest.create("sale_payments", {
+          sale_id: saleId,
+          amount: Number(toCurrent.toFixed(2)),
+          payment_method: method,
+          payment_note: note,
+        });
+      }
+      // Surplus applied to the customer's oldest outstanding invoices
+      for (const a of allocations) {
+        await rest.create("sale_payments", {
+          sale_id: a.saleId,
+          amount: a.amount,
+          payment_method: method,
+          payment_note: "Adjusted from previous due",
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sale_payments"] });
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+      queryClient.invalidateQueries({ queryKey: ["previous_due"] });
     },
     onError: (e: Error) => toast.error(toFriendlyError(e)),
+
   });
 
   const updateSaleStatus = useMutation({
