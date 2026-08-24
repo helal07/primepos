@@ -20,7 +20,7 @@ export function useSerialSearch(query: string) {
     enabled: q.length >= 3,
     staleTime: 15_000,
     queryFn: async (): Promise<SerialMatch[]> => {
-      const like = `%${q}%`;
+      const like = q;
       const [purchased, exchanged, sold] = await Promise.all([
         rest
           .all<{ serial_number: string | null; product_id: string | null }>("purchase_items", {
