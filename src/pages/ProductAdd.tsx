@@ -16,6 +16,8 @@ import { ArrowLeft, Upload, X, ImageIcon, Save, Plus, Pencil, Trash2 } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { useSellingPriceGroups, useProductGroupPrices, useProductGroupPriceMutations } from "@/hooks/usePriceGroups";
 import { QuickAddDialog } from "@/components/inventory/QuickAddDialog";
+import { useWarrantyTypes, warrantyLabel, warrantyToMonths } from "@/hooks/useWarranties";
+
 
 const PRODUCT_TYPES = [
   { value: "general", label: "General" },
@@ -31,7 +33,8 @@ const defaultForm = {
   purchase_price: "0", selling_price: "0", tax_percent: "0",
   stock_quantity: "0", alert_quantity: "5",
   is_active: true, has_warranty: false,
-  warranty_duration: "", warranty_type: "",
+  warranty_duration: "", warranty_type: "", warranty_id: "",
+
   serial_tracking: false, product_type: "general",
   show_on_website: true, image_url: "",
 };
@@ -62,6 +65,7 @@ export default function ProductAdd() {
     setGroupPriceRows(map);
   }, [productGroupPrices]);
 
+  const { data: warrantyTypes = [] } = useWarrantyTypes();
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -85,7 +89,9 @@ export default function ProductAdd() {
           tax_percent: String(p.tax_percent), stock_quantity: String(p.stock_quantity),
           alert_quantity: String(p.alert_quantity), is_active: p.is_active,
           has_warranty: p.has_warranty, warranty_duration: p.warranty_duration ? String(p.warranty_duration) : "",
-          warranty_type: p.warranty_type || "", serial_tracking: p.serial_tracking,
+          warranty_type: p.warranty_type || "", warranty_id: (p as any).warranty_id || "",
+          serial_tracking: p.serial_tracking,
+
           product_type: (p as any).product_type || "general",
           show_on_website: (p as any).show_on_website !== false,
           image_url: p.image_url || "",
@@ -154,6 +160,8 @@ export default function ProductAdd() {
       is_active: form.is_active, has_warranty: form.has_warranty,
       warranty_duration: form.warranty_duration ? parseInt(form.warranty_duration) : null,
       warranty_type: form.warranty_type || null,
+      warranty_id: form.has_warranty ? (form.warranty_id || null) : null,
+
       serial_tracking: form.serial_tracking,
       product_type: form.product_type,
       show_on_website: form.show_on_website,
@@ -422,10 +430,36 @@ export default function ProductAdd() {
                 <CardTitle className="text-base">Warranty & Guarantee</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-2">
+                    <Label>Warranty Period</Label>
+                    <Select
+                      value={form.warranty_id || "custom"}
+                      onValueChange={v => {
+                        if (v === "custom") { set("warranty_id", ""); return; }
+                        const w = warrantyTypes.find(x => x.id === v);
+                        setForm(f => ({
+                          ...f,
+                          warranty_id: v,
+                          warranty_duration: w ? String(warrantyToMonths(w.duration, w.duration_type)) : f.warranty_duration,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select warranty" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="custom">Custom (manual months)</SelectItem>
+                        {warrantyTypes.filter(w => w.is_active !== false).map(w => (
+                          <SelectItem key={w.id} value={w.id}>{warrantyLabel(w)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Manage periods in Product → Warranties.
+                    </p>
+                  </div>
                   <div className="space-y-2">
                     <Label>Duration (months)</Label>
-                    <Input type="number" value={form.warranty_duration} onChange={e => set("warranty_duration", e.target.value)} />
+                    <Input type="number" value={form.warranty_duration} onChange={e => { set("warranty_duration", e.target.value); set("warranty_id", ""); }} />
                   </div>
                   <div className="space-y-2">
                     <Label>Type</Label>
@@ -440,6 +474,7 @@ export default function ProductAdd() {
                   </div>
                 </div>
               </CardContent>
+
             </Card>
           )}
 

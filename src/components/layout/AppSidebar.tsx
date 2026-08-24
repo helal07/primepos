@@ -128,8 +128,10 @@ const URL_PERM_MODULE: Record<string, string> = {
   "/attendance": "hrm",
   "/leave": "hrm",
   "/payroll": "hrm",
-  "/warranties": "warranty",
+  "/warranties": "products",
   "/warranty-claims": "warranty",
+  "/warranty-checking": "warranty",
+
   "/users": "users",
   "/roles": "roles",
   "/settings": "settings",
@@ -170,8 +172,10 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
       { title: "Price Groups", url: "/products/price-groups", icon: Layers },
       { title: "Units", url: "/units", icon: Ruler },
       { title: "Variations", url: "/variations", icon: Shuffle },
+      { title: "Warranties", url: "/warranties", icon: BadgeCheck },
       { title: "Stock Adjustments", url: "/stock-adjustments", icon: ClipboardList },
       { title: "Stock Transfers", url: "/stock-transfers", icon: Truck },
+
       { title: "Bulk Import", url: "/products/import", icon: FileUp },
       { title: "Export", url: "/products/export", icon: FileDown },
       { title: "Print Labels", url: "/products/labels", icon: Printer },
@@ -246,10 +250,11 @@ const menuGroups: { label: string; module?: ModuleKey; items: any[] }[] = [
     label: "Warranty Manager",
     module: "warranty",
     items: [
-      { title: "Warranties", url: "/warranties", icon: BadgeCheck },
       { title: "Warranty Claims", url: "/warranty-claims", icon: Wrench },
+      { title: "Warranty Checking", url: "/warranty-checking", icon: BadgeCheck },
     ],
   },
+
   {
     label: "Installment Sale",
     module: "installments",
