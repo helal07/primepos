@@ -20,6 +20,8 @@ interface PaymentDialogProps {
   onFinalize: (payments: PaymentRow[], paymentStatus: string) => void;
   isPending?: boolean;
   title?: string;
+  /** Outstanding amount from the customer's earlier invoices. */
+  previousDue?: number;
 }
 
 const METHODS = [
@@ -29,7 +31,7 @@ const METHODS = [
   { value: "bank", label: "Bank", icon: Building },
 ];
 
-export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isPending, title = "Finalize Payment" }: PaymentDialogProps) {
+export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isPending, title = "Finalize Payment", previousDue = 0 }: PaymentDialogProps) {
   const [payments, setPayments] = useState<PaymentRow[]>([
     { amount: totalAmount, payment_method: "cash", payment_note: "" },
   ]);
@@ -40,20 +42,30 @@ export function PaymentDialog({ open, onOpenChange, totalAmount, onFinalize, isP
     }
   }, [open, totalAmount]);
 
+  const prevDue = Math.max(0, Number(previousDue) || 0);
+  const receivable = totalAmount + prevDue;
   const totalPaying = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-  const changeReturn = Math.max(0, totalPaying - totalAmount);
+  // Extra money beyond the invoice total is accepted as payment only while the
+  // customer still has old dues; anything above the receivable is change return.
+  const changeReturn = Math.max(0, totalPaying - receivable);
   const balance = Math.max(0, totalAmount - totalPaying);
+  const adjustedToOldDues = Math.max(0, Math.min(totalPaying, receivable) - totalAmount);
+  const remainingLedger = Math.max(0, receivable - Math.min(totalPaying, receivable));
 
   const paymentStatus = totalPaying >= totalAmount ? "paid" : totalPaying > 0 ? "partial" : "unpaid";
 
   const hasNegative = payments.some(p => Number(p.amount) < 0);
   const emptyCart = !(totalAmount > 0);
+  const overReceivable = prevDue > 0 && totalPaying > receivable + 0.001;
   const validationError = emptyCart
     ? "Add items to the cart before finalizing payment."
     : hasNegative
       ? "Payment amounts cannot be negative."
-      : null;
+      : overReceivable
+        ? `Received amount cannot exceed the receivable amount (৳${receivable.toFixed(2)}).`
+        : null;
   const canFinalize = !validationError && !isPending;
+
 
   const updatePayment = (idx: number, field: keyof PaymentRow, value: any) => {
     setPayments(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
