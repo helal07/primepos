@@ -39,7 +39,7 @@ import { useCustomers } from "@/hooks/useContacts";
 import { Label } from "@/components/ui/label";
 import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
+import { useSaleMutations, useSale, useSaleItems, useSalePayments, usePreviousDue, type SaleItem } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
