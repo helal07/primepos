@@ -42,12 +42,29 @@ class PublicController extends Controller
 
     public function landingPricing()
     {
+        // `show_on_landing` was added later; legacy rows may be NULL/0 while still
+        // being intended for display, so only an explicit `false` hides a package.
         return SaasPackage::query()
             ->where('is_active', true)
-            ->where('show_on_landing', true)
+            ->where(fn ($q) => $q->where('show_on_landing', true)->orWhereNull('show_on_landing'))
+            ->orderBy('sort_order')
             ->orderBy('price')
             ->get();
     }
+
+    /**
+     * All active packages — used by the public tenant registration page,
+     * which has no auth token and therefore cannot read the REST resource.
+     */
+    public function packages()
+    {
+        return SaasPackage::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('price')
+            ->get();
+    }
+
 
     public function landingCms(Request $request, string $key)
     {
