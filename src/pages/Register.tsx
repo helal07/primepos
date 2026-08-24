@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { rest } from "@/lib/restResource";
+import { api } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,18 +43,19 @@ export default function Register() {
 
   useEffect(() => {
     (async () => {
-      const list = await rest.all<Pkg>("saas_packages", {
-        filter: { is_active: true },
-        sort: "sort_order",
-      }).catch(() => []);
+      // Public endpoint: this page is unauthenticated, so the REST resource
+      // (which requires a token) always returned an empty list here.
+      const raw = await api.get<Pkg[]>("/api/public/packages").catch(() => []);
+      const list = Array.isArray(raw) ? raw : ((raw as any)?.data ?? []);
       setPackages(list);
       if (list.length > 0) {
         // Default to trial plan if one exists, otherwise the first plan
-        const trial = list.find((p) => p.is_trial);
+        const trial = list.find((p: Pkg) => p.is_trial);
         setPackageId(trial?.id ?? list[0].id);
       }
     })();
   }, []);
+
 
   const selectedPkg = packages.find((p) => p.id === packageId) ?? null;
   const choice: "trial" | "paid" = selectedPkg?.is_trial ? "trial" : "paid";
