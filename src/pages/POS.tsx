@@ -39,7 +39,7 @@ import { useCustomers } from "@/hooks/useContacts";
 import { Label } from "@/components/ui/label";
 import { rest } from "@/lib/restResource";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSaleMutations, useSale, useSaleItems, type SaleItem } from "@/hooks/useSales";
+import { useSaleMutations, useSale, useSaleItems, useSalePayments, usePreviousDue, type SaleItem } from "@/hooks/useSales";
 import { useSettings } from "@/hooks/useSettings";
 import { PaymentDialog, type PaymentRow } from "@/components/payments/PaymentDialog";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
@@ -123,7 +123,11 @@ export default function POS() {
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
+  const [lastPayments, setLastPayments] = useState<{ amount: number; payment_method: string; payment_note: string }[]>([]);
+  const [lastPreviousDue, setLastPreviousDue] = useState(0);
+  const [printedSaleId, setPrintedSaleId] = useState<string | null>(null);
   const [lastInvoice, setLastInvoice] = useState("");
+
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
@@ -166,6 +170,36 @@ export default function POS() {
   // Fetch last sale for invoice printing
   const { data: lastSaleData } = useSale(lastSaleId);
   const { data: lastSaleItems } = useSaleItems(lastSaleId);
+  const { data: lastSalePayments } = useSalePayments(lastSaleId);
+  // Previous due of the currently selected customer (for the live cart)
+  const { data: previousDueInfo } = usePreviousDue(customerId || null, null);
+  const previousDue = previousDueInfo?.total ?? 0;
+  const outstandingSales = previousDueInfo?.sales ?? [];
+
+  // Payments shown on the receipt: prefer the checkout rows (they include the
+  // amount adjusted against old dues) unless persisted rows total more.
+  const receiptPayments = useMemo(() => {
+    const persisted = (lastSalePayments ?? []) as any[];
+    const persistedSum = persisted.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const enteredSum = lastPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    if (enteredSum > persistedSum + 0.001) return lastPayments;
+    return persisted.length ? persisted : lastPayments;
+  }, [lastSalePayments, lastPayments]);
+
+  // Auto-print the invoice once the sale data is ready — no second confirmation
+  useEffect(() => {
+    if (!showReceipt || !lastSaleId || printedSaleId === lastSaleId) return;
+    if (!lastSaleData || !lastSaleItems) return;
+    const t = setTimeout(() => {
+      setPrintedSaleId(lastSaleId);
+      printInvoiceArea({ title: `Invoice ${lastInvoice}`, settings: settings || {} });
+    }, 350);
+    return () => clearTimeout(t);
+  }, [showReceipt, lastSaleId, printedSaleId, lastSaleData, lastSaleItems, lastInvoice, settings]);
+
+
+
+
 
   const dateStr = format(saleDate, "dd/MM/yyyy");
   const timeStr = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -433,13 +467,29 @@ export default function POS() {
       total_amount: totalAmount, payment_method: payments[0]?.payment_method || "cash",
       payment_status: paymentStatus, items: expandedItems,
     });
-    await createSalePayments.mutateAsync({ saleId: result.id, payments });
+    await createSalePayments.mutateAsync({
+      saleId: result.id,
+      payments,
+      saleTotal: totalAmount,
+      outstanding: outstandingSales,
+    });
     setLastInvoice(result.invoice_number);
     setLastSaleId(result.id);
+    setLastPayments(payments.map((p) => ({ ...p, payment_note: p.payment_note || "" })));
+    setLastPreviousDue(previousDue);
+    setPrintedSaleId(null);
     setShowPayment(false);
     setShowMobileCart(false);
     setShowReceipt(true);
+    // Clear the POS screen right away so the next sale starts fresh
+    setCart([]);
+    setCustomerId("");
+    setDiscountValue(0);
+    setShippingCost(0);
+    setSearch("");
+    setSaleDate(new Date());
   };
+
 
   const handleQuickCash = async () => {
     if (cart.length === 0) {
@@ -480,8 +530,10 @@ export default function POS() {
   const handleNewSale = () => {
     setCart([]); setCustomerId(""); setDiscountValue(0); setShippingCost(0);
     setShowReceipt(false); setLastInvoice(""); setLastSaleId(null);
+    setLastPayments([]); setLastPreviousDue(0); setPrintedSaleId(null);
     setSaleDate(new Date());
   };
+
 
   const handleCancel = () => {
     setCart([]); setCustomerId(""); setDiscountValue(0); setShippingCost(0);
@@ -1133,6 +1185,8 @@ export default function POS() {
             <SaleInvoice
               sale={lastSaleData}
               items={lastSaleItems}
+              payments={receiptPayments}
+              previousDue={lastPreviousDue}
               settings={settings || {}}
               onPrint={() => {
                 printInvoiceArea({ title: `Invoice ${lastInvoice}`, settings: settings || {} });
@@ -1142,13 +1196,14 @@ export default function POS() {
             <div className="text-center py-8">
               <div className="text-4xl mb-2">✅</div>
               <p className="text-muted-foreground">Invoice: <strong>{lastInvoice}</strong></p>
-              <p className="text-lg font-bold">৳{totalAmount.toFixed(2)}</p>
+              <p className="text-lg font-bold">Preparing invoice…</p>
             </div>
           )}
           <DialogFooter className="flex-col gap-2">
             <Button onClick={handleNewSale} className="w-full">New Sale</Button>
             <Button variant="outline" onClick={() => navigate("/sales")} className="w-full">View Sales</Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
@@ -1157,8 +1212,10 @@ export default function POS() {
         open={showPayment}
         onOpenChange={setShowPayment}
         totalAmount={totalAmount}
+        previousDue={previousDue}
         onFinalize={handleCompleteWithPayments}
         isPending={createSale.isPending}
+
       />
 
       {/* Quick Add Customer */}

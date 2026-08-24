@@ -181,23 +181,34 @@ export default function SaleView() {
         <CardContent className="pt-6">
           <div className="flex flex-col items-end space-y-1 text-sm">
             <div className="flex justify-between w-64"><span className="text-muted-foreground">Subtotal</span><span>৳{Number(sale.subtotal).toLocaleString()}</span></div>
-            <div className="flex justify-between w-64"><span className="text-muted-foreground">Discount</span><span>-৳{Number(sale.discount_amount).toLocaleString()}</span></div>
-            <div className="flex justify-between w-64"><span className="text-muted-foreground">Tax</span><span>+৳{Number(sale.tax_amount).toLocaleString()}</span></div>
+            {Number(sale.discount_amount) > 0 && (
+              <div className="flex justify-between w-64"><span className="text-muted-foreground">Discount</span><span>-৳{Number(sale.discount_amount).toLocaleString()}</span></div>
+            )}
+            {Number(sale.tax_amount) > 0 && (
+              <div className="flex justify-between w-64"><span className="text-muted-foreground">Tax</span><span>+৳{Number(sale.tax_amount).toLocaleString()}</span></div>
+            )}
             {Number(sale.shipping_cost) > 0 && (
               <div className="flex justify-between w-64"><span className="text-muted-foreground">Shipping</span><span>+৳{Number(sale.shipping_cost).toLocaleString()}</span></div>
             )}
-            <div className="flex justify-between w-64 border-t pt-1 font-bold text-base"><span>Grand Total</span><span>৳{Number(sale.total_amount).toLocaleString()}</span></div>
-            <div className="flex justify-between w-64 pt-1"><span className="text-muted-foreground">Paid</span><span>৳{totals.paid.toLocaleString()}</span></div>
-            {totals.balance > 0 ? (
-              <div className="flex justify-between w-64 font-semibold text-destructive"><span>Balance Due</span><span>৳{totals.balance.toLocaleString()}</span></div>
-            ) : totals.balance < 0 ? (
-              <div className="flex justify-between w-64 font-semibold text-emerald-600"><span>Advance</span><span>৳{Math.abs(totals.balance).toLocaleString()}</span></div>
+            <div className="flex justify-between w-64 border-t pt-1 font-bold text-base"><span>Total</span><span>৳{Number(sale.total_amount).toLocaleString()}</span></div>
+            {totals.previousDue > 0 && (
+              <>
+                <div className="flex justify-between w-64"><span className="text-muted-foreground">Previous Due</span><span className="text-destructive">+৳{totals.previousDue.toLocaleString()}</span></div>
+                <div className="flex justify-between w-64 border-t pt-1 font-semibold"><span>Receivable Amount</span><span>৳{totals.receivable.toLocaleString()}</span></div>
+              </>
+            )}
+            <div className="flex justify-between w-64 pt-1"><span className="text-muted-foreground">Today's Payment</span><span>-৳{totals.paidToday.toLocaleString()}</span></div>
+            {totals.totalBalance > 0 ? (
+              <div className="flex justify-between w-64 font-semibold text-destructive"><span>Total Balance</span><span>৳{totals.totalBalance.toLocaleString()}</span></div>
+            ) : totals.totalBalance < 0 ? (
+              <div className="flex justify-between w-64 font-semibold text-emerald-600"><span>Advance</span><span>৳{Math.abs(totals.totalBalance).toLocaleString()}</span></div>
             ) : (
-              <div className="flex justify-between w-64 font-semibold text-emerald-600"><span>Paid in full</span><span>৳0</span></div>
+              <div className="flex justify-between w-64 font-semibold text-emerald-600"><span>Total Balance</span><span>৳0</span></div>
             )}
           </div>
         </CardContent>
       </Card>
+
 
       {/* Invoice Dialog */}
       <Dialog open={showInvoice} onOpenChange={setShowInvoice}>

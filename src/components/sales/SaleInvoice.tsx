@@ -9,7 +9,10 @@ interface SaleInvoiceProps {
   settings: Record<string, any>;
   onPrint: () => void;
   payments?: any[];
+  /** Outstanding amount from the customer's earlier invoices. */
+  previousDue?: number;
 }
+
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "Zero";
@@ -63,7 +66,7 @@ function mergeItems(items: any[]) {
   return Array.from(map.values());
 }
 
-export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: SaleInvoiceProps) {
+export function SaleInvoice({ sale, items, settings, onPrint, payments = [], previousDue = 0 }: SaleInvoiceProps) {
   const business = settings?.business || {};
   const branding = settings?.cms_branding || {};
   const tpl = settings?.invoice || {};
@@ -81,7 +84,9 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
   const terms = tpl.terms || settings?.invoice_terms || "Goods once sold will not be taken back without valid reason. Warranty as per product terms.";
 
   const saleDate = new Date(sale.sale_date);
-  const { total, paid, balance } = computeSaleTotals(sale, payments);
+  const { total, paid, previousDue: prevDue, receivable, totalBalance } =
+    computeSaleTotals(sale, payments, previousDue);
+
 
   const merged = mergeItems(items);
   const totalQty = merged.reduce((s, r) => s + Number(r.quantity || 0), 0);
@@ -356,21 +361,32 @@ export function SaleInvoice({ sale, items, settings, onPrint, payments = [] }: S
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid #e5e7eb", fontWeight: "bold" }}>
                 <span>Total</span><span>৳ {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
+              {prevDue > 0 && (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb", color: "#dc2626" }}>
+                    <span>Previous Due</span><span>+ ৳ {prevDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderBottom: "1px solid #e5e7eb", fontWeight: "bold" }}>
+                    <span>Receivable Amount</span><span>৳ {receivable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", borderBottom: "1px solid #e5e7eb" }}>
-                <span>Received</span><span>৳ {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>Today's Payment</span><span>- ৳ {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              {balance > 0 ? (
+              {totalBalance > 0 ? (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold", color: "#dc2626" }}>
-                  <span>Balance Due</span><span>৳ {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span>Total Balance</span><span>৳ {totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
-              ) : balance < 0 ? (
+              ) : totalBalance < 0 ? (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold", color: "#059669" }}>
-                  <span>Advance</span><span>৳ {Math.abs(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span>Advance</span><span>৳ {Math.abs(totalBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               ) : (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 10px", fontWeight: "bold", color: "#059669" }}>
-                  <span>Paid in full</span><span>৳ 0.00</span>
+                  <span>Total Balance</span><span>৳ 0.00</span>
                 </div>
+
               )}
             </div>
           </div>
