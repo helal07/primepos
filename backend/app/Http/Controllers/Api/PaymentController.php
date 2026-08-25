@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentAttempt;
+use App\Models\PaymentGateway;
 use App\Models\SaasPackage;
 use App\Models\TenantPayment;
 use App\Services\NotificationService;
 use App\Services\Payments\PaymentGatewayResolver;
 use App\Services\TenantSubscriptionService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 class PaymentController extends Controller
 {
@@ -22,63 +25,103 @@ class PaymentController extends Controller
         protected NotificationService $notifier,
     ) {}
 
-    /** Port of `payment-init`. */
+    /** Start a gateway checkout for the authenticated tenant. */
     public function init(Request $request): JsonResponse
     {
         $user = $request->user();
         $data = $request->validate([
             'package_id'        => ['required', 'uuid'],
-            'subscription_type' => ['required', 'in:monthly,yearly'],
+            'subscription_type' => ['nullable', 'in:monthly,yearly'],
             'gateway'           => ['required', 'string'],
+            'from'              => ['nullable', 'string'],
         ]);
 
+        $code = strtolower($data['gateway']);
+        $gw   = PaymentGateway::query()->where('code', $code)->first();
+        if (! $gw || ! ($gw->active ?? false)) {
+            return response()->json(['message' => 'This payment gateway is not available.'], 422);
+        }
+
         $package = SaasPackage::findOrFail($data['package_id']);
-        $amount  = $data['subscription_type'] === 'yearly'
+        $type    = $data['subscription_type'] ?? 'monthly';
+        $amount  = $type === 'yearly'
             ? (float) ($package->yearly_price ?? $package->price * 12)
             : (float) $package->price;
+
+        if ($amount <= 0) {
+            return response()->json(['message' => 'This package does not require payment.'], 422);
+        }
 
         $payment = TenantPayment::query()->withoutGlobalScopes()->create([
             'id'                => (string) Str::uuid(),
             'tenant_id'         => $user->tenant_id,
             'package_id'        => $package->id,
-            'subscription_type' => $data['subscription_type'],
+            'subscription_type' => $type,
             'amount'            => $amount,
-            'gateway'           => $data['gateway'],
+            'currency'          => 'BDT',
+            'gateway'           => $code,
+            'payment_method'    => $code,
             'status'            => 'pending',
+            'notes'             => $data['from'] ?? null,
+            'created_by'        => $user->id,
         ]);
 
-        $callback = url('/api/payments/callback/' . $data['gateway']);
-        $r = $this->gateways->resolve($data['gateway'])->initiate($payment, $callback);
+        $callback = url('/api/payments/callback/' . $code);
+
+        try {
+            $r = $this->gateways->resolve($code)->initiate($payment, $callback);
+        } catch (Throwable $e) {
+            $payment->forceFill(['status' => 'failed'])->saveQuietly();
+            Log::warning('payment init failed', ['gateway' => $code, 'error' => $e->getMessage()]);
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         $payment->forceFill(['gateway_payment_id' => $r['gateway_payment_id']])->saveQuietly();
 
         return response()->json([
             'payment_id'   => $payment->id,
+            'url'          => $r['redirect_url'],
             'redirect_url' => $r['redirect_url'],
         ]);
     }
 
-    /** Port of `bkash-callback` / `eps-callback`. Public webhook. */
-    public function callback(Request $request, string $gateway): Response
+    /** Public gateway callback / IPN. Verified server-side before activation. */
+    public function callback(Request $request, string $gateway): RedirectResponse
     {
         $payload = $request->all();
 
         PaymentAttempt::query()->withoutGlobalScopes()->create([
-            'id'      => (string) Str::uuid(),
-            'gateway' => $gateway,
-            'payload' => $payload,
+            'id'          => (string) Str::uuid(),
+            'gateway'     => $gateway,
+            'raw_payload' => $payload,
         ]);
 
-        $impl = $this->gateways->resolve($gateway);
+        try {
+            $impl = $this->gateways->resolve($gateway);
+        } catch (Throwable) {
+            return $this->back('failed');
+        }
+
         $paymentId = $impl->extractPaymentId($payload);
-        if (! $paymentId) return response('missing id', 400);
+        $payment   = $paymentId
+            ? TenantPayment::query()->withoutGlobalScopes()->find($paymentId)
+            : null;
 
-        $payment = TenantPayment::query()->withoutGlobalScopes()->find($paymentId);
-        if (! $payment) return response('not found', 404);
+        if (! $payment) return $this->back('failed');
 
-        if (! $impl->verifyCallback($payload)) {
+        // Idempotency: a repeated callback must never extend a subscription twice.
+        if ($payment->status === 'completed') return $this->back('success', $payment->id);
+
+        try {
+            $ok = $impl->verifyCallback($payload, $payment);
+        } catch (Throwable $e) {
+            Log::warning('payment verify error', ['payment' => $payment->id, 'error' => $e->getMessage()]);
+            $ok = false;
+        }
+
+        if (! $ok) {
             $payment->forceFill(['status' => 'failed', 'gateway_response' => $payload])->saveQuietly();
-            return response('failed', 200);
+            return $this->back('failed');
         }
 
         $payment->forceFill([
@@ -97,21 +140,29 @@ class PaymentController extends Controller
             $tenant->email,
         );
 
-        return response('ok', 200);
+        return $this->back('success', $payment->id);
     }
 
-    /** Port of `super-approve-payment` — manual approval by superadmin. */
+    protected function back(string $status, ?string $ref = null): RedirectResponse
+    {
+        $q = ['payment' => $status];
+        if ($ref) $q['ref'] = $ref;
+        return redirect()->to('/subscription?' . http_build_query($q));
+    }
+
+    /** Manual approval by superadmin (offline / bank transfers). */
     public function superApprove(Request $request, string $paymentId): JsonResponse
     {
         abort_unless($request->user()->isSuperadmin(), 403);
 
         $payment = TenantPayment::query()->withoutGlobalScopes()->findOrFail($paymentId);
-        $payment->forceFill([
-            'status'  => 'completed',
-            'paid_at' => now(),
-        ])->saveQuietly();
+        if ($payment->status !== 'completed') {
+            $payment->forceFill(['status' => 'completed', 'paid_at' => now()])->saveQuietly();
+            $tenant = $this->subs->activate($payment);
+        } else {
+            $tenant = $payment->tenant;
+        }
 
-        $tenant = $this->subs->activate($payment);
         return response()->json(['ok' => true, 'tenant' => $tenant]);
     }
 }
