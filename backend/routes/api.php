@@ -85,6 +85,12 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::post('/payments/init',                  [PaymentController::class, 'init']);
     Route::post('/payments/{paymentId}/approve',   [PaymentController::class, 'superApprove']);
 
+    // Superadmin gateway configuration (secrets are write-only)
+    Route::get  ('/admin/payment-gateways',       [\App\Http\Controllers\Api\PaymentGatewayAdminController::class, 'index'])
+        ->middleware('role:superadmin');
+    Route::patch('/admin/payment-gateways/{gatewayId}', [\App\Http\Controllers\Api\PaymentGatewayAdminController::class, 'update'])
+        ->middleware('role:superadmin');
+
     // Notifications
     Route::post('/notifications/send', [NotificationController::class, 'send']);
 

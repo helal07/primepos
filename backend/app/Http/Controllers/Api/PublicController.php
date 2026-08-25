@@ -66,6 +66,16 @@ class PublicController extends Controller
     }
 
 
+    /** Gateways a tenant may choose at checkout — no credentials exposed. */
+    public function paymentGateways()
+    {
+        return \App\Models\PaymentGateway::query()
+            ->where('active', true)
+            ->where('visible', true)
+            ->orderBy('sort_order')
+            ->get(['id', 'code', 'display_name', 'logo_url', 'instructions']);
+    }
+
     public function landingCms(Request $request, string $key)
     {
         // Global rows only: tenant_id null. UI only reads CMS content this way.
