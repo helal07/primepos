@@ -48,7 +48,11 @@ Route::prefix('public')->group(function () {
 
     Route::get('/landing/cms/{key}',[\App\Http\Controllers\Api\PublicController::class, 'landingCms']);
     Route::get('/landing/faqs',     [\App\Http\Controllers\Api\PublicController::class, 'landingFaqs']);
+
+    // Non-secret list of checkout gateways available to tenants
+    Route::get('/payment-gateways', [\App\Http\Controllers\Api\PublicController::class, 'paymentGateways']);
 });
+
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +84,12 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     // Payments
     Route::post('/payments/init',                  [PaymentController::class, 'init']);
     Route::post('/payments/{paymentId}/approve',   [PaymentController::class, 'superApprove']);
+
+    // Superadmin gateway configuration (secrets are write-only)
+    Route::get  ('/admin/payment-gateways',       [\App\Http\Controllers\Api\PaymentGatewayAdminController::class, 'index'])
+        ->middleware('role:superadmin');
+    Route::patch('/admin/payment-gateways/{gatewayId}', [\App\Http\Controllers\Api\PaymentGatewayAdminController::class, 'update'])
+        ->middleware('role:superadmin');
 
     // Notifications
     Route::post('/notifications/send', [NotificationController::class, 'send']);

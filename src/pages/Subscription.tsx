@@ -60,11 +60,12 @@ export default function Subscription() {
   const [history, setHistory] = useState<PayRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [gatewayList, setGatewayList] = useState<{ id: string; code: string; display_name: string }[]>([]);
 
   // Manual submit
   const [open, setOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Pkg | null>(null);
-  const [method, setMethod] = useState<"bkash" | "eps" | "offline">("bkash");
+  const [method, setMethod] = useState<"bkash" | "sslcommerz" | "eps" | "offline">("bkash");
   const [reference, setReference] = useState("");
   const [payerName, setPayerName] = useState("");
   const [payerPhone, setPayerPhone] = useState("");
@@ -92,6 +93,13 @@ export default function Subscription() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    import("@/lib/functions")
+      .then(({ listCheckoutGateways }) => listCheckoutGateways())
+      .then((rows) => setGatewayList(Array.isArray(rows) ? rows : []))
+      .catch(() => setGatewayList([]));
+  }, []);
+
   useEffect(() => { document.title = "Subscription"; load(); /* eslint-disable-next-line */ }, [user?.id]);
 
   // Handle redirect from gateway
@@ -117,7 +125,7 @@ export default function Subscription() {
     // eslint-disable-next-line
   }, []);
 
-  const payNow = async (plan: Pkg, gateway: "bkash" | "eps") => {
+  const payNow = async (plan: Pkg, gateway: string) => {
     const key = `${plan.id}:${gateway}`;
     setPayingId(key);
     try {
@@ -235,14 +243,12 @@ export default function Subscription() {
                       ))}
                     </ul>
                     <div className="mt-4 space-y-2">
-                      <Button className="w-full" onClick={() => payNow(p, "bkash")} disabled={p.price === 0 || !!payingId}>
-                        {payingId === `${p.id}:bkash` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Pay with bKash
-                      </Button>
-                      <Button className="w-full" onClick={() => payNow(p, "eps")} disabled={p.price === 0 || !!payingId}>
-                        {payingId === `${p.id}:eps` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Pay with EPS
-                      </Button>
+                      {gatewayList.map((g) => (
+                        <Button key={g.id} className="w-full" onClick={() => payNow(p, g.code)} disabled={p.price === 0 || !!payingId}>
+                          {payingId === `${p.id}:${g.code}` && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Pay with {g.display_name}
+                        </Button>
+                      ))}
                       <Button variant="outline" className="w-full" onClick={() => openSubmit(p)} disabled={p.price === 0}>
                         {p.price === 0 ? "Trial plan" : "Submit manually"}
                       </Button>
@@ -304,7 +310,8 @@ export default function Subscription() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bkash">bKash</SelectItem>
-                  <SelectItem value="eps">EPS / SSLCommerz</SelectItem>
+                  <SelectItem value="sslcommerz">SSLCommerz</SelectItem>
+                  <SelectItem value="eps">EPS</SelectItem>
                   <SelectItem value="offline">Offline / Bank deposit</SelectItem>
                 </SelectContent>
               </Select>

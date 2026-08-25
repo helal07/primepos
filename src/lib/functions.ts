@@ -52,9 +52,23 @@ export const resetTenantPassword = (userId: string, newPassword: string) =>
 
 // ---- Payments --------------------------------------------------------------
 
+export type GatewayCode = "bkash" | "sslcommerz" | "eps";
+
+export interface PublicGateway {
+  id: string;
+  code: GatewayCode;
+  display_name: string;
+  logo_url?: string | null;
+  instructions?: string | null;
+}
+
+export const listCheckoutGateways = () =>
+  api.get<PublicGateway[]>("/api/public/payment-gateways");
+
 export interface PaymentInitPayload {
-  gateway: "bkash" | "eps";
+  gateway: GatewayCode | string;
   package_id: string;
+  subscription_type?: "monthly" | "yearly";
   from?: string;
 }
 export const paymentInit = (body: PaymentInitPayload) =>

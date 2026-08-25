@@ -10,6 +10,7 @@ class PaymentGatewayResolver
     {
         return match (strtolower($code)) {
             'bkash' => app(BkashGateway::class),
+            'sslcommerz', 'ssl', 'sslcz' => app(SslCommerzGateway::class),
             'eps', 'easypay' => app(EpsGateway::class),
             default => throw new InvalidArgumentException("Unknown gateway: {$code}"),
         };
