@@ -48,7 +48,11 @@ Route::prefix('public')->group(function () {
 
     Route::get('/landing/cms/{key}',[\App\Http\Controllers\Api\PublicController::class, 'landingCms']);
     Route::get('/landing/faqs',     [\App\Http\Controllers\Api\PublicController::class, 'landingFaqs']);
+
+    // Non-secret list of checkout gateways available to tenants
+    Route::get('/payment-gateways', [\App\Http\Controllers\Api\PublicController::class, 'paymentGateways']);
 });
+
 
 /*
 |--------------------------------------------------------------------------
