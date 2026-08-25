@@ -60,11 +60,12 @@ export default function Subscription() {
   const [history, setHistory] = useState<PayRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [gatewayList, setGatewayList] = useState<{ id: string; code: string; display_name: string }[]>([]);
 
   // Manual submit
   const [open, setOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Pkg | null>(null);
-  const [method, setMethod] = useState<"bkash" | "eps" | "offline">("bkash");
+  const [method, setMethod] = useState<"bkash" | "sslcommerz" | "eps" | "offline">("bkash");
   const [reference, setReference] = useState("");
   const [payerName, setPayerName] = useState("");
   const [payerPhone, setPayerPhone] = useState("");
@@ -91,6 +92,13 @@ export default function Subscription() {
     setHistory(hist ?? []);
     setLoading(false);
   };
+
+  useEffect(() => {
+    import("@/lib/functions")
+      .then(({ listCheckoutGateways }) => listCheckoutGateways())
+      .then((rows) => setGatewayList(Array.isArray(rows) ? rows : []))
+      .catch(() => setGatewayList([]));
+  }, []);
 
   useEffect(() => { document.title = "Subscription"; load(); /* eslint-disable-next-line */ }, [user?.id]);
 
@@ -302,7 +310,8 @@ export default function Subscription() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bkash">bKash</SelectItem>
-                  <SelectItem value="eps">EPS / SSLCommerz</SelectItem>
+                  <SelectItem value="sslcommerz">SSLCommerz</SelectItem>
+                  <SelectItem value="eps">EPS</SelectItem>
                   <SelectItem value="offline">Offline / Bank deposit</SelectItem>
                 </SelectContent>
               </Select>
