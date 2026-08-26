@@ -757,6 +757,20 @@ export default function POS() {
               <Button variant="outline" size="icon" className="h-11 w-11 md:h-9 md:w-9 shrink-0" onClick={() => setShowScanner(true)}>
                 <ScanBarcode className="h-5 w-5 md:h-4 md:w-4" />
               </Button>
+              <Button
+                variant={mobileTab === "catalog" ? "default" : "outline"}
+                size="icon"
+                className="md:hidden h-11 w-11 shrink-0 relative"
+                aria-label="Toggle product catalog"
+                onClick={() => setMobileTab((t) => (t === "catalog" ? "cart" : "catalog"))}
+              >
+                <LayoutGrid className="h-5 w-5" />
+                {cart.length > 0 && mobileTab !== "catalog" && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                    {cart.reduce((s, i) => s + i.quantity, 0)}
+                  </span>
+                )}
+              </Button>
             </div>
             {/* Customer row */}
             <CustomerPicker
