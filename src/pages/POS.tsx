@@ -554,7 +554,7 @@ export default function POS() {
   return (
     <div className="h-[calc(100vh-4rem)] -m-4 flex flex-col bg-background">
       {/* TOP TOOLBAR — Ultimate POS style */}
-      <div className="shrink-0 border-b bg-gradient-to-r from-card via-card to-muted/40 px-3 py-2 flex items-center gap-2 overflow-x-auto">
+      <div className="shrink-0 border-b bg-gradient-to-r from-card via-card to-muted/40 px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&_button]:h-8 sm:[&_button]:h-9">
         {/* Location / Warehouse */}
         <div className="flex items-center gap-2 shrink-0">
           <label className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
