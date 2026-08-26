@@ -814,14 +814,14 @@ export default function POS() {
                 </div>
               );
             })()}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {priceGroups && priceGroups.filter(g => g.is_active).length > 0 ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
                   <Select
                     value={activePriceGroupId ?? "default"}
                     onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
                   >
-                    <SelectTrigger className="h-8 w-full sm:w-[160px] text-xs">
+                    <SelectTrigger className="h-9 flex-1 min-w-0 sm:w-[160px] text-xs">
                       <SelectValue placeholder="Default Pricing" />
                     </SelectTrigger>
                     <SelectContent>
@@ -836,36 +836,42 @@ export default function POS() {
                   )}
                 </div>
               ) : (
-                <Badge variant="outline" className="h-8 px-2 text-xs font-normal text-muted-foreground">
+                <Badge variant="outline" className="h-9 px-2 text-xs font-normal text-muted-foreground flex-1 justify-center">
                   Default Pricing
                 </Badge>
+              )}
+              {/* Previous due of the selected customer (or neutral info slot) */}
+              {customerId && previousDue > 0 ? (
+                <button
+                  type="button"
+                  onClick={openPaymentDialog}
+                  className="h-9 shrink-0 inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2.5 text-xs font-semibold text-destructive"
+                  title="Previous due — tap to collect with this sale"
+                >
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Due ৳{previousDue.toFixed(0)}
+                </button>
+              ) : (
+                <span className="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md border text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                </span>
               )}
             </div>
           </div>
 
-          {/* Mobile segmented tabs: Catalog / Cart */}
-          <div className="md:hidden grid grid-cols-2 border-b shrink-0">
-            <button
-              type="button"
-              onClick={() => setMobileTab("catalog")}
-              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "catalog" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
-            >
-              Catalog
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab("cart")}
-              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "cart" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
-            >
-              Cart ({cart.reduce((s, i) => s + i.quantity, 0)})
-            </button>
-          </div>
-
           {/* Cart Table */}
-          <ScrollArea className={cn("flex-1 pb-24 md:pb-0", mobileTab === "catalog" && "hidden md:block")}>
+          <ScrollArea className={cn("flex-1 pb-28 md:pb-0", mobileTab === "catalog" && "hidden md:block")}>
 
             {cart.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground text-sm">Search and add products to the cart</div>
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
+                  <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div className="text-sm font-semibold text-muted-foreground">Your cart is empty</div>
+                <div className="text-xs text-muted-foreground max-w-[16rem]">
+                  Scan a barcode, tap a product tile, or type to search.
+                </div>
+              </div>
             ) : (
               <div className="overflow-x-auto">
               <Table className="min-w-0 w-full">
