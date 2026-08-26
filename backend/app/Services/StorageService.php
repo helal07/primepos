@@ -47,6 +47,30 @@ class StorageService
         return Storage::disk(self::isPublic($bucket) ? 'public_uploads' : 'private_uploads');
     }
 
+    /** Read-only disk holding files uploaded before the uploads/ volume move. */
+    public static function legacyDisk(string $bucket)
+    {
+        if (!self::isKnown($bucket)) {
+            throw new \InvalidArgumentException("Unknown bucket: {$bucket}");
+        }
+        return Storage::disk(self::isPublic($bucket) ? 'legacy_public_uploads' : 'legacy_private_uploads');
+    }
+
+    /**
+     * Disk that actually holds the file: the current root when present,
+     * otherwise the legacy root. Never breaks older records.
+     */
+    public static function diskFor(string $bucket, string $path)
+    {
+        $disk = self::disk($bucket);
+        if ($disk->exists($path)) {
+            return $disk;
+        }
+        $legacy = self::legacyDisk($bucket);
+        return $legacy->exists($path) ? $legacy : $disk;
+    }
+
+
     /** Build the path: {bucket}/{tenant?}/{key}  — tenant prefix keeps RLS-like separation on disk. */
     public static function path(string $bucket, string $key, ?string $tenantId = null): string
     {
