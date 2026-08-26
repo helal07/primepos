@@ -27,7 +27,7 @@ import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
   ScanBarcode, FileText, Clock, UserPlus,
   AlertCircle, Check, ChevronsUpDown,
-  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet, MoreHorizontal,
+  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet, MoreHorizontal, Menu, LayoutGrid,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -130,7 +130,8 @@ export default function POS() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
+  const [showActions, setShowActions] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("cart");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCust, setNewCust] = useState({ name: "", phone: "", email: "", address: "" });
   const [savingCust, setSavingCust] = useState(false);
@@ -573,10 +574,10 @@ export default function POS() {
             </SelectContent>
           </Select>
         </div>
-        {/* Date pill */}
+        {/* Date pill — desktop only */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" className="h-9 gap-1.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+            <Button size="sm" className="hidden md:inline-flex h-9 gap-1.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
               <CalendarIcon className="h-3.5 w-3.5" />
               {dateStr} {timeStr}
             </Button>
@@ -586,8 +587,8 @@ export default function POS() {
           </PopoverContent>
         </Popover>
 
-        {/* Quick action icons */}
-        <div className="flex items-center gap-1.5 mx-auto shrink-0">
+        {/* Quick action icons — desktop only */}
+        <div className="hidden md:flex items-center gap-1.5 mx-auto shrink-0">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-primary hover:bg-primary/10" title="Recent transactions" onClick={() => navigate("/sales")}>
             <History className="h-4 w-4" />
           </Button>
@@ -611,11 +612,54 @@ export default function POS() {
           </Button>
         </div>
 
-        {/* Add expense */}
-        <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold shrink-0" onClick={() => navigate("/expenses/add")}>
+        {/* Add expense — desktop only */}
+        <Button variant="outline" size="sm" className="hidden md:inline-flex h-9 gap-1.5 text-xs font-semibold shrink-0" onClick={() => navigate("/expenses/add")}>
           <Minus className="h-3.5 w-3.5" /> Add Expense
         </Button>
+
+        {/* Mobile hamburger — all other toolbar actions */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="md:hidden ml-auto h-9 w-9 shrink-0"
+          aria-label="POS actions"
+          onClick={() => setShowActions(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
+
+      {/* Mobile actions sheet */}
+      <Sheet open={showActions} onOpenChange={setShowActions}>
+        <SheetContent side="bottom" className="rounded-t-2xl p-0 max-h-[85vh] overflow-y-auto md:hidden">
+          <SheetHeader className="px-4 py-3 border-b">
+            <SheetTitle className="text-base">POS Actions</SheetTitle>
+          </SheetHeader>
+          <div className="p-2">
+            {[
+              { label: `Sale date: ${dateStr} ${timeStr}`, icon: CalendarIcon, onClick: () => { setShowActions(false); setSaleDate(new Date()); toast.success("Sale date reset to now"); } },
+              { label: "Recent transactions", icon: History, onClick: () => navigate("/sales") },
+              { label: "Quick cash sale", icon: Wallet, onClick: async () => { setShowActions(false); await handleQuickCash(); }, disabled: cart.length === 0 || createSale.isPending },
+              { label: "Multiple payment", icon: CreditCard, onClick: () => { setShowActions(false); openPaymentDialog(); }, disabled: cart.length === 0 },
+              { label: "Hold / suspend sale", icon: Pause, onClick: () => { setShowActions(false); handleCancel(); }, disabled: cart.length === 0 },
+              { label: "New sale / reset", icon: RotateCcw, onClick: () => { setShowActions(false); handleNewSale(); } },
+              { label: "Add expense", icon: Minus, onClick: () => navigate("/expenses/add") },
+              { label: "Cancel current sale", icon: X, onClick: () => { setShowActions(false); handleCancel(); }, disabled: cart.length === 0 },
+            ].map(({ label, icon: Icon, onClick, disabled }) => (
+              <button
+                key={label}
+                type="button"
+                disabled={disabled}
+                onClick={onClick}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left text-sm font-medium hover:bg-accent disabled:opacity-40"
+              >
+                <Icon className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">{label}</span>
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content: Left Cart + Right Products */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
@@ -713,6 +757,20 @@ export default function POS() {
               <Button variant="outline" size="icon" className="h-11 w-11 md:h-9 md:w-9 shrink-0" onClick={() => setShowScanner(true)}>
                 <ScanBarcode className="h-5 w-5 md:h-4 md:w-4" />
               </Button>
+              <Button
+                variant={mobileTab === "catalog" ? "default" : "outline"}
+                size="icon"
+                className="md:hidden h-11 w-11 shrink-0 relative"
+                aria-label="Toggle product catalog"
+                onClick={() => setMobileTab((t) => (t === "catalog" ? "cart" : "catalog"))}
+              >
+                <LayoutGrid className="h-5 w-5" />
+                {cart.length > 0 && mobileTab !== "catalog" && (
+                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                    {cart.reduce((s, i) => s + i.quantity, 0)}
+                  </span>
+                )}
+              </Button>
             </div>
             {/* Customer row */}
             <CustomerPicker
@@ -756,14 +814,14 @@ export default function POS() {
                 </div>
               );
             })()}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {priceGroups && priceGroups.filter(g => g.is_active).length > 0 ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
                   <Select
                     value={activePriceGroupId ?? "default"}
                     onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
                   >
-                    <SelectTrigger className="h-8 w-full sm:w-[160px] text-xs">
+                    <SelectTrigger className="h-9 flex-1 min-w-0 sm:w-[160px] text-xs">
                       <SelectValue placeholder="Default Pricing" />
                     </SelectTrigger>
                     <SelectContent>
@@ -778,36 +836,42 @@ export default function POS() {
                   )}
                 </div>
               ) : (
-                <Badge variant="outline" className="h-8 px-2 text-xs font-normal text-muted-foreground">
+                <Badge variant="outline" className="h-9 px-2 text-xs font-normal text-muted-foreground flex-1 justify-center">
                   Default Pricing
                 </Badge>
+              )}
+              {/* Previous due of the selected customer (or neutral info slot) */}
+              {customerId && previousDue > 0 ? (
+                <button
+                  type="button"
+                  onClick={openPaymentDialog}
+                  className="h-9 shrink-0 inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2.5 text-xs font-semibold text-destructive"
+                  title="Previous due — tap to collect with this sale"
+                >
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Due ৳{previousDue.toFixed(0)}
+                </button>
+              ) : (
+                <span className="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md border text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                </span>
               )}
             </div>
           </div>
 
-          {/* Mobile segmented tabs: Catalog / Cart */}
-          <div className="md:hidden grid grid-cols-2 border-b shrink-0">
-            <button
-              type="button"
-              onClick={() => setMobileTab("catalog")}
-              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "catalog" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
-            >
-              Catalog
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab("cart")}
-              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "cart" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
-            >
-              Cart ({cart.reduce((s, i) => s + i.quantity, 0)})
-            </button>
-          </div>
-
           {/* Cart Table */}
-          <ScrollArea className={cn("flex-1 pb-24 md:pb-0", mobileTab === "catalog" && "hidden md:block")}>
+          <ScrollArea className={cn("flex-1 pb-28 md:pb-0", mobileTab === "catalog" && "hidden md:block")}>
 
             {cart.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground text-sm">Search and add products to the cart</div>
+              <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+                <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
+                  <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div className="text-sm font-semibold text-muted-foreground">Your cart is empty</div>
+                <div className="text-xs text-muted-foreground max-w-[16rem]">
+                  Scan a barcode, tap a product tile, or type to search.
+                </div>
+              </div>
             ) : (
               <div className="overflow-x-auto">
               <Table className="min-w-0 w-full">
@@ -966,7 +1030,7 @@ export default function POS() {
           </div>
 
           {/* Product Grid */}
-          <ScrollArea className="flex-1 p-2 pb-28 md:pb-2">
+          <ScrollArea className="flex-1 p-2 pb-44 md:pb-2">
             {productsLoading ? (
               <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
             ) : filteredProducts.length === 0 ? (
@@ -1043,34 +1107,73 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Mobile sticky pay bar */}
-      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 flex items-center gap-2">
+      {/* Mobile sticky payment bar — Ultimate POS style */}
+      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 border-t bg-background/95 backdrop-blur">
+        {/* Total strip */}
         <button
           type="button"
-          className="min-w-0 flex-1 text-left"
+          className="w-full flex items-center justify-between px-3 py-1.5 border-b bg-muted/40 text-left"
           onClick={() => { setMobileTab("cart"); setShowMobileCart(true); }}
         >
-          <div className="text-[10px] leading-none text-muted-foreground">
+          <span className="text-[11px] font-medium text-muted-foreground">
             {cart.reduce((s, i) => s + i.quantity, 0)} items
-          </div>
-          <div className="text-base font-bold truncate">৳{totalAmount.toFixed(2)}</div>
+          </span>
+          <span className="text-sm font-bold">Total: ৳{totalAmount.toFixed(2)}</span>
         </button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-11 w-11 shrink-0"
-          aria-label="More actions"
-          onClick={() => setShowMobileCart(true)}
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
-        <Button
-          className="h-11 flex-1 font-semibold"
-          onClick={openPaymentDialog}
-          disabled={cart.length === 0}
-        >
-          <Banknote className="h-4 w-4 mr-2" /> Pay
-        </Button>
+        {/* Primary row */}
+        <div className="grid grid-cols-3 gap-1.5 px-1.5 pt-1.5">
+          <Button
+            variant="outline"
+            className="h-10 text-xs font-bold border-destructive/50 text-destructive hover:bg-destructive/10"
+            onClick={handleCancel}
+            disabled={cart.length === 0}
+          >
+            <X className="h-3.5 w-3.5 mr-1" /> Cancel
+          </Button>
+          <Button
+            className="h-10 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={openPaymentDialog}
+            disabled={cart.length === 0}
+          >
+            <CreditCard className="h-3.5 w-3.5 mr-1" /> Multiple Pay
+          </Button>
+          <Button
+            className="h-10 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={handleQuickCash}
+            disabled={cart.length === 0 || createSale.isPending}
+          >
+            <Banknote className="h-3.5 w-3.5 mr-1" /> Cash
+          </Button>
+        </div>
+        {/* Secondary row */}
+        <div className="grid grid-cols-3 gap-1.5 px-1.5 pb-1.5 pt-1">
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-amber-600 disabled:opacity-40"
+            onClick={() => navigate("/sales")}
+          >
+            <FileText className="h-4 w-4" />
+            Quotation
+          </button>
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-primary disabled:opacity-40"
+            onClick={handleCreditSale}
+            disabled={cart.length === 0 || !customerId || createSale.isPending}
+          >
+            <Check className="h-4 w-4" />
+            Credit Sale
+          </button>
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-destructive disabled:opacity-40"
+            onClick={handleCardSale}
+            disabled={cart.length === 0 || createSale.isPending}
+          >
+            <CreditCard className="h-4 w-4" />
+            Card
+          </button>
+        </div>
       </div>
 
 
