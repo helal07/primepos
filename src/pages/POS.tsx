@@ -785,8 +785,27 @@ export default function POS() {
             </div>
           </div>
 
+          {/* Mobile segmented tabs: Catalog / Cart */}
+          <div className="md:hidden grid grid-cols-2 border-b shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileTab("catalog")}
+              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "catalog" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
+            >
+              Catalog
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("cart")}
+              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "cart" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
+            >
+              Cart ({cart.reduce((s, i) => s + i.quantity, 0)})
+            </button>
+          </div>
+
           {/* Cart Table */}
-          <ScrollArea className="flex-1 pb-24 md:pb-0">
+          <ScrollArea className={cn("flex-1 pb-24 md:pb-0", mobileTab === "catalog" && "hidden md:block")}>
+
             {cart.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground text-sm">Search and add products to the cart</div>
             ) : (
