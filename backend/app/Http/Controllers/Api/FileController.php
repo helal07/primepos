@@ -70,10 +70,12 @@ class FileController extends Controller
             abort_unless($this->policy->view($user, $bucket, $path), 403);
         }
 
-        $disk = StorageService::disk($bucket);
+        // Current root first, legacy root as fallback for pre-volume uploads.
+        $disk = StorageService::diskFor($bucket, $path);
         abort_unless($disk->exists($path), 404);
 
         return $disk->response($path);
+
     }
 
     /**

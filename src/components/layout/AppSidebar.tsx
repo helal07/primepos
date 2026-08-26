@@ -64,6 +64,8 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/hooks/useSettings";
 import { normalizeStorageUrl } from "@/lib/storage";
+import { BrandLogo } from "@/components/BrandLogo";
+
 import {
   Sidebar,
   SidebarContent,
@@ -372,11 +374,8 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground text-lg font-bold overflow-hidden shrink-0">
-            {logoUrl ? (
-              <img src={logoUrl} alt={companyName} className="h-full w-full object-contain" />
-            ) : (
-              nameInitial
-            )}
+            <BrandLogo src={logoUrl} alt={companyName} fallback={nameInitial} />
+
           </div>
           {!collapsed && (
             <span className="min-w-0 flex-1 text-lg font-bold text-sidebar-accent-foreground truncate">

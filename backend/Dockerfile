@@ -83,6 +83,10 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
     && chown -R www-data:www-data /tmp/nginx /run/nginx
 
 
+# User uploads (logos, product images, docs). Mount this as a persistent volume
+# in Coolify/Docker, otherwise every redeploy wipes uploaded files.
+VOLUME ["/var/www/html/storage/app/uploads"]
+
 EXPOSE 80
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

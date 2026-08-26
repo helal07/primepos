@@ -40,15 +40,22 @@ export function publicUrl(bucket: string, path: string): string {
 }
 
 /**
- * Older records stored absolute /storage URLs built from APP_URL, which can point
- * at a different host than the one serving the app. Rewrite those to same-origin.
+ * Turns any stored reference into a URL usable from the current origin:
+ *  - absolute URL containing /storage/  -> rewritten to the API host (older records
+ *    stored APP_URL-based links that may point at a different host)
+ *  - other absolute URLs / data URIs    -> returned untouched
+ *  - bare "<bucket>/<path>"             -> served from the API /storage root
  */
 export function normalizeStorageUrl(url?: string | null): string {
   if (!url) return "";
   const i = url.indexOf("/storage/");
-  if (i === -1) return url;
-  return `${API_URL}${url.slice(i)}`;
+  if (i !== -1) return `${API_URL}${url.slice(i)}`;
+  if (/^(https?:|data:|blob:)/i.test(url)) return url;
+  const bucket = url.replace(/^\//, "").split("/")[0];
+  if (isPublicBucket(bucket)) return `${API_URL}/storage/${url.replace(/^\//, "")}`;
+  return url;
 }
+
 
 
 /** Public bucket -> direct URL. Private bucket -> short-lived signed URL via API. */
