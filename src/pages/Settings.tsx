@@ -59,11 +59,12 @@ function BusinessTab() {
           <Label>Business Logo (appears on invoices)</Label>
           <div className="flex items-center gap-4">
             <div className="h-20 w-20 rounded-md border bg-muted/40 flex items-center justify-center overflow-hidden">
-              {form.logo_url ? (
-                <img src={normalizeStorageUrl(form.logo_url)} alt="Logo" className="h-full w-full object-contain" />
-              ) : (
-                <span className="text-xs text-muted-foreground">No logo</span>
-              )}
+              <BrandLogo
+                src={form.logo_url}
+                alt="Logo"
+                fallback={<span className="text-xs text-muted-foreground">No logo</span> as any}
+              />
+
             </div>
             <div className="flex flex-col gap-2">
               <input
