@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { normalizeStorageUrl } from "@/lib/storage";
 
 /**
@@ -14,7 +14,7 @@ export function BrandLogo({
 }: {
   src?: string | null;
   alt: string;
-  fallback: string;
+  fallback: ReactNode;
   className?: string;
 }) {
   const url = normalizeStorageUrl(src);
@@ -26,3 +26,4 @@ export function BrandLogo({
 
   return <img src={url} alt={alt} className={className} onError={() => setFailed(true)} />;
 }
+
