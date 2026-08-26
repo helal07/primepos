@@ -966,13 +966,13 @@ export default function POS() {
           </div>
 
           {/* Product Grid */}
-          <ScrollArea className="flex-1 p-2">
+          <ScrollArea className="flex-1 p-2 pb-28 md:pb-2">
             {productsLoading ? (
               <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm">No products found</div>
             ) : (
-              <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                 {filteredProducts.map((product: any) => {
                   const isSerial = product.serial_tracking || product.product_type === "imei" || product.product_type === "serial";
                   return (
