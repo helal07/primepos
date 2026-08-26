@@ -27,7 +27,7 @@ import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
   ScanBarcode, FileText, Clock, UserPlus,
   AlertCircle, Check, ChevronsUpDown,
-  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet,
+  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet, MoreHorizontal,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -130,6 +130,7 @@ export default function POS() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCust, setNewCust] = useState({ name: "", phone: "", email: "", address: "" });
   const [savingCust, setSavingCust] = useState(false);
@@ -553,7 +554,7 @@ export default function POS() {
   return (
     <div className="h-[calc(100vh-4rem)] -m-4 flex flex-col bg-background">
       {/* TOP TOOLBAR — Ultimate POS style */}
-      <div className="shrink-0 border-b bg-gradient-to-r from-card via-card to-muted/40 px-3 py-2 flex items-center gap-2 overflow-x-auto">
+      <div className="shrink-0 border-b bg-gradient-to-r from-card via-card to-muted/40 px-2 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&_button]:h-8 sm:[&_button]:h-9">
         {/* Location / Warehouse */}
         <div className="flex items-center gap-2 shrink-0">
           <label className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
@@ -617,13 +618,15 @@ export default function POS() {
       </div>
 
       {/* Main Content: Left Cart + Right Products */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* LEFT — Cart Area */}
-        <div className="flex-1 flex flex-col border-r bg-card overflow-hidden">
-          {/* Cart Header: Customer + Search + Date */}
-          <div className="p-3 border-b space-y-2">
-            {/* Search row — full width on mobile */}
-            <div className="flex items-center gap-2">
+        <div className={cn("flex flex-col md:border-r bg-card overflow-hidden md:flex-1", mobileTab === "catalog" ? "flex-none" : "flex-1")}>
+
+          {/* Cart Header: Customer + Price group on top, product scan below */}
+          <div className="p-3 border-b flex flex-col gap-2">
+            {/* Search row — pushed below customer / price group */}
+            <div className="flex items-center gap-2 order-last">
+
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -782,8 +785,27 @@ export default function POS() {
             </div>
           </div>
 
+          {/* Mobile segmented tabs: Catalog / Cart */}
+          <div className="md:hidden grid grid-cols-2 border-b shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileTab("catalog")}
+              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "catalog" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
+            >
+              Catalog
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("cart")}
+              className={cn("py-2 text-sm font-semibold transition-colors", mobileTab === "cart" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}
+            >
+              Cart ({cart.reduce((s, i) => s + i.quantity, 0)})
+            </button>
+          </div>
+
           {/* Cart Table */}
-          <ScrollArea className="flex-1 pb-24 md:pb-0">
+          <ScrollArea className={cn("flex-1 pb-24 md:pb-0", mobileTab === "catalog" && "hidden md:block")}>
+
             {cart.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground text-sm">Search and add products to the cart</div>
             ) : (
@@ -854,7 +876,7 @@ export default function POS() {
           </ScrollArea>
 
           {/* Cart Footer Summary */}
-          <div className="border-t p-3 bg-muted/30 space-y-2">
+          <div className={cn("border-t p-3 bg-muted/30 space-y-2", mobileTab === "catalog" && "hidden md:block")}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Items: {cart.reduce((s, i) => s + i.quantity, 0)}</span>
               <span className="text-sm font-bold">Total: {subtotal.toFixed(0)}</span>
@@ -881,7 +903,7 @@ export default function POS() {
         </div>
 
         {/* RIGHT — Product Grid */}
-        <div className="w-[45%] lg:w-[50%] flex-col overflow-hidden hidden md:flex">
+        <div className={cn("w-full md:w-[45%] lg:w-[50%] flex-1 md:flex-none flex-col overflow-hidden md:flex", mobileTab === "catalog" ? "flex" : "hidden")}>
           {/* Category / Brand Tabs */}
           <div className="flex border-b">
             <button
@@ -944,13 +966,13 @@ export default function POS() {
           </div>
 
           {/* Product Grid */}
-          <ScrollArea className="flex-1 p-2">
+          <ScrollArea className="flex-1 p-2 pb-28 md:pb-2">
             {productsLoading ? (
               <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground text-sm">No products found</div>
             ) : (
-              <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
                 {filteredProducts.map((product: any) => {
                   const isSerial = product.serial_tracking || product.product_type === "imei" || product.product_type === "serial";
                   return (
@@ -1021,17 +1043,36 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Mobile Cart FAB */}
-      {cart.length > 0 && (
-        <div className="md:hidden fixed bottom-20 left-3 right-3 z-40">
-          <Button className="w-full h-12 rounded-2xl shadow-lg text-sm font-semibold" onClick={() => setShowMobileCart(true)}>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            <span>{cart.reduce((s, i) => s + i.quantity, 0)} items</span>
-            <span className="mx-2">•</span>
-            <span>৳{totalAmount.toFixed(2)}</span>
-          </Button>
-        </div>
-      )}
+      {/* Mobile sticky pay bar */}
+      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 flex items-center gap-2">
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={() => { setMobileTab("cart"); setShowMobileCart(true); }}
+        >
+          <div className="text-[10px] leading-none text-muted-foreground">
+            {cart.reduce((s, i) => s + i.quantity, 0)} items
+          </div>
+          <div className="text-base font-bold truncate">৳{totalAmount.toFixed(2)}</div>
+        </button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 shrink-0"
+          aria-label="More actions"
+          onClick={() => setShowMobileCart(true)}
+        >
+          <MoreHorizontal className="h-5 w-5" />
+        </Button>
+        <Button
+          className="h-11 flex-1 font-semibold"
+          onClick={openPaymentDialog}
+          disabled={cart.length === 0}
+        >
+          <Banknote className="h-4 w-4 mr-2" /> Pay
+        </Button>
+      </div>
+
 
       {/* Mobile Cart Sheet */}
       <Sheet open={showMobileCart} onOpenChange={setShowMobileCart}>

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Search, ArrowLeft, PackagePlus, AlertTriangle, ScanBarcode, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -351,7 +351,7 @@ export default function PurchaseAdd() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 pb-24 md:pb-0">
+    <div className="space-y-3 sm:space-y-4 pb-28">
       <PageHeader title={isEditMode ? "Edit Purchase" : "Add Purchase"} description={isEditMode ? "Edit purchase details" : "Record a new purchase from supplier"} actions={
         <Button variant="outline" size="sm" className="h-10 shrink-0" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
           <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Back</span>
@@ -726,137 +726,163 @@ export default function PurchaseAdd() {
         </CardContent>
       </Card>
 
-      {/* Bottom — Payment & Totals */}
+      {/* Bottom — collapsible Discount & Charges / Payments / Totals */}
       <Card>
         <CardContent className="pt-4 sm:pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-            <div>
-              <Label>Discount (৳ or %)</Label>
-              <Input value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} placeholder="0 or 10%" />
-            </div>
-            <div>
-              <Label>Other Charges</Label>
-              <Input type="number" min={0} value={otherCharges} onChange={(e) => setOtherCharges(parseFloat(e.target.value) || 0)} />
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          {/* Inline multi-row payments */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">Payments</Label>
-              <span className="text-sm">
-                Status:{" "}
-                <span className={`font-semibold ${computedPaymentStatus === "paid" ? "text-green-600" : computedPaymentStatus === "partial" ? "text-amber-600" : "text-destructive"}`}>
-                  {computedPaymentStatus === "paid" ? "Fully Paid" : computedPaymentStatus === "partial" ? "Partial Payment" : "Credit (Unpaid)"}
-                </span>
+          {/* One-line grand total summary */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{totalItemCount} items</span>
+              <span>Sub ৳{subtotal.toFixed(2)}</span>
+              <span>Tax ৳{totalTax.toFixed(2)}</span>
+              <span>Paid ৳{totalPaying.toFixed(2)}</span>
+              <span className={changeReturn > 0 ? "text-green-600" : dueAmount > 0 ? "text-destructive" : "text-green-600"}>
+                {changeReturn > 0 ? "Change" : "Due"} ৳{(changeReturn > 0 ? changeReturn : dueAmount).toFixed(2)}
+              </span>
+              <span className={`font-semibold ${computedPaymentStatus === "paid" ? "text-green-600" : computedPaymentStatus === "partial" ? "text-amber-600" : "text-destructive"}`}>
+                {computedPaymentStatus === "paid" ? "Fully Paid" : computedPaymentStatus === "partial" ? "Partial" : "Credit"}
               </span>
             </div>
-            {paymentRows.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-2 gap-2 md:flex md:gap-2 md:items-end border md:border-0 rounded-lg p-2 md:p-0">
-                <div className="md:w-32">
-                  {idx === 0 && <Label className="text-xs">Amount</Label>}
-                  <Input
-                    type="number" inputMode="decimal"
-                    min={0}
-                    value={row.amount}
-                    onChange={(e) => updatePaymentRow(idx, "amount", parseFloat(e.target.value) || 0)}
-                  />
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-none">Grand Total</div>
+              <div className="text-lg font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
+            </div>
+          </div>
+
+          <Accordion type="multiple" className="mt-2">
+            <AccordionItem value="charges">
+              <AccordionTrigger className="text-sm font-semibold">
+                Discount &amp; Charges
+                <span className="ml-auto mr-2 text-xs font-normal text-muted-foreground">
+                  −৳{overallDiscount.toFixed(2)} / +৳{otherCharges.toFixed(2)}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Discount (৳ or %)</Label>
+                    <Input className="h-10" value={discountInput} onChange={(e) => setDiscountInput(e.target.value)} placeholder="0 or 10%" />
+                  </div>
+                  <div>
+                    <Label>Other Charges</Label>
+                    <Input className="h-10" type="number" min={0} value={otherCharges} onChange={(e) => setOtherCharges(parseFloat(e.target.value) || 0)} />
+                  </div>
                 </div>
-                <div className="md:w-36">
-                  {idx === 0 && <Label className="text-xs">Method</Label>}
-                  <Select value={row.payment_method} onValueChange={(v) => updatePaymentRow(idx, "payment_method", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                      <SelectItem value="bkash">bKash</SelectItem>
-                      <SelectItem value="bank">Bank</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-2 md:flex-1">
-                  {idx === 0 && <Label className="text-xs">Note</Label>}
-                  <Input
-                    value={row.payment_note}
-                    onChange={(e) => updatePaymentRow(idx, "payment_note", e.target.value)}
-                    placeholder="Optional note"
-                  />
-                </div>
-                {paymentRows.length > 1 && (
-                  <Button variant="ghost" size="icon" className="text-destructive shrink-0 col-span-2 md:col-span-1 justify-self-end" onClick={() => removePaymentRow(idx)}>
-                    <Trash2 className="h-4 w-4" />
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="payments">
+              <AccordionTrigger className="text-sm font-semibold">
+                Payments
+                <span className="ml-auto mr-2 text-xs font-normal text-muted-foreground">
+                  {paymentRows.filter(p => Number(p.amount) > 0).length} entr{paymentRows.filter(p => Number(p.amount) > 0).length === 1 ? "y" : "ies"} • ৳{totalPaying.toFixed(2)}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-3">
+                  {paymentRows.map((row, idx) => (
+                    <div key={idx} className="grid grid-cols-2 gap-2 md:flex md:gap-2 md:items-end border md:border-0 rounded-lg p-2 md:p-0">
+                      <div className="md:w-32">
+                        {idx === 0 && <Label className="text-xs">Amount</Label>}
+                        <Input
+                          className="h-10"
+                          type="number" inputMode="decimal"
+                          min={0}
+                          value={row.amount}
+                          onChange={(e) => updatePaymentRow(idx, "amount", parseFloat(e.target.value) || 0)}
+                        />
+                      </div>
+                      <div className="md:w-36">
+                        {idx === 0 && <Label className="text-xs">Method</Label>}
+                        <Select value={row.payment_method} onValueChange={(v) => updatePaymentRow(idx, "payment_method", v)}>
+                          <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="card">Card</SelectItem>
+                            <SelectItem value="bkash">bKash</SelectItem>
+                            <SelectItem value="bank">Bank</SelectItem>
+                            <SelectItem value="cheque">Cheque</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2 md:flex-1">
+                        {idx === 0 && <Label className="text-xs">Note</Label>}
+                        <Input
+                          className="h-10"
+                          value={row.payment_note}
+                          onChange={(e) => updatePaymentRow(idx, "payment_note", e.target.value)}
+                          placeholder="Optional note"
+                        />
+                      </div>
+                      {paymentRows.length > 1 && (
+                        <Button variant="ghost" size="icon" className="text-destructive shrink-0 col-span-2 md:col-span-1 justify-self-end" onClick={() => removePaymentRow(idx)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={addPaymentRow} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" /> Add Payment Row
                   </Button>
-                )}
-              </div>
-            ))}
-            <Button variant="outline" size="sm" onClick={addPaymentRow} className="w-full">
-              <Plus className="h-4 w-4 mr-2" /> Add Payment Row
-            </Button>
-          </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-          <Separator className="my-4" />
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 items-end">
-            <div>
-              <Label className="text-xs text-muted-foreground">Total Items</Label>
-              <div className="text-base sm:text-lg font-bold">{totalItemCount}</div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Subtotal</Label>
-              <div className="text-base sm:text-lg font-bold">৳{subtotal.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Tax</Label>
-              <div className="text-base sm:text-lg font-bold">৳{totalTax.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Grand Total</Label>
-              <div className="text-lg sm:text-xl font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Paid</Label>
-              <div className="text-lg sm:text-xl font-bold text-primary">৳{totalPaying.toFixed(2)}</div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">{changeReturn > 0 ? "Change" : "Due"}</Label>
-              <div className={`text-lg sm:text-xl font-bold ${changeReturn > 0 ? "text-green-600" : dueAmount > 0 ? "text-destructive" : "text-green-600"}`}>
-                ৳{(changeReturn > 0 ? changeReturn : dueAmount).toFixed(2)}
-              </div>
-            </div>
-          </div>
-
-          <Separator className="my-4" />
-
-          <div className="hidden md:flex justify-end gap-3">
-            <Button variant="outline" onClick={() => navigate("/purchases")}>Cancel</Button>
-            <Button
-              size="lg"
-              disabled={items.length === 0 || createPurchase.isPending || updatePurchase.isPending || duplicateSerials.size > 0}
-              onClick={handleSavePurchase}
-            >
-              {createPurchase.isPending || updatePurchase.isPending ? "Saving..." : (isEditMode ? "Update Purchase" : "Save Purchase")}
-            </Button>
-          </div>
+            <AccordionItem value="totals" className="border-b-0">
+              <AccordionTrigger className="text-sm font-semibold">Totals breakdown</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 items-end">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Total Items</Label>
+                    <div className="text-base sm:text-lg font-bold">{totalItemCount}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Subtotal</Label>
+                    <div className="text-base sm:text-lg font-bold">৳{subtotal.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Tax</Label>
+                    <div className="text-base sm:text-lg font-bold">৳{totalTax.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Grand Total</Label>
+                    <div className="text-lg sm:text-xl font-bold text-primary">৳{grandTotal.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Paid</Label>
+                    <div className="text-lg sm:text-xl font-bold text-primary">৳{totalPaying.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">{changeReturn > 0 ? "Change" : "Due"}</Label>
+                    <div className={`text-lg sm:text-xl font-bold ${changeReturn > 0 ? "text-green-600" : dueAmount > 0 ? "text-destructive" : "text-green-600"}`}>
+                      ৳{(changeReturn > 0 ? changeReturn : dueAmount).toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </CardContent>
       </Card>
 
-      {/* Sticky mobile save bar */}
-      <div className="md:hidden fixed bottom-16 inset-x-0 z-30 border-t bg-background/95 backdrop-blur p-3 flex items-center gap-2">
+      {/* Sticky save bar — single primary action on every breakpoint */}
+      <div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-[var(--sidebar-width,0px)] z-30 border-t bg-background/95 backdrop-blur p-3 flex items-center gap-2">
         <div className="flex-1 min-w-0">
           <div className="text-[10px] text-muted-foreground leading-none">Grand Total</div>
           <div className="text-base font-bold text-primary truncate">৳{grandTotal.toFixed(2)}</div>
         </div>
+        <Button variant="outline" className="h-11 hidden sm:inline-flex" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
+          Cancel
+        </Button>
         <Button
-          className="flex-1 h-11"
+          className="flex-1 sm:flex-none sm:min-w-[200px] h-11"
           disabled={items.length === 0 || createPurchase.isPending || updatePurchase.isPending || duplicateSerials.size > 0}
           onClick={handleSavePurchase}
         >
-          {createPurchase.isPending || updatePurchase.isPending ? "Saving..." : (isEditMode ? "Update" : "Save Purchase")}
+          {createPurchase.isPending || updatePurchase.isPending ? "Saving..." : (isEditMode ? "Update Purchase" : "Save Purchase")}
         </Button>
       </div>
+
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={scannerIdx !== null} onOpenChange={(o) => !o && setScannerIdx(null)}>
