@@ -783,7 +783,6 @@ export default function POS() {
             {customerId && (() => {
               const c: any = (customers ?? []).find((x: any) => x.id === customerId);
               if (!c) return null;
-              const bal = Number(c.balance) || 0;
               const limit = Number(c.credit_limit) || 0;
               const grp = c.customer_group_id
                 ? (customerGroups ?? []).find((g: any) => g.id === c.customer_group_id)
@@ -794,18 +793,6 @@ export default function POS() {
                   {grp && (
                     <Badge variant="secondary" className="text-[10px]">Group: {grp.name}</Badge>
                   )}
-                  {bal > 0 ? (
-                    <span className="inline-flex items-center gap-1 font-semibold text-destructive">
-                      <AlertCircle className="h-3 w-3" />
-                      Due: ৳ {bal.toLocaleString("en", { minimumFractionDigits: 2 })}
-                    </span>
-                  ) : bal < 0 ? (
-                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600">
-                      Advance: ৳ {Math.abs(bal).toLocaleString("en", { minimumFractionDigits: 2 })}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">No outstanding balance</span>
-                  )}
                   {limit > 0 && (
                     <span className="text-muted-foreground">
                       Credit limit: ৳ {limit.toLocaleString("en", { minimumFractionDigits: 2 })}
@@ -814,14 +801,16 @@ export default function POS() {
                 </div>
               );
             })()}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {/* Default price + previous due — split 50/50 on mobile */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {/* Left half: default selling price */}
               {priceGroups && priceGroups.filter(g => g.is_active).length > 0 ? (
-                <div className="flex items-center gap-1 flex-1 min-w-0">
+                <div className="flex items-center gap-1 min-w-0">
                   <Select
                     value={activePriceGroupId ?? "default"}
                     onValueChange={(v) => setActivePriceGroupId(v === "default" ? null : v)}
                   >
-                    <SelectTrigger className="h-9 flex-1 min-w-0 sm:w-[160px] text-xs">
+                    <SelectTrigger className="h-9 flex-1 min-w-0 text-xs">
                       <SelectValue placeholder="Default Pricing" />
                     </SelectTrigger>
                     <SelectContent>
@@ -836,26 +825,36 @@ export default function POS() {
                   )}
                 </div>
               ) : (
-                <Badge variant="outline" className="h-9 px-2 text-xs font-normal text-muted-foreground flex-1 justify-center">
+                <Badge variant="outline" className="h-9 px-2 text-xs font-normal text-muted-foreground justify-center">
                   Default Pricing
                 </Badge>
               )}
-              {/* Previous due of the selected customer (or neutral info slot) */}
+              {/* Right half: previous due / advance / no balance */}
               {customerId && previousDue > 0 ? (
                 <button
                   type="button"
                   onClick={openPaymentDialog}
-                  className="h-9 shrink-0 inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2.5 text-xs font-semibold text-destructive"
+                  className="h-9 inline-flex items-center justify-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 text-xs font-semibold text-destructive"
                   title="Previous due — tap to collect with this sale"
                 >
-                  <AlertCircle className="h-3.5 w-3.5" />
                   Due ৳{previousDue.toFixed(0)}
                 </button>
-              ) : (
-                <span className="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-md border text-muted-foreground">
-                  <AlertCircle className="h-4 w-4" />
-                </span>
-              )}
+              ) : customerId && (() => {
+                const c: any = (customers ?? []).find((x: any) => x.id === customerId);
+                const bal = c ? Number(c.balance) || 0 : 0;
+                if (bal < 0) {
+                  return (
+                    <span className="h-9 inline-flex items-center justify-center rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 text-xs font-semibold text-emerald-600">
+                      Advance ৳{Math.abs(bal).toFixed(0)}
+                    </span>
+                  );
+                }
+                return (
+                  <span className="h-9 inline-flex items-center justify-center rounded-md border bg-muted/40 px-2 text-xs text-muted-foreground">
+                    No outstanding balance
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
