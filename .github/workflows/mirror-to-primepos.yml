@@ -43,10 +43,14 @@ jobs:
           git remote remove target 2>/dev/null || true
           git remote add target "https://x-access-token:${TARGET_PAT}@github.com/helal07/primepos.git"
           echo "Pushing $(git rev-parse --short HEAD) to helal07/primepos:main"
-          if ! git push target "HEAD:refs/heads/main" --force 2>push.log; then
+          # Single guarded push — never push outside this block so failures always
+          # reach the masked-log + clear-error path below.
+          if ! git push target "HEAD:refs/heads/main" --force >push.log 2>&1; then
+            # Redact the token from the captured log before printing anything.
             sed -e "s#${TARGET_PAT}#***#g" push.log || true
             echo "::error::Push to helal07/primepos failed. Check that TARGET_REPO_PAT is valid/not expired, has write access to that repo, and that 'main' is not protected against force pushes."
             exit 1
           fi
+          # Redact on success too, in case the remote echoes the URL.
           sed -e "s#${TARGET_PAT}#***#g" push.log || true
           echo "Mirror push completed."
