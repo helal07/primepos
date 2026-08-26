@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,7 @@ function BusinessTab() {
               <BrandLogo
                 src={form.logo_url}
                 alt="Logo"
-                fallback={<span className="text-xs text-muted-foreground">No logo</span> as any}
+                fallback={<span className="text-xs text-muted-foreground">No logo</span>}
               />
 
             </div>
