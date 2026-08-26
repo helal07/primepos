@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings, useSaveSetting } from "@/hooks/useSettings";
 import { ThemePicker } from "@/components/settings/ThemePicker";
-import { uploadFile, normalizeStorageUrl } from "@/lib/storage";
+import { uploadFile } from "@/lib/storage";
 import { toast } from "sonner";
 import { Upload, Loader2, Smartphone, Building2, Receipt, Percent, Bell, Palette, Package, Users, ShoppingCart, ShoppingBag, CreditCard, LayoutDashboard, Settings as SettingsIcon, Hash, Mail, MessageSquare, Tag } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
