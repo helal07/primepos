@@ -130,6 +130,7 @@ export default function POS() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCust, setNewCust] = useState({ name: "", phone: "", email: "", address: "" });
   const [savingCust, setSavingCust] = useState(false);
