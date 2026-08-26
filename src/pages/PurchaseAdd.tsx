@@ -351,7 +351,7 @@ export default function PurchaseAdd() {
   };
 
   return (
-    <div className="space-y-3 sm:space-y-4 pb-24 md:pb-0">
+    <div className="space-y-3 sm:space-y-4 pb-28">
       <PageHeader title={isEditMode ? "Edit Purchase" : "Add Purchase"} description={isEditMode ? "Edit purchase details" : "Record a new purchase from supplier"} actions={
         <Button variant="outline" size="sm" className="h-10 shrink-0" onClick={() => navigate(isEditMode ? `/purchases/${editId}` : "/purchases")}>
           <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden sm:inline">Back</span>
