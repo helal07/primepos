@@ -23,6 +23,33 @@ php artisan serve     # http://127.0.0.1:8000
 - MySQL 8.4 service আগে create করুন, তারপর `DB_HOST` সেই service-এর internal hostname-এ point করুন।
 - phpMyAdmin Coolify service হিসেবে add করে একই internal network-এ রাখুন।
 
+### ⚠️ Persistent volume (আপলোড করা ছবি হারানো ঠেকাতে বাধ্যতামূলক)
+
+Coolify → এই application → **Storages** → নতুন volume:
+
+```text
+Mount Path: /var/www/html/storage/app/uploads
+```
+
+সব আপলোড (`branding`, `product-images`, `avatars`, `installment-docs`, `exchange-docs`,
+`user-documents`, `expense-attachments`, `tenant-backups`) এখন এই ফোল্ডারে থাকে:
+
+```text
+storage/app/uploads/public/<bucket>/<tenant?>/<file>   → /storage/<bucket>/... (public)
+storage/app/uploads/private/<bucket>/<tenant?>/<file>  → signed /api/files/... only
+```
+
+volume না দিলে প্রতি redeploy/restart-এ container filesystem রিসেট হয় এবং ছবি মুছে যায়
+(ডাটাবেজে লিংক থেকে যায়, ফাইল থাকে না)।
+
+পুরনো (volume-এর আগের) ফাইল entrypoint-এ স্বয়ংক্রিয়ভাবে কপি হয়:
+
+```bash
+php artisan app:migrate-uploads          # idempotent copy
+php artisan app:migrate-uploads --prune  # কপি যাচাইয়ের পর পুরনো ফাইল ডিলিট
+```
+
+
 ## ডিরেক্টরি লেআউট
 
 ```text
