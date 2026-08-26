@@ -27,7 +27,7 @@ import {
   Search, Plus, Minus, Trash2, X, ShoppingCart, CreditCard, Banknote,
   ScanBarcode, FileText, Clock, UserPlus,
   AlertCircle, Check, ChevronsUpDown,
-  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet,
+  MapPin, Calculator, RotateCcw, Pause, Receipt, History, Wallet, MoreHorizontal,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { toast } from "sonner";
