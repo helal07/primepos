@@ -59,14 +59,20 @@ export default function InstallmentCustomerAdd() {
       const guarantor_nid_url = gNidFile ? await uploadFile(gNidFile, "guarantor-nid") : null;
       const guarantor_photo_url = gPhotoFile ? await uploadFile(gPhotoFile, "guarantor-photo") : null;
 
+      const selected = customers?.find((c: any) => c.id === form.customer_id) as any;
+
       await create.mutateAsync({
         ...form,
+        // legacy NOT NULL columns — mirror the linked customer
+        name: selected?.name ?? null,
+        phone: selected?.phone ?? null,
         nid_url,
         photo_url,
         guarantor_nid_url,
         guarantor_photo_url,
         created_by: user?.id,
       });
+
 
       if (addMore) {
         setForm(defaultForm);
