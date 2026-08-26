@@ -1043,17 +1043,36 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Mobile Cart FAB */}
-      {cart.length > 0 && (
-        <div className="md:hidden fixed bottom-20 left-3 right-3 z-40">
-          <Button className="w-full h-12 rounded-2xl shadow-lg text-sm font-semibold" onClick={() => setShowMobileCart(true)}>
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            <span>{cart.reduce((s, i) => s + i.quantity, 0)} items</span>
-            <span className="mx-2">•</span>
-            <span>৳{totalAmount.toFixed(2)}</span>
-          </Button>
-        </div>
-      )}
+      {/* Mobile sticky pay bar */}
+      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 flex items-center gap-2">
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={() => { setMobileTab("cart"); setShowMobileCart(true); }}
+        >
+          <div className="text-[10px] leading-none text-muted-foreground">
+            {cart.reduce((s, i) => s + i.quantity, 0)} items
+          </div>
+          <div className="text-base font-bold truncate">৳{totalAmount.toFixed(2)}</div>
+        </button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 shrink-0"
+          aria-label="More actions"
+          onClick={() => setShowMobileCart(true)}
+        >
+          <MoreHorizontal className="h-5 w-5" />
+        </Button>
+        <Button
+          className="h-11 flex-1 font-semibold"
+          onClick={openPaymentDialog}
+          disabled={cart.length === 0}
+        >
+          <Banknote className="h-4 w-4 mr-2" /> Pay
+        </Button>
+      </div>
+
 
       {/* Mobile Cart Sheet */}
       <Sheet open={showMobileCart} onOpenChange={setShowMobileCart}>
