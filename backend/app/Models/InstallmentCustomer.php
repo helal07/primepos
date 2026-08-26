@@ -16,5 +16,23 @@ class InstallmentCustomer extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected static function booted(): void
+    {
+        // Legacy columns name/phone are still populated for reporting and
+        // older rows; derive them from the linked customer when omitted.
+        $fill = function (InstallmentCustomer $row) {
+            if ((! empty($row->name) && ! empty($row->phone)) || empty($row->customer_id)) {
+                return;
+            }
+            $customer = Customer::query()->withoutGlobalScopes()->find($row->customer_id);
+            if (! $customer) return;
+            if (empty($row->name))  $row->name  = $customer->name;
+            if (empty($row->phone)) $row->phone = $customer->phone;
+        };
+
+        static::creating($fill);
+        static::updating($fill);
+    }
+
     public function customer(): BelongsTo { return $this->belongsTo(Customer::class, 'customer_id'); }
 }
