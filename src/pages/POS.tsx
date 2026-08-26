@@ -574,10 +574,10 @@ export default function POS() {
             </SelectContent>
           </Select>
         </div>
-        {/* Date pill */}
+        {/* Date pill — desktop only */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" className="h-9 gap-1.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+            <Button size="sm" className="hidden md:inline-flex h-9 gap-1.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
               <CalendarIcon className="h-3.5 w-3.5" />
               {dateStr} {timeStr}
             </Button>
@@ -587,8 +587,8 @@ export default function POS() {
           </PopoverContent>
         </Popover>
 
-        {/* Quick action icons */}
-        <div className="flex items-center gap-1.5 mx-auto shrink-0">
+        {/* Quick action icons — desktop only */}
+        <div className="hidden md:flex items-center gap-1.5 mx-auto shrink-0">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-primary hover:bg-primary/10" title="Recent transactions" onClick={() => navigate("/sales")}>
             <History className="h-4 w-4" />
           </Button>
@@ -612,11 +612,54 @@ export default function POS() {
           </Button>
         </div>
 
-        {/* Add expense */}
-        <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold shrink-0" onClick={() => navigate("/expenses/add")}>
+        {/* Add expense — desktop only */}
+        <Button variant="outline" size="sm" className="hidden md:inline-flex h-9 gap-1.5 text-xs font-semibold shrink-0" onClick={() => navigate("/expenses/add")}>
           <Minus className="h-3.5 w-3.5" /> Add Expense
         </Button>
+
+        {/* Mobile hamburger — all other toolbar actions */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="md:hidden ml-auto h-9 w-9 shrink-0"
+          aria-label="POS actions"
+          onClick={() => setShowActions(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
+
+      {/* Mobile actions sheet */}
+      <Sheet open={showActions} onOpenChange={setShowActions}>
+        <SheetContent side="bottom" className="rounded-t-2xl p-0 max-h-[85vh] overflow-y-auto md:hidden">
+          <SheetHeader className="px-4 py-3 border-b">
+            <SheetTitle className="text-base">POS Actions</SheetTitle>
+          </SheetHeader>
+          <div className="p-2">
+            {[
+              { label: `Sale date: ${dateStr} ${timeStr}`, icon: CalendarIcon, onClick: () => { setShowActions(false); setSaleDate(new Date()); toast.success("Sale date reset to now"); } },
+              { label: "Recent transactions", icon: History, onClick: () => navigate("/sales") },
+              { label: "Quick cash sale", icon: Wallet, onClick: async () => { setShowActions(false); await handleQuickCash(); }, disabled: cart.length === 0 || createSale.isPending },
+              { label: "Multiple payment", icon: CreditCard, onClick: () => { setShowActions(false); openPaymentDialog(); }, disabled: cart.length === 0 },
+              { label: "Hold / suspend sale", icon: Pause, onClick: () => { setShowActions(false); handleCancel(); }, disabled: cart.length === 0 },
+              { label: "New sale / reset", icon: RotateCcw, onClick: () => { setShowActions(false); handleNewSale(); } },
+              { label: "Add expense", icon: Minus, onClick: () => navigate("/expenses/add") },
+              { label: "Cancel current sale", icon: X, onClick: () => { setShowActions(false); handleCancel(); }, disabled: cart.length === 0 },
+            ].map(({ label, icon: Icon, onClick, disabled }) => (
+              <button
+                key={label}
+                type="button"
+                disabled={disabled}
+                onClick={onClick}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left text-sm font-medium hover:bg-accent disabled:opacity-40"
+              >
+                <Icon className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">{label}</span>
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content: Left Cart + Right Products */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
