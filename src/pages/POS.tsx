@@ -783,7 +783,6 @@ export default function POS() {
             {customerId && (() => {
               const c: any = (customers ?? []).find((x: any) => x.id === customerId);
               if (!c) return null;
-              const bal = Number(c.balance) || 0;
               const limit = Number(c.credit_limit) || 0;
               const grp = c.customer_group_id
                 ? (customerGroups ?? []).find((g: any) => g.id === c.customer_group_id)
