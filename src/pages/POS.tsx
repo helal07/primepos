@@ -620,11 +620,12 @@ export default function POS() {
       {/* Main Content: Left Cart + Right Products */}
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT — Cart Area */}
-        <div className="flex-1 flex flex-col border-r bg-card overflow-hidden">
-          {/* Cart Header: Customer + Search + Date */}
-          <div className="p-3 border-b space-y-2">
-            {/* Search row — full width on mobile */}
-            <div className="flex items-center gap-2">
+        <div className={cn("flex-1 flex flex-col border-r bg-card overflow-hidden", mobileTab === "catalog" && "hidden md:flex")}>
+          {/* Cart Header: Customer + Price group on top, product scan below */}
+          <div className="p-3 border-b flex flex-col gap-2">
+            {/* Search row — pushed below customer / price group */}
+            <div className="flex items-center gap-2 order-last">
+
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
