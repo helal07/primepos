@@ -1107,34 +1107,73 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Mobile sticky pay bar */}
-      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 flex items-center gap-2">
+      {/* Mobile sticky payment bar — Ultimate POS style */}
+      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 border-t bg-background/95 backdrop-blur">
+        {/* Total strip */}
         <button
           type="button"
-          className="min-w-0 flex-1 text-left"
+          className="w-full flex items-center justify-between px-3 py-1.5 border-b bg-muted/40 text-left"
           onClick={() => { setMobileTab("cart"); setShowMobileCart(true); }}
         >
-          <div className="text-[10px] leading-none text-muted-foreground">
+          <span className="text-[11px] font-medium text-muted-foreground">
             {cart.reduce((s, i) => s + i.quantity, 0)} items
-          </div>
-          <div className="text-base font-bold truncate">৳{totalAmount.toFixed(2)}</div>
+          </span>
+          <span className="text-sm font-bold">Total: ৳{totalAmount.toFixed(2)}</span>
         </button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-11 w-11 shrink-0"
-          aria-label="More actions"
-          onClick={() => setShowMobileCart(true)}
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
-        <Button
-          className="h-11 flex-1 font-semibold"
-          onClick={openPaymentDialog}
-          disabled={cart.length === 0}
-        >
-          <Banknote className="h-4 w-4 mr-2" /> Pay
-        </Button>
+        {/* Primary row */}
+        <div className="grid grid-cols-3 gap-1.5 px-1.5 pt-1.5">
+          <Button
+            variant="outline"
+            className="h-10 text-xs font-bold border-destructive/50 text-destructive hover:bg-destructive/10"
+            onClick={handleCancel}
+            disabled={cart.length === 0}
+          >
+            <X className="h-3.5 w-3.5 mr-1" /> Cancel
+          </Button>
+          <Button
+            className="h-10 text-xs font-bold bg-slate-800 text-white hover:bg-slate-900"
+            onClick={openPaymentDialog}
+            disabled={cart.length === 0}
+          >
+            <CreditCard className="h-3.5 w-3.5 mr-1" /> Multiple Pay
+          </Button>
+          <Button
+            className="h-10 text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={handleQuickCash}
+            disabled={cart.length === 0 || createSale.isPending}
+          >
+            <Banknote className="h-3.5 w-3.5 mr-1" /> Cash
+          </Button>
+        </div>
+        {/* Secondary row */}
+        <div className="grid grid-cols-3 gap-1.5 px-1.5 pb-1.5 pt-1">
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-amber-600 disabled:opacity-40"
+            onClick={() => navigate("/sales")}
+          >
+            <FileText className="h-4 w-4" />
+            Quotation
+          </button>
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-primary disabled:opacity-40"
+            onClick={handleCreditSale}
+            disabled={cart.length === 0 || !customerId || createSale.isPending}
+          >
+            <Check className="h-4 w-4" />
+            Credit Sale
+          </button>
+          <button
+            type="button"
+            className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium text-destructive disabled:opacity-40"
+            onClick={handleCardSale}
+            disabled={cart.length === 0 || createSale.isPending}
+          >
+            <CreditCard className="h-4 w-4" />
+            Card
+          </button>
+        </div>
       </div>
 
 
