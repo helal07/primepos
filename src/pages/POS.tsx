@@ -876,7 +876,7 @@ export default function POS() {
           </ScrollArea>
 
           {/* Cart Footer Summary */}
-          <div className="border-t p-3 bg-muted/30 space-y-2">
+          <div className={cn("border-t p-3 bg-muted/30 space-y-2", mobileTab === "catalog" && "hidden md:block")}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Items: {cart.reduce((s, i) => s + i.quantity, 0)}</span>
               <span className="text-sm font-bold">Total: {subtotal.toFixed(0)}</span>
