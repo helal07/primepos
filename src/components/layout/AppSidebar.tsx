@@ -64,6 +64,8 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSettings } from "@/hooks/useSettings";
 import { normalizeStorageUrl } from "@/lib/storage";
+import { BrandLogo } from "@/components/BrandLogo";
+
 import {
   Sidebar,
   SidebarContent,
