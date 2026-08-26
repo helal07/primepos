@@ -7,6 +7,10 @@ on:
       - master
   workflow_dispatch:
 
+concurrency:
+  group: mirror-to-primepos
+  cancel-in-progress: false
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
@@ -17,11 +21,32 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Check target token secret
+        env:
+          TARGET_PAT: ${{ secrets.TARGET_REPO_PAT }}
+        run: |
+          if [ -z "$TARGET_PAT" ]; then
+            echo "::error::Secret TARGET_REPO_PAT is missing or empty."
+            echo "Add it in: Settings > Secrets and variables > Actions > New repository secret"
+            echo "Name: TARGET_REPO_PAT — value: a GitHub PAT with 'repo' (or Contents: read/write) access to helal07/primepos"
+            exit 1
+          fi
+          echo "TARGET_REPO_PAT is present."
+
       - name: Push to primepos
         env:
           TARGET_PAT: ${{ secrets.TARGET_REPO_PAT }}
         run: |
+          set -euo pipefail
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git remote add target https://x-access-token:${TARGET_PAT}@github.com/helal07/primepos.git
-          git push target HEAD:main --force
+          git remote remove target 2>/dev/null || true
+          git remote add target "https://x-access-token:${TARGET_PAT}@github.com/helal07/primepos.git"
+          echo "Pushing $(git rev-parse --short HEAD) to helal07/primepos:main"
+          if ! git push target "HEAD:refs/heads/main" --force 2>push.log; then
+            sed -e "s#${TARGET_PAT}#***#g" push.log || true
+            echo "::error::Push to helal07/primepos failed. Check that TARGET_REPO_PAT is valid/not expired, has write access to that repo, and that 'main' is not protected against force pushes."
+            exit 1
+          fi
+          sed -e "s#${TARGET_PAT}#***#g" push.log || true
+          echo "Mirror push completed."
