@@ -903,7 +903,7 @@ export default function POS() {
         </div>
 
         {/* RIGHT — Product Grid */}
-        <div className="w-[45%] lg:w-[50%] flex-col overflow-hidden hidden md:flex">
+        <div className={cn("w-full md:w-[45%] lg:w-[50%] flex-1 md:flex-none flex-col overflow-hidden md:flex", mobileTab === "catalog" ? "flex" : "hidden")}>
           {/* Category / Brand Tabs */}
           <div className="flex border-b">
             <button
