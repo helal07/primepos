@@ -106,11 +106,15 @@ class StorageService
 
     public function delete(string $bucket, string $path): bool
     {
-        return self::disk($bucket)->delete($path);
+        $ok = self::disk($bucket)->delete($path);
+        if (self::legacyDisk($bucket)->exists($path)) {
+            self::legacyDisk($bucket)->delete($path);
+        }
+        return $ok;
     }
 
     public function exists(string $bucket, string $path): bool
     {
-        return self::disk($bucket)->exists($path);
+        return self::disk($bucket)->exists($path) || self::legacyDisk($bucket)->exists($path);
     }
 }
