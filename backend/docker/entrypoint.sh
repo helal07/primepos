@@ -23,6 +23,9 @@ if [ -z "$APP_KEY" ]; then
 fi
 
 php artisan migrate --force
+
+# Sweep any legacy NOT NULL columns that lack a default (MySQL error 1364).
+php artisan app:fix-legacy-columns || true
 php artisan db:seed --class=Database\\Seeders\\SuperadminSeeder --force
 php artisan app:ensure-superadmin --reset-password
 
