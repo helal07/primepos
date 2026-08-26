@@ -1030,7 +1030,7 @@ export default function POS() {
           </div>
 
           {/* Product Grid */}
-          <ScrollArea className="flex-1 p-2 pb-28 md:pb-2">
+          <ScrollArea className="flex-1 p-2 pb-44 md:pb-2">
             {productsLoading ? (
               <div className="text-center py-12 text-muted-foreground text-sm">Loading...</div>
             ) : filteredProducts.length === 0 ? (
@@ -1131,7 +1131,7 @@ export default function POS() {
             <X className="h-3.5 w-3.5 mr-1" /> Cancel
           </Button>
           <Button
-            className="h-10 text-xs font-bold bg-slate-800 text-white hover:bg-slate-900"
+            className="h-10 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={openPaymentDialog}
             disabled={cart.length === 0}
           >
