@@ -28,7 +28,7 @@ NID entered (blur / on submit)  ->  POST /api/installments/nid-risk-check
 
 Dialog content per shop: shop/business name, customer name on file, total financed amount, total paid, outstanding due, count of overdue installments, last payment date. Actions: "Continue anyway" and "Cancel". The warning is informational — it never blocks saving, and the decision is logged in the activity log.
 
-Privacy: the response exposes only shop name plus aggregated amounts — no phone numbers, addresses, documents, product-level detail, or other tenants' record IDs.
+Privacy: the response exposes only shop name, shop contact phone (so the tenant can call and ask about the customer's payment behavior) plus aggregated amounts — no customer phone numbers, addresses, documents, product-level detail, or other tenants' record IDs.
 
 ## 3. Technical notes
 
