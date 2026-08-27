@@ -48,7 +48,7 @@ import { useSerialSearch } from "@/hooks/useSerialSearch";
 import { SaleInvoice } from "@/components/sales/SaleInvoice";
 import { useSellingPriceGroups, useCustomerGroups, useProductGroupPricesMap } from "@/hooks/usePriceGroups";
 import { useProductStockMap } from "@/hooks/useWarehouses";
-import { useWarehouses, useDefaultWarehouse } from "@/hooks/useWarehouses";
+import { useWarehouses, useDefaultWarehouse, useLocationStockMap } from "@/hooks/useWarehouses";
 import { resolvePrice } from "@/lib/priceGroup";
 import { printInvoiceArea } from "@/lib/printInvoice";
 
@@ -103,13 +103,17 @@ export default function POS() {
   useEffect(() => {
     if (!warehouseId && defaultWarehouse?.id) setWarehouseId(defaultWarehouse.id);
   }, [defaultWarehouse, warehouseId]);
+  const { data: locationStockMap } = useLocationStockMap(warehouseId || null);
+  // Stock is per business location: when a location is selected we only count
+  // what that location holds (Ultimate POS behaviour).
   const getStock = useCallback(
     (p: any) => {
+      if (warehouseId) return Number(locationStockMap?.get(p.id) ?? 0);
       const ws = stockMap?.get(p.id);
       if (typeof ws === "number") return ws;
       return Number(p?.stock_quantity ?? 0);
     },
-    [stockMap]
+    [stockMap, locationStockMap, warehouseId]
   );
 
   const [search, setSearch] = useState("");
@@ -348,6 +352,12 @@ export default function POS() {
   const addToCart = useCallback((product: any) => {
     const isSerial = product.serial_tracking || product.product_type === "imei" || product.product_type === "serial";
     if (isSerial) { setImeiProductId(product.id); return; }
+    const available = getStock(product);
+    const inCart = cart.find((i) => i.product_id === product.id)?.quantity ?? 0;
+    if (inCart + 1 > available) {
+      toast.error(`Not enough stock at this location for ${product.name}. Available: ${available}`);
+      return;
+    }
     setCart((prev) => {
       const exists = prev.find((i) => i.product_id === product.id);
       if (exists) {
@@ -366,7 +376,7 @@ export default function POS() {
         serial_tracking: false,
       }];
     });
-  }, [activePriceGroupId, groupPriceMap]);
+  }, [activePriceGroupId, groupPriceMap, cart, getStock]);
 
   const addSerialToCart = (productId: string, serial: string) => {
     const product = (products as any[])?.find((p: any) => p.id === productId);
@@ -410,6 +420,15 @@ export default function POS() {
   };
 
   const updateQty = (index: number, newQty: number) => {
+    const target = cart[index];
+    if (target && !target.serial_tracking && newQty > target.quantity) {
+      const product = (products as any[])?.find((p: any) => p.id === target.product_id);
+      const available = product ? getStock(product) : 0;
+      if (newQty > available) {
+        toast.error(`Only ${available} in stock at this location for ${target.product_name}`);
+        return;
+      }
+    }
     setCart((prev) =>
       prev.map((item, i) => {
         if (i !== index || item.serial_tracking) return item;
@@ -428,6 +447,20 @@ export default function POS() {
 
   const handleCompleteWithPayments = async (payments: PaymentRow[], paymentStatus: string) => {
     if (cart.length === 0) return;
+    if (!warehouseId) {
+      toast.error("Select a business location before completing the sale.");
+      return;
+    }
+    // Re-validate every non-serial line against the selected location's stock
+    for (const item of cart) {
+      if (item.serial_tracking) continue;
+      const product = (products as any[])?.find((p: any) => p.id === item.product_id);
+      const available = product ? getStock(product) : 0;
+      if (item.quantity > available) {
+        toast.error(`${item.product_name}: only ${available} available at this location`);
+        return;
+      }
+    }
     // Block credit/partial sales for walk-in customers and enforce credit limit
     const totalPaying = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const dueNow = totalAmount - totalPaying;
