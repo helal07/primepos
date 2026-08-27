@@ -141,4 +141,125 @@ class InstallmentController extends Controller
             'reason'  => $sent ? null : 'No active SMS gateway is configured. Add provider credentials in SMS settings.',
         ], $sent ? 200 : 422);
     }
+
+    /**
+     * Cross-tenant credit risk check by NID.
+     *
+     * Looks for installment customers holding the same NID at OTHER tenants and
+     * reports aggregated outstanding dues per shop so the current retailer can
+     * judge whether granting a new installment plan is safe.
+     *
+     * Privacy: only shop name + shop contact phone and aggregated money figures
+     * are returned — never other tenants' customer contacts, documents or ids.
+     */
+    public function nidRiskCheck(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'nid' => ['required', 'string', 'regex:/^[0-9]{8,25}$/'],
+        ]);
+
+        $nid       = preg_replace('/\D+/', '', (string) $data['nid']);
+        $myTenant  = (string) ($request->user()->tenant_id ?? '');
+
+        // Matching installment customers at other tenants.
+        $matches = DB::table('installment_customers')
+            ->select('id', 'tenant_id', 'name')
+            ->where('nid', $nid)
+            ->when($myTenant !== '', fn ($q) => $q->where('tenant_id', '!=', $myTenant))
+            ->whereNotNull('tenant_id')
+            ->limit(200)
+            ->get();
+
+        if ($matches->isEmpty()) {
+            return response()->json(['nid' => $nid, 'has_risk' => false, 'shops' => []]);
+        }
+
+        $icIds = $matches->pluck('id')->all();
+
+        $sales = DB::table('installment_sales')
+            ->select('id', 'tenant_id', 'total_amount', 'down_payment', 'remaining_amount', 'status')
+            ->whereIn('installment_customer_id', $icIds)
+            ->get();
+
+        if ($sales->isEmpty()) {
+            return response()->json(['nid' => $nid, 'has_risk' => false, 'shops' => []]);
+        }
+
+        $saleIds = $sales->pluck('id')->all();
+
+        $collected = DB::table('installment_collections')
+            ->selectRaw('installment_sale_id, SUM(amount) AS paid, MAX(collected_at) AS last_paid')
+            ->whereIn('installment_sale_id', $saleIds)
+            ->groupBy('installment_sale_id')
+            ->get()
+            ->keyBy('installment_sale_id');
+
+        $overdue = DB::table('installment_schedules')
+            ->selectRaw('installment_sale_id, COUNT(*) AS overdue_count')
+            ->whereIn('installment_sale_id', $saleIds)
+            ->whereDate('due_date', '<', now()->toDateString())
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', '!=', 'paid');
+            })
+            ->groupBy('installment_sale_id')
+            ->get()
+            ->keyBy('installment_sale_id');
+
+        $tenantIds = $sales->pluck('tenant_id')->unique()->filter()->all();
+
+        $tenants  = DB::table('tenants')->whereIn('id', $tenantIds)
+            ->select('id', 'name', 'phone')->get()->keyBy('id');
+        $settings = DB::table('business_settings')->whereIn('tenant_id', $tenantIds)
+            ->select('tenant_id', 'business_name', 'contact_phone')->get()->keyBy('tenant_id');
+
+        $namesByTenant = $matches->groupBy('tenant_id')->map(
+            fn ($rows) => $rows->pluck('name')->filter()->unique()->values()->first()
+        );
+
+        $shops = [];
+        foreach ($sales->groupBy('tenant_id') as $tenantId => $rows) {
+            $financed = 0.0; $paid = 0.0; $due = 0.0; $overdueCount = 0; $lastPaid = null;
+
+            foreach ($rows as $sale) {
+                $total     = (float) ($sale->total_amount ?? 0);
+                $down      = (float) ($sale->down_payment ?? 0);
+                $financed += max($total - $down, 0);
+
+                $c = $collected->get($sale->id);
+                $paid += (float) ($c->paid ?? 0);
+                if (! empty($c->last_paid) && ($lastPaid === null || $c->last_paid > $lastPaid)) {
+                    $lastPaid = $c->last_paid;
+                }
+
+                $due          += (float) ($sale->remaining_amount ?? 0);
+                $overdueCount += (int) ($overdue->get($sale->id)->overdue_count ?? 0);
+            }
+
+            if (round($due, 2) <= 0) continue;
+
+            $t = $tenants->get($tenantId);
+            $s = $settings->get($tenantId);
+
+            $shops[] = [
+                'shop_name'       => $s->business_name ?? $t->name ?? 'Unknown shop',
+                'shop_phone'      => $s->contact_phone ?? $t->phone ?? null,
+                'customer_name'   => $namesByTenant[$tenantId] ?? null,
+                'financed_amount' => round($financed, 2),
+                'paid_amount'     => round($paid, 2),
+                'due_amount'      => round($due, 2),
+                'sales_count'     => $rows->count(),
+                'overdue_count'   => $overdueCount,
+                'last_payment_at' => $lastPaid,
+            ];
+        }
+
+        usort($shops, fn ($a, $b) => $b['due_amount'] <=> $a['due_amount']);
+
+        return response()->json([
+            'nid'      => $nid,
+            'has_risk' => count($shops) > 0,
+            'shops'    => $shops,
+        ]);
+    }
 }
+
