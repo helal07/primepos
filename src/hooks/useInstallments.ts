@@ -248,3 +248,32 @@ export function useSmsReminder() {
   });
 }
 
+
+// ── Cross-tenant NID risk check ──
+export interface NidRiskShop {
+  shop_name: string;
+  shop_phone: string | null;
+  customer_name: string | null;
+  financed_amount: number;
+  paid_amount: number;
+  due_amount: number;
+  sales_count: number;
+  overdue_count: number;
+  last_payment_at: string | null;
+}
+export interface NidRiskResult {
+  nid: string;
+  has_risk: boolean;
+  shops: NidRiskShop[];
+}
+
+/**
+ * Checks the given NID against installment customers of OTHER tenants and
+ * returns any outstanding installment dues, grouped per shop.
+ */
+export function useNidRiskCheck() {
+  return useMutation({
+    mutationFn: async (nid: string) =>
+      api.post<NidRiskResult>("/api/installments/nid-risk-check", { nid }),
+  });
+}
