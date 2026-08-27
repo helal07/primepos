@@ -277,7 +277,7 @@ class RestRegistry
                 'filters'      => ['customer_id'],
                 'sort'         => ['created_at'],
                 'default_sort' => '-created_at',
-                'search'       => ['guarantor_name', 'guarantor_mobile'],
+                'search'       => ['guarantor_name', 'guarantor_mobile', 'nid'],
                 'with'         => ['customer'],
                 'max_per_page' => 500,
             ],

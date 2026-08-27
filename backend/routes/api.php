@@ -124,6 +124,9 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
         ->middleware('module:installments');
     Route::post('/installments/schedules/{scheduleId}/reminder', [\App\Http\Controllers\Api\InstallmentController::class, 'reminder'])
         ->middleware('module:installments');
+    Route::post('/installments/nid-risk-check', [\App\Http\Controllers\Api\InstallmentController::class, 'nidRiskCheck'])
+        ->middleware(['module:installments', 'throttle:30,1']);
+
 
     // Dashboard aggregates (replaces 14 chained Supabase queries)
     Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);

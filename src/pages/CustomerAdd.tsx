@@ -40,10 +40,17 @@ export default function CustomerAdd() {
     });
   }, [editId, customers]);
 
+  const phoneDigits = form.phone.replace(/\D+/g, "");
+  const phoneValid = phoneDigits.length >= 6 && phoneDigits.length <= 20;
+  const phoneError = form.phone.trim() === ""
+    ? "Mobile number is required"
+    : (!phoneValid ? "Enter a valid mobile number (6-20 digits)" : "");
+
   const handleSubmit = () => {
+    if (!form.name || !phoneValid) return;
     const payload = {
       name: form.name,
-      phone: form.phone || null,
+      phone: form.phone.trim(),
       email: form.email || null,
       address: form.address || null,
       company: form.company || null,
@@ -57,6 +64,7 @@ export default function CustomerAdd() {
     if (editId) update.mutate({ id: editId, ...payload } as any, done);
     else create.mutate(payload as any, done);
   };
+
 
   return (
     <div className="space-y-6">
@@ -78,9 +86,16 @@ export default function CustomerAdd() {
               <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name" />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
+              <Label>Phone <span className="text-destructive">*</span></Label>
+              <Input
+                value={form.phone}
+                onChange={e => setForm({ ...form, phone: e.target.value })}
+                placeholder="Mobile number"
+                aria-invalid={!!phoneError}
+              />
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
             </div>
+
             <div className="space-y-2">
               <Label>Email</Label>
               <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" />
@@ -131,7 +146,7 @@ export default function CustomerAdd() {
           </div>
 
           <div className="flex gap-3 pt-2 border-t">
-            <Button className="mt-4" onClick={handleSubmit} disabled={!form.name || create.isPending || update.isPending}>
+            <Button className="mt-4" onClick={handleSubmit} disabled={!form.name || !phoneValid || create.isPending || update.isPending}>
               <Check className="mr-2 h-4 w-4" /> {editId ? "Update" : "Submit"}
             </Button>
             <Button className="mt-4" variant="outline" onClick={() => navigate("/customers")}>

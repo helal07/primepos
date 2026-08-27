@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useInstallmentCustomers, useInstallmentSaleMutations } from "@/hooks/useInstallments";
+import { useInstallmentCustomers, useInstallmentSaleMutations, useNidRiskCheck, type NidRiskResult } from "@/hooks/useInstallments";
+import { NidRiskDialog } from "@/components/installments/NidRiskDialog";
 import { useProducts } from "@/hooks/useInventory";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -28,6 +29,8 @@ export default function InstallmentSaleAdd() {
   const { data: products } = useProducts();
   const { create } = useInstallmentSaleMutations();
   const [saving, setSaving] = useState(false);
+  const riskCheck = useNidRiskCheck();
+  const [risk, setRisk] = useState<NidRiskResult | null>(null);
 
   const [form, setForm] = useState({
     sale_date: new Date().toISOString().split("T")[0],
@@ -93,6 +96,14 @@ export default function InstallmentSaleAdd() {
     const ic = instCustomers?.find((c: any) => c.id === icId);
     set("installment_customer_id", icId);
     if (ic?.customer_id) set("customer_id", ic.customer_id);
+
+    // Cross-tenant credit warning based on the customer's NID.
+    const nid = String(ic?.nid ?? "").replace(/\D+/g, "");
+    if (nid.length >= 8) {
+      riskCheck.mutateAsync(nid)
+        .then((res) => { if (res.has_risk) setRisk(res); })
+        .catch(() => {});
+    }
   };
 
   const handleSelectProduct = (pid: string) => {
@@ -306,6 +317,15 @@ export default function InstallmentSaleAdd() {
       <Button onClick={handleSubmit} disabled={saving}>
         <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Create Installment Sale"}
       </Button>
+
+      <NidRiskDialog
+        open={!!risk}
+        result={risk}
+        onCancel={() => { setRisk(null); set("installment_customer_id", ""); }}
+        onContinue={() => setRisk(null)}
+        continueLabel="Proceed with this customer"
+      />
+
     </div>
   );
 }
