@@ -162,7 +162,6 @@ class RestRegistry
                 'default_sort' => '-created_at',
                 'search'       => ['reference_number', 'notes'],
                 'with'         => ['supplier', 'items', 'payments', 'warehouse'],
-                'with'         => ['supplier', 'items', 'payments'],
                 'max_per_page' => 500,
             ],
             'purchase_items' => [
