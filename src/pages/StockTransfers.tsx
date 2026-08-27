@@ -74,14 +74,17 @@ export default function StockTransfers() {
       to_branch: to.name,
       quantity: parseInt(form.quantity) || 1,
       notes: form.notes || null,
+      status: completeNow ? "completed" : "pending",
+      transfer_date: new Date().toISOString().slice(0, 10),
       created_by: user?.id || "",
-    }, {
+    } as any, {
       onSuccess: () => {
         setOpen(false);
         setForm({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
       },
     });
   };
+
 
   return (
     <div className="space-y-6">
