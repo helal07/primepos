@@ -59,7 +59,7 @@ class InstallmentController extends Controller
             ]);
 
             // ── schedule roll-up ──
-            $paid = (float) DB::table('installment_schedules')->whereKey($schedule->id)->value('paid_amount');
+            $paid = (float) DB::table('installment_schedules')->where('id', $schedule->id)->value('paid_amount');
             $paid += (float) $data['amount'];
             $due  = (float) $schedule->amount;
 
