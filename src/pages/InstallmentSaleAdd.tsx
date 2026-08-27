@@ -93,6 +93,14 @@ export default function InstallmentSaleAdd() {
     const ic = instCustomers?.find((c: any) => c.id === icId);
     set("installment_customer_id", icId);
     if (ic?.customer_id) set("customer_id", ic.customer_id);
+
+    // Cross-tenant credit warning based on the customer's NID.
+    const nid = String(ic?.nid ?? "").replace(/\D+/g, "");
+    if (nid.length >= 8) {
+      riskCheck.mutateAsync(nid)
+        .then((res) => { if (res.has_risk) setRisk(res); })
+        .catch(() => {});
+    }
   };
 
   const handleSelectProduct = (pid: string) => {
