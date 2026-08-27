@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useInstallmentCustomers, useInstallmentSaleMutations } from "@/hooks/useInstallments";
+import { useInstallmentCustomers, useInstallmentSaleMutations, useNidRiskCheck, type NidRiskResult } from "@/hooks/useInstallments";
+import { NidRiskDialog } from "@/components/installments/NidRiskDialog";
 import { useProducts } from "@/hooks/useInventory";
 import { useAvailableSerials } from "@/hooks/useAvailableSerials";
 import { PageHeader } from "@/components/layout/PageHeader";
