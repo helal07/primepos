@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\InstallmentCollection;
 use App\Models\InstallmentSale;
 use App\Models\InstallmentSchedule;
