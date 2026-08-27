@@ -123,9 +123,10 @@ export default function InstallmentCollections() {
                 {!dueList.length ? (
                   <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No due installments</TableCell></TableRow>
                 ) : dueList.map((s: any) => {
-                  const sale = s.installment_sales || {};
-                  const cust = sale.customers || {};
-                  const ic = sale.installment_customers || {};
+                  const sale = s.installment_sales || s.installmentSale || {};
+                  const cust = sale.customers || sale.customer || {};
+                  const ic = sale.installment_customers || sale.installmentCustomer || {};
+                  const saleId = sale.id || s.installment_sale_id;
                   return (
                     <TableRow key={s.id}>
                       <TableCell>
@@ -139,7 +140,7 @@ export default function InstallmentCollections() {
                       </TableCell>
                       <TableCell
                         className="font-medium cursor-pointer underline-offset-2 hover:underline"
-                        onClick={() => navigate(`/installment/sales/${sale.id}`)}
+                        onClick={() => saleId && navigate(`/installment/sales/${saleId}`)}
                       >
                         {sale.invoice_number || sale.invoice_no || "—"}
                       </TableCell>
