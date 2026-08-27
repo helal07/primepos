@@ -118,14 +118,15 @@ export default function InstallmentSchedule() {
               <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">No pending schedules</TableCell></TableRow>
             ) : (
               filtered.map((s: any) => {
-                const sale = s.installment_sales || {};
-                const cust = sale.customers || {};
-                const ic = sale.installment_customers || {};
+                const sale = s.installment_sales || s.installmentSale || {};
+                const cust = sale.customers || sale.customer || {};
+                const ic = sale.installment_customers || sale.installmentCustomer || {};
+                const saleId = sale.id || s.installment_sale_id;
                 return (
                   <TableRow
                     key={s.id}
-                    className="cursor-pointer"
-                    onClick={() => navigate(`/installment/sales/${sale.id}`)}
+                    className={saleId ? "cursor-pointer" : undefined}
+                    onClick={() => saleId && navigate(`/installment/sales/${saleId}`)}
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
