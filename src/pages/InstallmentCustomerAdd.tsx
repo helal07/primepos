@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCustomers } from "@/hooks/useContacts";
-import { useInstallmentCustomerMutations } from "@/hooks/useInstallments";
+import { useInstallmentCustomerMutations, useNidRiskCheck, type NidRiskResult } from "@/hooks/useInstallments";
 import { useAuth } from "@/contexts/AuthContext";
-import { uploadFile as apiUploadFile } from "@/lib/storage";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,16 +10,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, UserPlus } from "lucide-react";
+import { ArrowLeft, Save, UserPlus, ShieldAlert } from "lucide-react";
 import { MediaCapture } from "@/components/exchange/MediaCapture";
+import { NidRiskDialog } from "@/components/installments/NidRiskDialog";
 import { useToast } from "@/hooks/use-toast";
 
 const defaultForm = {
   customer_id: "",
+  nid: "",
   permanent_address: "",
   work_address: "",
   guarantor_name: "",
   guarantor_mobile: "",
+  guarantor_nid: "",
   guarantor_present_address: "",
   guarantor_permanent_address: "",
   guarantor_work_address: "",
@@ -32,6 +34,7 @@ export default function InstallmentCustomerAdd() {
   const { toast } = useToast();
   const { data: customers } = useCustomers();
   const { create } = useInstallmentCustomerMutations();
+  const riskCheck = useNidRiskCheck();
   const [form, setForm] = useState(defaultForm);
   // Storage paths (private bucket) produced by MediaCapture — upload/live camera.
   const [nidPath, setNidPath] = useState<string | null>(null);
@@ -39,17 +42,39 @@ export default function InstallmentCustomerAdd() {
   const [gNidPath, setGNidPath] = useState<string | null>(null);
   const [gPhotoPath, setGPhotoPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [risk, setRisk] = useState<NidRiskResult | null>(null);
+  const [pendingAddMore, setPendingAddMore] = useState(false);
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
-  const handleSubmit = async (addMore = false) => {
-    if (!form.customer_id) { toast({ title: "Select a customer", variant: "destructive" }); return; }
+  const nidDigits = form.nid.replace(/\D+/g, "");
+  const nidValid = nidDigits.length >= 8 && nidDigits.length <= 25;
+  const nidError = form.nid.trim() === ""
+    ? "NID number is required"
+    : (!nidValid ? "NID must be 8-25 digits" : "");
+
+  /** Cross-tenant credit check — runs on NID blur and again before saving. */
+  const runRiskCheck = async (silent = false): Promise<NidRiskResult | null> => {
+    if (!nidValid) return null;
+    try {
+      const res = await riskCheck.mutateAsync(nidDigits);
+      if (res.has_risk) { setRisk(res); return res; }
+      if (!silent) toast({ title: "No outstanding installments found at other shops" });
+      return res;
+    } catch {
+      return null;
+    }
+  };
+
+  const save = async (addMore: boolean) => {
     setSaving(true);
     try {
       const selected = customers?.find((c: any) => c.id === form.customer_id) as any;
 
       await create.mutateAsync({
         ...form,
+        nid: nidDigits,
+        guarantor_nid: form.guarantor_nid.replace(/\D+/g, "") || null,
         // legacy NOT NULL columns — mirror the linked customer
         name: selected?.name ?? null,
         phone: selected?.phone ?? null,
@@ -59,7 +84,6 @@ export default function InstallmentCustomerAdd() {
         guarantor_photo_url: gPhotoPath,
         created_by: user?.id,
       });
-
 
       if (addMore) {
         setForm(defaultForm);
@@ -72,6 +96,16 @@ export default function InstallmentCustomerAdd() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = async (addMore = false) => {
+    if (!form.customer_id) { toast({ title: "Select a customer", variant: "destructive" }); return; }
+    if (!nidValid) { toast({ title: "NID number is required", description: nidError, variant: "destructive" }); return; }
+
+    setPendingAddMore(addMore);
+    const res = await runRiskCheck(true);
+    if (res?.has_risk) return; // dialog decides
+    await save(addMore);
   };
 
   return (
@@ -97,6 +131,30 @@ export default function InstallmentCustomerAdd() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>NID Number *</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={form.nid}
+                  onChange={(e) => set("nid", e.target.value)}
+                  onBlur={() => runRiskCheck(true)}
+                  placeholder="National ID number"
+                  inputMode="numeric"
+                  aria-invalid={!!nidError}
+                />
+                <Button
+                  type="button" variant="outline"
+                  onClick={() => runRiskCheck(false)}
+                  disabled={!nidValid || riskCheck.isPending}
+                >
+                  <ShieldAlert className="h-4 w-4 mr-2" />
+                  {riskCheck.isPending ? "Checking..." : "Credit check"}
+                </Button>
+              </div>
+              {nidError
+                ? <p className="text-xs text-destructive mt-1">{nidError}</p>
+                : <p className="text-xs text-muted-foreground mt-1">Checked against installment dues at other shops.</p>}
             </div>
             <div>
               <Label>Permanent Address</Label>
@@ -136,6 +194,15 @@ export default function InstallmentCustomerAdd() {
               </div>
             </div>
             <div>
+              <Label>Guarantor NID Number</Label>
+              <Input
+                value={form.guarantor_nid}
+                onChange={(e) => set("guarantor_nid", e.target.value)}
+                placeholder="Optional"
+                inputMode="numeric"
+              />
+            </div>
+            <div>
               <Label>Present Address</Label>
               <Textarea value={form.guarantor_present_address} onChange={(e) => set("guarantor_present_address", e.target.value)} />
             </div>
@@ -164,13 +231,21 @@ export default function InstallmentCustomerAdd() {
       </div>
 
       <div className="flex gap-3">
-        <Button onClick={() => handleSubmit(false)} disabled={saving}>
+        <Button onClick={() => handleSubmit(false)} disabled={saving || !nidValid}>
           <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Submit"}
         </Button>
-        <Button variant="outline" onClick={() => handleSubmit(true)} disabled={saving}>
+        <Button variant="outline" onClick={() => handleSubmit(true)} disabled={saving || !nidValid}>
           <UserPlus className="h-4 w-4 mr-2" /> Save & Add More
         </Button>
       </div>
+
+      <NidRiskDialog
+        open={!!risk}
+        result={risk}
+        onCancel={() => setRisk(null)}
+        onContinue={() => { setRisk(null); void save(pendingAddMore); }}
+        continueLabel="Register anyway"
+      />
     </div>
   );
 }
