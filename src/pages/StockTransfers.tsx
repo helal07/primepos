@@ -14,6 +14,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, ArrowRightLeft, Check, X } from "lucide-react";
 
@@ -31,7 +33,9 @@ export default function StockTransfers() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [completeNow, setCompleteNow] = useState(true);
   const [form, setForm] = useState({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
+
 
   const activeWarehouses = (warehouses ?? []).filter(w => w.is_active);
 
@@ -72,14 +76,17 @@ export default function StockTransfers() {
       to_branch: to.name,
       quantity: parseInt(form.quantity) || 1,
       notes: form.notes || null,
+      status: completeNow ? "completed" : "pending",
+      transfer_date: new Date().toISOString().slice(0, 10),
       created_by: user?.id || "",
-    }, {
+    } as any, {
       onSuccess: () => {
         setOpen(false);
         setForm({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
       },
     });
   };
+
 
   return (
     <div className="space-y-6">
@@ -141,6 +148,17 @@ export default function StockTransfers() {
                 <Label>Notes</Label>
                 <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes" rows={2} />
               </div>
+              <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
+                <Checkbox checked={completeNow} onCheckedChange={v => setCompleteNow(!!v)} className="mt-0.5" />
+                <span>
+                  <span className="font-medium">Complete transfer now</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Stock moves out of the source location and into the destination immediately.
+                    Uncheck to save as pending and complete it later.
+                  </span>
+                </span>
+              </label>
+
             </div>
             <DialogFooter>
               <Button
