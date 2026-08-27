@@ -1,13 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { rest } from "@/lib/restResource";
 
-export function useAvailableSerials(productId: string | null) {
+/**
+ * Available IMEI / serial numbers for a product.
+ * When `warehouseId` is provided, only serials purchased into that business
+ * location are offered (Ultimate POS style per-location stock).
+ */
+export function useAvailableSerials(productId: string | null, warehouseId?: string | null) {
   return useQuery({
-    queryKey: ["available_serials", productId],
+    queryKey: ["available_serials", productId, warehouseId ?? "all"],
     enabled: !!productId,
     queryFn: async () => {
       const [purchased, exchanged, sold] = await Promise.all([
-        rest.all<{ serial_number: string | null }>("purchase_items", {
+        rest.all<{ serial_number: string | null; purchase_id: string | null }>("purchase_items", {
           filter: { product_id: productId! }, perPage: 2000,
         }),
         rest.all<{ imei: string | null }>("exchange_purchases", {
@@ -18,9 +23,19 @@ export function useAvailableSerials(productId: string | null) {
           filter: { product_id: productId! }, perPage: 2000,
         }),
       ]);
+
+      let purchasedRows = purchased;
+      if (warehouseId) {
+        const purchases = await rest.all<{ id: string }>("purchases", {
+          filter: { warehouse_id: warehouseId }, perPage: 2000,
+        });
+        const allowed = new Set(purchases.map((p) => p.id));
+        purchasedRows = purchased.filter((p) => p.purchase_id && allowed.has(p.purchase_id));
+      }
+
       const soldSet = new Set(sold.map((s) => s.serial_number).filter(Boolean));
       const all = [
-        ...purchased.map((p) => p.serial_number).filter((v): v is string => !!v),
+        ...purchasedRows.map((p) => p.serial_number).filter((v): v is string => !!v),
         ...exchanged.map((e) => e.imei).filter((v): v is string => !!v),
       ].filter(Boolean);
       // dedupe and exclude sold

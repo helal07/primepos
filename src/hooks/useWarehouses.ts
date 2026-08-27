@@ -114,3 +114,28 @@ export function useProductStockMap() {
     refetchOnWindowFocus: true,
   });
 }
+
+/**
+ * product_id → on-hand quantity for ONE warehouse / business location.
+ * Used by the POS so selling can only draw from the selected location.
+ */
+export function useLocationStockMap(warehouseId?: string | null) {
+  return useQuery({
+    queryKey: ["location_stock_map", warehouseId ?? "none"],
+    enabled: !!warehouseId,
+    queryFn: async () => {
+      const rows = await rest.all<{ product_id: string | null; quantity: number | string }>(
+        "warehouse_stock",
+        { perPage: 5000, filter: { warehouse_id: warehouseId! } }
+      );
+      const map = new Map<string, number>();
+      for (const row of rows) {
+        if (!row.product_id) continue;
+        map.set(row.product_id, (map.get(row.product_id) ?? 0) + Number(row.quantity || 0));
+      }
+      return map;
+    },
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
