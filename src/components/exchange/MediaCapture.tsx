@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, RefreshCw, Upload, X } from "lucide-react";
 import { uploadFile, signedUrl } from "@/lib/storage";
 import { toast } from "sonner";
 import { compressIfImage } from "@/lib/compressImage";
@@ -9,17 +9,26 @@ interface Props {
   label: string;
   value?: string | null;
   onChange: (url: string | null) => void;
-  tenantId: string;
+  tenantId?: string;
   folder: string;
   enableCamera?: boolean;
   accept?: string;
+  /** Storage bucket to upload into (defaults to the exchange bucket). */
+  bucket?: string;
+  /** Store the raw storage path instead of a short-lived signed URL. */
+  returnPath?: boolean;
 }
 
-export function MediaCapture({ label, value, onChange, tenantId, folder, enableCamera, accept = "image/*" }: Props) {
+export function MediaCapture({
+  label, value, onChange, tenantId, folder, enableCamera, accept = "image/*",
+  bucket = "exchange-docs", returnPath = false,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [busy, setBusy] = useState(false);
   const [streaming, setStreaming] = useState(false);
+  const [facing, setFacing] = useState<"environment" | "user">("environment");
+  const [preview, setPreview] = useState<string | null>(null);
 
   const upload = async (input: File) => {
     setBusy(true);
@@ -27,9 +36,10 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
       const file = await compressIfImage(input, { maxWidth: 1600, maxHeight: 1600, quality: 0.82 });
       const ext = file.name.split(".").pop() || "jpg";
       const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { path } = await uploadFile("exchange-docs", file, { filename });
-      const url = await signedUrl("exchange-docs", path, 60);
-      onChange(url || path);
+      const { path } = await uploadFile(bucket, file, { filename });
+      const url = await signedUrl(bucket, path, 60);
+      setPreview(url || null);
+      onChange(returnPath ? path : (url || path));
     } catch (e: any) {
       toast.error(e.message || "Upload failed");
     } finally {
@@ -44,7 +54,7 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
       await new Promise((r) => setTimeout(r, 50));
       let stream: MediaStream;
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing } }, audio: false });
       } catch {
         stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }
@@ -85,10 +95,10 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
       <label className="text-sm font-medium">{label}</label>
       {value && (
         <div className="relative inline-block">
-          <img src={value} alt={label} className="h-24 w-24 object-cover rounded border" />
+          <img src={preview || value} alt={label} className="h-24 w-24 object-cover rounded border" />
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={() => { setPreview(null); onChange(null); }}
             className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5"
           >
             <X className="h-3 w-3" />
@@ -106,6 +116,12 @@ export function MediaCapture({ label, value, onChange, tenantId, folder, enableC
           />
           <div className="flex gap-2">
             <Button type="button" size="sm" onClick={snap} disabled={busy}>Capture</Button>
+            <Button
+              type="button" size="sm" variant="outline"
+              onClick={async () => { stopCam(); setFacing((f) => (f === "environment" ? "user" : "environment")); await startCam(); }}
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Flip
+            </Button>
             <Button type="button" size="sm" variant="outline" onClick={stopCam}>Cancel</Button>
           </div>
         </div>

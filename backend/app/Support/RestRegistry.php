@@ -284,20 +284,27 @@ class RestRegistry
             'installment_sales' => [
                 'model'        => Models\InstallmentSale::class,
                 'module'       => 'installments',
-                'filters'      => ['customer_id', 'product_id', 'installment_customer_id', 'status', 'invoice_number', 'start_date'],
-                'sort'         => ['created_at', 'invoice_number'],
+                'filters'      => ['customer_id', 'product_id', 'installment_customer_id', 'status', 'invoice_no', 'sale_date'],
+                'sort'         => ['created_at', 'invoice_no', 'sale_date'],
                 'default_sort' => '-created_at',
-                'search'       => ['invoice_number'],
-                'with'         => ['customer', 'product', 'installmentCustomer', 'schedules'],
+                'search'       => ['invoice_no'],
+                'with'         => ['customer', 'product', 'installmentCustomer', 'schedules', 'collections'],
                 'max_per_page' => 500,
+
             ],
             'installment_schedules' => [
                 'model'        => Models\InstallmentSchedule::class,
                 'module'       => 'installments',
                 'filters'      => ['installment_sale_id', 'status', 'due_date'],
-                'sort'         => ['due_date', 'installment_no'],
+                'sort'         => ['due_date', 'serial_no', 'created_at'],
                 'default_sort' => 'due_date',
-                'with'         => ['installmentSale', 'installmentSale.customer', 'installmentSale.product'],
+                'with'         => [
+                    'installmentSale',
+                    'installmentSale.customer',
+                    'installmentSale.product',
+                    'installmentSale.installmentCustomer',
+                    'collections',
+                ],
                 'max_per_page' => 2000,
             ],
             'installment_collections' => [
@@ -306,9 +313,10 @@ class RestRegistry
                 'filters'      => ['installment_sale_id', 'schedule_id', 'collected_at'],
                 'sort'         => ['collected_at', 'created_at'],
                 'default_sort' => '-collected_at',
-                'with'         => ['schedule'],
+                'with'         => ['schedule', 'installmentSale', 'installmentSale.customer'],
                 'max_per_page' => 1000,
             ],
+
 
             // ===== HRM (Stage 9g) =====
             'employees' => [

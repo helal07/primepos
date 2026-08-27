@@ -59,5 +59,7 @@ class InstallmentSale extends Model
     public function product(): BelongsTo             { return $this->belongsTo(Product::class, 'product_id'); }
     public function installmentCustomer(): BelongsTo { return $this->belongsTo(InstallmentCustomer::class, 'installment_customer_id'); }
     public function schedules(): HasMany             { return $this->hasMany(InstallmentSchedule::class, 'installment_sale_id'); }
+    public function collections(): HasMany           { return $this->hasMany(InstallmentCollection::class, 'installment_sale_id'); }
+
 
 }
