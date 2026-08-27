@@ -31,7 +31,9 @@ export default function StockTransfers() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [completeNow, setCompleteNow] = useState(true);
   const [form, setForm] = useState({ product_id: "", from_warehouse_id: "", to_warehouse_id: "", quantity: "1", notes: "" });
+
 
   const activeWarehouses = (warehouses ?? []).filter(w => w.is_active);
 
