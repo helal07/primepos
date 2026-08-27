@@ -40,10 +40,17 @@ export default function CustomerAdd() {
     });
   }, [editId, customers]);
 
+  const phoneDigits = form.phone.replace(/\D+/g, "");
+  const phoneValid = phoneDigits.length >= 6 && phoneDigits.length <= 20;
+  const phoneError = form.phone.trim() === ""
+    ? "Mobile number is required"
+    : (!phoneValid ? "Enter a valid mobile number (6-20 digits)" : "");
+
   const handleSubmit = () => {
+    if (!form.name || !phoneValid) return;
     const payload = {
       name: form.name,
-      phone: form.phone || null,
+      phone: form.phone.trim(),
       email: form.email || null,
       address: form.address || null,
       company: form.company || null,
@@ -57,6 +64,7 @@ export default function CustomerAdd() {
     if (editId) update.mutate({ id: editId, ...payload } as any, done);
     else create.mutate(payload as any, done);
   };
+
 
   return (
     <div className="space-y-6">
