@@ -99,6 +99,7 @@ const InstallmentSales = lazyRetry(() => import("./pages/InstallmentSales"));
 const InstallmentCollections = lazyRetry(() => import("./pages/InstallmentCollections"));
 const InstallmentSchedule = lazyRetry(() => import("./pages/InstallmentSchedule"));
 const InstallmentAgreement = lazyRetry(() => import("./pages/InstallmentAgreement"));
+const InstallmentSaleView = lazyRetry(() => import("./pages/InstallmentSaleView"));
 const AdminDashboard = lazyRetry(() => import("./pages/admin/AdminDashboard"));
 const TenantManagement = lazyRetry(() => import("./pages/admin/TenantManagement"));
 const PackageManagement = lazyRetry(() => import("./pages/admin/PackageManagement"));
@@ -287,6 +288,7 @@ const App = () => (
                         <Route path="/installment/customers" element={<ModuleGate module="installments"><InstallmentCustomers /></ModuleGate>} />
                         <Route path="/installment/sales/add" element={<ModuleGate module="installments"><InstallmentSaleAdd /></ModuleGate>} />
                         <Route path="/installment/sales" element={<ModuleGate module="installments"><InstallmentSales /></ModuleGate>} />
+                        <Route path="/installment/sales/:id" element={<ModuleGate module="installments"><InstallmentSaleView /></ModuleGate>} />
                         <Route path="/installment/collections" element={<ModuleGate module="installments"><InstallmentCollections /></ModuleGate>} />
                         <Route path="/installment/schedule" element={<ModuleGate module="installments"><InstallmentSchedule /></ModuleGate>} />
                         <Route path="/installment/agreement/:id" element={<ModuleGate module="installments"><InstallmentAgreement /></ModuleGate>} />
