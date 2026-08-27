@@ -86,9 +86,16 @@ export default function CustomerAdd() {
               <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name" />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
+              <Label>Phone <span className="text-destructive">*</span></Label>
+              <Input
+                value={form.phone}
+                onChange={e => setForm({ ...form, phone: e.target.value })}
+                placeholder="Mobile number"
+                aria-invalid={!!phoneError}
+              />
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
             </div>
+
             <div className="space-y-2">
               <Label>Email</Label>
               <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="Email" />
