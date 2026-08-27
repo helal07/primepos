@@ -146,7 +146,7 @@ export default function CustomerAdd() {
           </div>
 
           <div className="flex gap-3 pt-2 border-t">
-            <Button className="mt-4" onClick={handleSubmit} disabled={!form.name || create.isPending || update.isPending}>
+            <Button className="mt-4" onClick={handleSubmit} disabled={!form.name || !phoneValid || create.isPending || update.isPending}>
               <Check className="mr-2 h-4 w-4" /> {editId ? "Update" : "Submit"}
             </Button>
             <Button className="mt-4" variant="outline" onClick={() => navigate("/customers")}>
