@@ -29,6 +29,8 @@ export default function InstallmentSaleAdd() {
   const { data: products } = useProducts();
   const { create } = useInstallmentSaleMutations();
   const [saving, setSaving] = useState(false);
+  const riskCheck = useNidRiskCheck();
+  const [risk, setRisk] = useState<NidRiskResult | null>(null);
 
   const [form, setForm] = useState({
     sale_date: new Date().toISOString().split("T")[0],
