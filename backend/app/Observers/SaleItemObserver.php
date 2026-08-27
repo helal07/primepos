@@ -14,6 +14,10 @@ class SaleItemObserver
     {
         $sale = $this->saleFor($item);
         if (! $sale || ! $sale->warehouse_id) return;
+        $this->stock->assertAvailable(
+            $sale->warehouse_id, $item->product_id, $item->variation_id,
+            (float) $item->quantity
+        );
         $this->stock->applyDelta(
             $sale->tenant_id, $sale->warehouse_id,
             $item->product_id, $item->variation_id,
