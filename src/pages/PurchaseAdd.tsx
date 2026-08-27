@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 const BarcodeScanner = lazy(() => import("@/components/pos/BarcodeScanner"));
 import { useProducts } from "@/hooks/useInventory";
+import { useWarehouses, useDefaultWarehouse } from "@/hooks/useWarehouses";
 import { useSuppliers } from "@/hooks/useContacts";
 import { usePurchaseMutations, usePurchaseOrders, usePurchaseOrderItems, usePurchase, usePurchaseItems, type PurchaseItem } from "@/hooks/usePurchases";
 import { type PaymentRow } from "@/components/payments/PaymentDialog";
@@ -41,6 +42,9 @@ export default function PurchaseAdd() {
   const { data: existingPurchase } = usePurchase(editId);
   const { data: existingItems } = usePurchaseItems(editId);
 
+  const { data: warehouses } = useWarehouses();
+  const defaultWarehouse = useDefaultWarehouse();
+  const [warehouseId, setWarehouseId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split("T")[0]);
   const [referenceNumber, setReferenceNumber] = useState(`PUR-${Date.now().toString().slice(-6)}`);
@@ -97,6 +101,7 @@ export default function PurchaseAdd() {
   useEffect(() => {
     if (isEditMode && existingPurchase && existingItems && !editInitialized) {
       setSupplierId(existingPurchase.supplier_id || "");
+      setWarehouseId((existingPurchase as any).warehouse_id || "");
       setPurchaseDate(existingPurchase.purchase_date || new Date().toISOString().split("T")[0]);
       setReferenceNumber(existingPurchase.reference_number || "");
       setPurchaseStatus(existingPurchase.status || "received");
@@ -121,6 +126,11 @@ export default function PurchaseAdd() {
       setEditInitialized(true);
     }
   }, [isEditMode, existingPurchase, existingItems, editInitialized]);
+
+  // Default the business location once warehouses load (add mode only)
+  useEffect(() => {
+    if (!warehouseId && !isEditMode && defaultWarehouse?.id) setWarehouseId(defaultWarehouse.id);
+  }, [defaultWarehouse, warehouseId, isEditMode]);
 
   const { data: poItems } = usePurchaseOrderItems(selectedPOId || null);
 
@@ -329,10 +339,14 @@ export default function PurchaseAdd() {
 
   const handleSavePurchase = async () => {
     if (items.length === 0) return;
+    if (!warehouseId) {
+      toast({ title: "Business location required", description: "Select the location/warehouse this stock is purchased into.", variant: "destructive" });
+      return;
+    }
     const payments = paymentRows.filter(p => Number(p.amount) > 0);
     const expandedItems = buildExpandedItems();
     const formData = {
-      supplier_id: supplierId || null, purchase_date: purchaseDate, reference_number: referenceNumber,
+      supplier_id: supplierId || null, warehouse_id: warehouseId, purchase_date: purchaseDate, reference_number: referenceNumber,
       status: purchaseStatus, subtotal, discount_amount: itemDiscount + overallDiscount,
       tax_amount: totalTax, shipping_cost: otherCharges, total_amount: grandTotal,
       payment_status: computedPaymentStatus, payment_method: payments[0]?.payment_method || "cash",
@@ -361,10 +375,22 @@ export default function PurchaseAdd() {
       {/* Top Section */}
       <Card>
         <CardContent className="pt-4 sm:pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <div>
               <Label>Reference No</Label>
               <Input value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} />
+            </div>
+            <div>
+              <Label>Business Location *</Label>
+              <Select value={warehouseId} onValueChange={setWarehouseId}>
+                <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
+                <SelectContent>
+                  {(warehouses ?? []).map((w: any) => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}{w.is_default ? " (default)" : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Stock is added to this location only</p>
             </div>
             <div>
               <Label>Supplier</Label>

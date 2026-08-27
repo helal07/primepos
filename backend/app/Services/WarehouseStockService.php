@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\WarehouseStock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Single source of truth for warehouse_stock movements.
@@ -12,6 +13,37 @@ use Illuminate\Support\Str;
  */
 class WarehouseStockService
 {
+    /**
+     * Reject a sale line when the chosen location does not hold enough stock.
+     * Only enforced when a stock row exists for the cell, so legacy products
+     * that were never tracked per-location keep working.
+     */
+    public function assertAvailable(
+        string $warehouseId,
+        string $productId,
+        ?string $variationId,
+        float $quantity
+    ): void {
+        if ($quantity <= 0) return;
+
+        $row = WarehouseStock::query()
+            ->withoutGlobalScopes()
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_id', $productId)
+            ->where(function ($q) use ($variationId) {
+                $variationId === null ? $q->whereNull('variation_id') : $q->where('variation_id', $variationId);
+            })
+            ->first();
+
+        if (! $row) return;
+
+        if ((float) $row->quantity < $quantity) {
+            throw ValidationException::withMessages([
+                'quantity' => "Insufficient stock at the selected location. Available: " . (float) $row->quantity,
+            ]);
+        }
+    }
+
     /**
      * Apply +/- delta to a specific (warehouse, product, variation) cell.
      */

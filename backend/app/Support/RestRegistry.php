@@ -157,11 +157,11 @@ class RestRegistry
             'purchases' => [
                 'model'        => Models\Purchase::class,
                 'module'       => 'purchases',
-                'filters'      => ['supplier_id', 'status', 'payment_status', 'payment_method', 'purchase_date', 'created_at'],
+                'filters'      => ['supplier_id', 'warehouse_id', 'status', 'payment_status', 'payment_method', 'purchase_date', 'created_at'],
                 'sort'         => ['created_at', 'purchase_date', 'total_amount', 'reference_number'],
                 'default_sort' => '-created_at',
                 'search'       => ['reference_number', 'notes'],
-                'with'         => ['supplier', 'items', 'payments'],
+                'with'         => ['supplier', 'items', 'payments', 'warehouse'],
                 'max_per_page' => 500,
             ],
             'purchase_items' => [
