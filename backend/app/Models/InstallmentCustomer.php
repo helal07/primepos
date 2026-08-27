@@ -30,9 +30,27 @@ class InstallmentCustomer extends Model
             if (empty($row->phone)) $row->phone = $customer->phone;
         };
 
+        // NID is mandatory for installment customers — it is the key used for
+        // the cross-tenant credit risk check.
+        $requireNid = function (InstallmentCustomer $row) {
+            if (! array_key_exists('nid', $row->getAttributes()) && $row->exists) {
+                return; // partial update that does not touch nid
+            }
+            $nid = preg_replace('/\D+/', '', (string) ($row->nid ?? ''));
+            if (strlen($nid) < 8 || strlen($nid) > 25) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'nid' => ['NID number is required and must be 8-25 digits.'],
+                ]);
+            }
+            $row->nid = $nid;
+        };
+
         static::creating($fill);
         static::updating($fill);
+        static::creating($requireNid);
+        static::updating($requireNid);
     }
+
 
     public function customer(): BelongsTo { return $this->belongsTo(Customer::class, 'customer_id'); }
 }
