@@ -382,7 +382,15 @@ export function useStockTransfers() {
 export function useStockTransferMutations() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["stock_transfers"] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["stock_transfers"] });
+    // Transfers move stock between locations — refresh every stock view.
+    qc.invalidateQueries({ queryKey: ["warehouse_stock"] });
+    qc.invalidateQueries({ queryKey: ["warehouse_stock_check"] });
+    qc.invalidateQueries({ queryKey: ["product_stock_map"] });
+    qc.invalidateQueries({ queryKey: ["location_stock_map"] });
+  };
+
 
   const create = useMutation({
     mutationFn: async (t: TablesInsert<"stock_transfers">) => {
