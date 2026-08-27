@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\WarehouseStock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Single source of truth for warehouse_stock movements.
