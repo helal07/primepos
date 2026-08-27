@@ -59,8 +59,10 @@ class InstallmentController extends Controller
             ]);
 
             // ── schedule roll-up ──
-            $paid = (float) DB::table('installment_schedules')->where('id', $schedule->id)->value('paid_amount');
-            $paid += (float) $data['amount'];
+            // Authoritative: sum every collection for this schedule so the observer's
+            // incremental recalc can never double-count the row we just inserted.
+            $paid = (float) InstallmentCollection::query()
+                ->where('schedule_id', $schedule->id)->sum('amount');
             $due  = (float) $schedule->amount;
 
             $status = $paid <= 0 ? 'pending' : ($paid + 0.009 < $due ? 'partial' : 'paid');
