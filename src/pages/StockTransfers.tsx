@@ -146,6 +146,17 @@ export default function StockTransfers() {
                 <Label>Notes</Label>
                 <Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes" rows={2} />
               </div>
+              <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
+                <Checkbox checked={completeNow} onCheckedChange={v => setCompleteNow(!!v)} className="mt-0.5" />
+                <span>
+                  <span className="font-medium">Complete transfer now</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Stock moves out of the source location and into the destination immediately.
+                    Uncheck to save as pending and complete it later.
+                  </span>
+                </span>
+              </label>
+
             </div>
             <DialogFooter>
               <Button
