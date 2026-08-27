@@ -317,6 +317,15 @@ export default function InstallmentSaleAdd() {
       <Button onClick={handleSubmit} disabled={saving}>
         <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Create Installment Sale"}
       </Button>
+
+      <NidRiskDialog
+        open={!!risk}
+        result={risk}
+        onCancel={() => { setRisk(null); set("installment_customer_id", ""); }}
+        onContinue={() => setRisk(null)}
+        continueLabel="Proceed with this customer"
+      />
+
     </div>
   );
 }
