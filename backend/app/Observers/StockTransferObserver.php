@@ -12,20 +12,33 @@ class StockTransferObserver
     public function created(StockTransfer $t): void
     {
         if ($t->status !== 'completed') return;
-        $this->stock->transfer(
-            $t->tenant_id, $t->from_warehouse_id, $t->to_warehouse_id,
-            $t->product_id, $t->variation_id, (float) $t->quantity
-        );
+        $this->move($t);
     }
 
     public function updated(StockTransfer $t): void
     {
         $oldStatus = $t->getOriginal('status');
         if ($oldStatus !== 'completed' && $t->status === 'completed') {
-            $this->stock->transfer(
-                $t->tenant_id, $t->from_warehouse_id, $t->to_warehouse_id,
-                $t->product_id, $t->variation_id, (float) $t->quantity
-            );
+            $this->move($t);
         }
+    }
+
+    /**
+     * Guard the source location, then move the stock.
+     */
+    protected function move(StockTransfer $t): void
+    {
+        $qty = (float) $t->quantity;
+        if ($qty <= 0 || ! $t->from_warehouse_id || ! $t->to_warehouse_id) return;
+        if ($t->from_warehouse_id === $t->to_warehouse_id) return;
+
+        $this->stock->assertAvailable(
+            $t->from_warehouse_id, $t->product_id, $t->variation_id, $qty
+        );
+
+        $this->stock->transfer(
+            $t->tenant_id, $t->from_warehouse_id, $t->to_warehouse_id,
+            $t->product_id, $t->variation_id, $qty
+        );
     }
 }
