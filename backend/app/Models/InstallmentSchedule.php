@@ -22,4 +22,10 @@ class InstallmentSchedule extends Model
     ];
 
     public function installmentSale(): BelongsTo { return $this->belongsTo(InstallmentSale::class, 'installment_sale_id'); }
+
+    public function collections(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(InstallmentCollection::class, 'schedule_id');
+    }
+
 }

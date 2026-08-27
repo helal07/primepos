@@ -119,8 +119,15 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::put   ('/rest/{resource}/{id}',    [RestController::class, 'update']);
     Route::delete('/rest/{resource}/{id}',    [RestController::class, 'destroy']);
 
+    // Installments: transactional collection + SMS reminders
+    Route::post('/installments/collect', [\App\Http\Controllers\Api\InstallmentController::class, 'collect'])
+        ->middleware('module:installments');
+    Route::post('/installments/schedules/{scheduleId}/reminder', [\App\Http\Controllers\Api\InstallmentController::class, 'reminder'])
+        ->middleware('module:installments');
+
     // Dashboard aggregates (replaces 14 chained Supabase queries)
     Route::get('/dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
+
 
     // Current-user modules & permissions
     Route::get('/me/modules',     [\App\Http\Controllers\Api\MeController::class, 'modules']);

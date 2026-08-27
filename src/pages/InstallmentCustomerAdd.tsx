@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Upload, Save, UserPlus } from "lucide-react";
+import { ArrowLeft, Save, UserPlus } from "lucide-react";
+import { MediaCapture } from "@/components/exchange/MediaCapture";
 import { useToast } from "@/hooks/use-toast";
 
 const defaultForm = {
@@ -32,33 +33,19 @@ export default function InstallmentCustomerAdd() {
   const { data: customers } = useCustomers();
   const { create } = useInstallmentCustomerMutations();
   const [form, setForm] = useState(defaultForm);
-  const [nidFile, setNidFile] = useState<File | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [gNidFile, setGNidFile] = useState<File | null>(null);
-  const [gPhotoFile, setGPhotoFile] = useState<File | null>(null);
+  // Storage paths (private bucket) produced by MediaCapture — upload/live camera.
+  const [nidPath, setNidPath] = useState<string | null>(null);
+  const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const [gNidPath, setGNidPath] = useState<string | null>(null);
+  const [gPhotoPath, setGPhotoPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
-
-  const uploadFile = async (input: File, folder: string) => {
-    const { compressIfImage } = await import("@/lib/compressImage");
-    const file = await compressIfImage(input, { maxWidth: 1800, maxHeight: 1800, quality: 0.82 });
-    const ext = file.name.split(".").pop();
-    const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { path } = await apiUploadFile("installment-docs", file, { filename });
-    // Store the path; bucket is private — UI fetches signed URLs to display
-    return path;
-  };
 
   const handleSubmit = async (addMore = false) => {
     if (!form.customer_id) { toast({ title: "Select a customer", variant: "destructive" }); return; }
     setSaving(true);
     try {
-      const nid_url = nidFile ? await uploadFile(nidFile, "nid") : null;
-      const photo_url = photoFile ? await uploadFile(photoFile, "photo") : null;
-      const guarantor_nid_url = gNidFile ? await uploadFile(gNidFile, "guarantor-nid") : null;
-      const guarantor_photo_url = gPhotoFile ? await uploadFile(gPhotoFile, "guarantor-photo") : null;
-
       const selected = customers?.find((c: any) => c.id === form.customer_id) as any;
 
       await create.mutateAsync({
@@ -66,17 +53,17 @@ export default function InstallmentCustomerAdd() {
         // legacy NOT NULL columns — mirror the linked customer
         name: selected?.name ?? null,
         phone: selected?.phone ?? null,
-        nid_url,
-        photo_url,
-        guarantor_nid_url,
-        guarantor_photo_url,
+        nid_url: nidPath,
+        photo_url: photoPath,
+        guarantor_nid_url: gNidPath,
+        guarantor_photo_url: gPhotoPath,
         created_by: user?.id,
       });
 
 
       if (addMore) {
         setForm(defaultForm);
-        setNidFile(null); setPhotoFile(null); setGNidFile(null); setGPhotoFile(null);
+        setNidPath(null); setPhotoPath(null); setGNidPath(null); setGPhotoPath(null);
       } else {
         navigate("/installment/customers");
       }
@@ -120,16 +107,16 @@ export default function InstallmentCustomerAdd() {
               <Textarea value={form.work_address} onChange={(e) => set("work_address", e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>NID Photo</Label>
-                <Input type="file" accept="image/*" onChange={(e) => setNidFile(e.target.files?.[0] || null)} />
-                {nidFile && <p className="text-xs text-muted-foreground mt-1">{nidFile.name}</p>}
-              </div>
-              <div>
-                <Label>Customer Photo</Label>
-                <Input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} />
-                {photoFile && <p className="text-xs text-muted-foreground mt-1">{photoFile.name}</p>}
-              </div>
+              <MediaCapture
+                label="NID Photo" value={nidPath} onChange={setNidPath}
+                tenantId={user?.tenant_id} folder="installments/nid"
+                bucket="installment-docs" returnPath enableCamera
+              />
+              <MediaCapture
+                label="Customer Photo" value={photoPath} onChange={setPhotoPath}
+                tenantId={user?.tenant_id} folder="installments/photo"
+                bucket="installment-docs" returnPath enableCamera
+              />
             </div>
           </CardContent>
         </Card>
@@ -161,14 +148,16 @@ export default function InstallmentCustomerAdd() {
               <Textarea value={form.guarantor_work_address} onChange={(e) => set("guarantor_work_address", e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Guarantor NID</Label>
-                <Input type="file" accept="image/*" onChange={(e) => setGNidFile(e.target.files?.[0] || null)} />
-              </div>
-              <div>
-                <Label>Guarantor Photo</Label>
-                <Input type="file" accept="image/*" onChange={(e) => setGPhotoFile(e.target.files?.[0] || null)} />
-              </div>
+              <MediaCapture
+                label="Guarantor NID" value={gNidPath} onChange={setGNidPath}
+                tenantId={user?.tenant_id} folder="installments/guarantor-nid"
+                bucket="installment-docs" returnPath enableCamera
+              />
+              <MediaCapture
+                label="Guarantor Photo" value={gPhotoPath} onChange={setGPhotoPath}
+                tenantId={user?.tenant_id} folder="installments/guarantor-photo"
+                bucket="installment-docs" returnPath enableCamera
+              />
             </div>
           </CardContent>
         </Card>
