@@ -24,6 +24,7 @@ export interface PurchaseItem {
 
 export interface PurchaseFormData {
   supplier_id?: string | null;
+  warehouse_id?: string | null;
   purchase_date?: string;
   reference_number?: string;
   status?: string;
