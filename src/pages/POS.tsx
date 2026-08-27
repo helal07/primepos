@@ -143,7 +143,7 @@ export default function POS() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [imeiProductId, setImeiProductId] = useState<string | null>(null);
-  const { data: availableSerials } = useAvailableSerials(imeiProductId);
+  const { data: availableSerials } = useAvailableSerials(imeiProductId, warehouseId || null);
   const [saleDate, setSaleDate] = useState<Date>(new Date());
   const [activePriceGroupId, setActivePriceGroupId] = useState<string | null>(null);
 
