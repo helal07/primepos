@@ -211,10 +211,16 @@ export default function PackageManagement() {
                 <h4 className="font-bold text-lg text-foreground">{p.name}</h4>
                 <p className="text-2xl font-bold text-foreground">৳{p.price}<span className="text-sm text-muted-foreground">/{p.duration_days}d</span></p>
                 <ul className="text-sm text-left space-y-1">
-                  {(p.features as string[])?.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1 text-foreground/90"><span className="text-primary">✓</span> {f}</li>
-                  ))}
+                  {MODULE_CATALOG.map((m) => {
+                    const on = ((p.enabled_modules as ModuleKey[]) ?? []).includes(m.key);
+                    return (
+                      <li key={m.key} className={`flex items-center gap-1 ${on ? "text-foreground/90" : "text-muted-foreground line-through"}`}>
+                        <span className={on ? "text-primary" : "text-destructive"}>{on ? "✓" : "✕"}</span> {m.label}
+                      </li>
+                    );
+                  })}
                 </ul>
+
               </div>
             ))}
           </div>
