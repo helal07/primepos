@@ -19,15 +19,21 @@ class EnsureSuperadmin extends Command
 
     public function handle(): int
     {
-        $email = trim((string) ($this->option('email') ?: env('SUPERADMIN_EMAIL', 'email2itsolution@gmail.com')));
+        // No credentials are hardcoded: everything comes from options or env.
+        $email = strtolower(trim((string) ($this->option('email') ?: env('SUPERADMIN_EMAIL', ''))));
         $envPassword = env('SUPERADMIN_PASSWORD');
-        $password = (string) ($this->option('password') ?: $envPassword ?: 'IT121212@');
+        $password = (string) ($this->option('password') ?: $envPassword ?: '');
 
         $name = $this->option('name') ?: 'Super Admin';
 
         if (! $email || ! $password) {
-            $this->error('Email and password are required.');
-            return self::FAILURE;
+            $this->warn('Superadmin bootstrap skipped: SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD not set.');
+            return self::SUCCESS;
+        }
+
+        if (strlen($password) < 10) {
+            $this->warn('Superadmin bootstrap skipped: password must be at least 10 characters.');
+            return self::SUCCESS;
         }
 
         $user = User::query()->where('email', $email)->first();
