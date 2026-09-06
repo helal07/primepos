@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePackages, usePackageMutations } from "@/hooks/useSaasAdmin";
-import { Plus, Pencil, Trash2, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Star, ArrowLeft } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MODULE_CATALOG, DEFAULT_MODULES, type ModuleKey } from "@/lib/modules";
@@ -86,11 +86,75 @@ export default function PackageManagement() {
       return { ...f, enabled_modules: nextModules, features: nextFeatures.join(", ") };
     });
 
+  if (open) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title={`${editId ? "Edit" : "Add"} Package`}
+          subtitle="Configure plan pricing, limits and modules"
+        >
+          <Button variant="outline" size="sm" className="border-border text-foreground/90" onClick={() => setOpen(false)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+        </PageHeader>
+
+        <div className="rounded-xl border border-border bg-card/60 p-4 md:p-6 grid gap-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label className="text-foreground/90">Name</Label><Input className="bg-muted border-border text-foreground" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Price (৳)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div><Label className="text-foreground/90">Duration (days)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Max Users</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: +e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Max Locations</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_business_location} onChange={(e) => setForm({ ...form, max_business_location: +e.target.value })} /></div>
+            <div><Label className="text-foreground/90">Max Invoices (0 = unlimited)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} /></div>
+          </div>
+          <div><Label className="text-foreground/90">Features (comma-separated)</Label><Input className="bg-muted border-border text-foreground" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" /></div>
+          <div>
+            <Label className="text-foreground/90">Enabled Modules</Label>
+            <p className="text-xs text-muted-foreground mb-2">Tenants on this plan will only see the ticked modules.</p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 rounded border border-border p-3">
+              {MODULE_CATALOG.map((m) => (
+                <label key={m.key} className="flex items-start gap-2 text-xs text-foreground/90 cursor-pointer">
+                  <Checkbox
+                    checked={form.enabled_modules.includes(m.key)}
+                    onCheckedChange={() => toggleModule(m.key)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="font-medium text-foreground">{m.label}</span>
+                    <span className="block text-muted-foreground leading-tight">{m.description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label className="text-foreground/90">Sort Order</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
+            <div className="flex flex-wrap items-center gap-6 md:pt-6">
+              <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-foreground/90">Popular</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-foreground/90">Active</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.show_on_landing} onCheckedChange={(v) => setForm({ ...form, show_on_landing: v })} /><Label className="text-foreground/90">Show on Landing</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={form.is_trial} onCheckedChange={(v) => setForm({ ...form, is_trial: v })} /><Label className="text-foreground/90">Free trial plan</Label></div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 border-t border-border pt-4">
+            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-foreground" onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
+              {editId ? "Update" : "Create"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader title="Package Management" subtitle="Manage subscription plans">
         <Button onClick={openNew} size="sm" className="bg-primary hover:bg-primary/90 text-foreground"><Plus className="h-4 w-4 mr-1" /> Add Package</Button>
       </PageHeader>
+
 
       <div className="rounded-xl border border-border bg-card/60 overflow-hidden">
         <Table>
@@ -157,56 +221,7 @@ export default function PackageManagement() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col bg-card border-border text-foreground">
-          <DialogHeader><DialogTitle className="text-foreground">{editId ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
-          <div className="grid gap-4 flex-1 overflow-y-auto -mx-6 px-6">
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-foreground/90">Name</Label><Input className="bg-muted border-border text-foreground" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label className="text-foreground/90">Price (৳)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label className="text-foreground/90">Duration (days)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
-              <div><Label className="text-foreground/90">Max Users</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_users} onChange={(e) => setForm({ ...form, max_users: +e.target.value })} /></div>
-              <div><Label className="text-foreground/90">Max Locations</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_business_location} onChange={(e) => setForm({ ...form, max_business_location: +e.target.value })} /></div>
-            </div>
-            <div><Label className="text-foreground/90">Max Invoices (0 = unlimited)</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.max_invoice} onChange={(e) => setForm({ ...form, max_invoice: +e.target.value })} /></div>
-            <div><Label className="text-foreground/90">Features (comma-separated)</Label><Input className="bg-muted border-border text-foreground" value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} placeholder="POS, Inventory, Accounting" /></div>
-            <div>
-              <Label className="text-foreground/90">Enabled Modules</Label>
-              <p className="text-xs text-muted-foreground mb-2">Tenants on this plan will only see the ticked modules.</p>
-              <div className="grid grid-cols-2 gap-2 max-h-56 overflow-auto rounded border border-border p-2">
-                {MODULE_CATALOG.map((m) => (
-                  <label key={m.key} className="flex items-start gap-2 text-xs text-foreground/90 cursor-pointer">
-                    <Checkbox
-                      checked={form.enabled_modules.includes(m.key)}
-                      onCheckedChange={() => toggleModule(m.key)}
-                      className="mt-0.5"
-                    />
-                    <span>
-                      <span className="font-medium text-foreground">{m.label}</span>
-                      <span className="block text-muted-foreground leading-tight">{m.description}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div><Label className="text-foreground/90">Sort Order</Label><Input className="bg-muted border-border text-foreground" type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: +e.target.value })} /></div>
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-2"><Switch checked={form.is_popular} onCheckedChange={(v) => setForm({ ...form, is_popular: v })} /><Label className="text-foreground/90">Popular</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><Label className="text-foreground/90">Active</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={form.show_on_landing} onCheckedChange={(v) => setForm({ ...form, show_on_landing: v })} /><Label className="text-foreground/90">Show on Landing</Label></div>
-              <div className="flex items-center gap-2"><Switch checked={form.is_trial} onCheckedChange={(v) => setForm({ ...form, is_trial: v })} /><Label className="text-foreground/90">Free trial plan</Label></div>
-            </div>
-          </div>
-          <DialogFooter className="border-t border-border pt-4">
-            <Button variant="outline" className="border-border text-foreground/90" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button className="bg-primary hover:bg-primary/90 text-foreground" onClick={handleSave} disabled={!form.name || create.isPending || update.isPending}>
-              {editId ? "Update" : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
