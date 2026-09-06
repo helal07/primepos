@@ -12,16 +12,44 @@ use App\Http\Controllers\Api\TenantBackupController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\RestController;
 
-Route::get('/health', fn () => ['status' => 'ok', 'time' => now()->toIso8601String()]);
+Route::get('/health', function () {
+    $checks = ['database' => false, 'cache' => false];
+
+    try {
+        \Illuminate\Support\Facades\DB::select('select 1');
+        $checks['database'] = true;
+    } catch (\Throwable $e) {
+        // reported as false below
+    }
+
+    try {
+        \Illuminate\Support\Facades\Cache::put('health:ping', 1, 10);
+        $checks['cache'] = \Illuminate\Support\Facades\Cache::get('health:ping') == 1;
+    } catch (\Throwable $e) {
+        // reported as false below
+    }
+
+    $ok = ! in_array(false, $checks, true);
+
+    return response()->json([
+        'status' => $ok ? 'ok' : 'degraded',
+        'checks' => $checks,
+        'time'   => now()->toIso8601String(),
+    ], $ok ? 200 : 503);
+});
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login',  [AuthController::class, 'login']);   // SPA cookie session
-    Route::post('/token',  [AuthController::class, 'token']);   // bearer token (mobile)
+    // Brute-force protection: 6 attempts/min per IP, 40/hour per IP.
+    Route::post('/login',  [AuthController::class, 'login'])
+        ->middleware(['throttle:6,1', 'throttle:40,60']);   // SPA cookie session
+    Route::post('/token',  [AuthController::class, 'token'])
+        ->middleware(['throttle:6,1', 'throttle:40,60']);   // bearer token (mobile)
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me',      [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
-        Route::post('/password', [AuthController::class, 'changePassword']);
+        Route::post('/password', [AuthController::class, 'changePassword'])
+            ->middleware('throttle:10,60');
     });
 });
 
@@ -30,10 +58,12 @@ Route::prefix('auth')->group(function () {
 | Public — tenant self-signup & payment gateway webhooks (no auth)
 |--------------------------------------------------------------------------
 */
-Route::post('/tenants/signup', [TenantController::class, 'signup']);
-Route::any('/payments/callback/{gateway}', [PaymentController::class, 'callback']);
-Route::post('/track/event',     [TrackingController::class, 'event']);
-Route::post('/track/fb-pixel',  [TrackingController::class, 'fbPixel']);
+Route::post('/tenants/signup', [TenantController::class, 'signup'])
+    ->middleware(['throttle:5,60']);
+Route::any('/payments/callback/{gateway}', [PaymentController::class, 'callback'])
+    ->middleware(['throttle:60,1']);
+Route::post('/track/event',     [TrackingController::class, 'event'])->middleware('throttle:120,1');
+Route::post('/track/fb-pixel',  [TrackingController::class, 'fbPixel'])->middleware('throttle:120,1');
 
 /*
 |--------------------------------------------------------------------------

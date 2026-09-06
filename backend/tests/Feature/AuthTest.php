@@ -54,15 +54,17 @@ class AuthTest extends TestCase
 
     public function test_seeded_superadmin_can_log_in_with_bootstrap_credentials(): void
     {
+        putenv('SUPERADMIN_EMAIL=bootstrap-super@example.test');
+        putenv('SUPERADMIN_PASSWORD=Bootstrap#Pass123');
         $this->seed(SuperadminSeeder::class);
 
         $this->postJson('/api/auth/token', [
-                'identifier'  => 'email2itsolution@gmail.com',
-                'password'    => 'IT121212@',
+                'identifier'  => 'bootstrap-super@example.test',
+                'password'    => 'Bootstrap#Pass123',
                 'device_name' => 'phpunit',
             ])
             ->assertOk()
-            ->assertJsonPath('user.email', 'email2itsolution@gmail.com')
+            ->assertJsonPath('user.email', 'bootstrap-super@example.test')
             ->assertJsonPath('user.is_superadmin', true);
     }
 

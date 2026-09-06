@@ -22,12 +22,24 @@ if [ -z "$APP_KEY" ]; then
   php artisan key:generate --force || true
 fi
 
-php artisan migrate --force
+# Schema changes are opt-out so multi-replica or rollback deploys can run
+# migrations as a separate one-shot release step instead of on every boot.
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+  php artisan migrate --force
 
-# Sweep any legacy NOT NULL columns that lack a default (MySQL error 1364).
-php artisan app:fix-legacy-columns || true
-php artisan db:seed --class=Database\\Seeders\\SuperadminSeeder --force
-php artisan app:ensure-superadmin --reset-password
+  # Sweep any legacy NOT NULL columns that lack a default (MySQL error 1364).
+  if [ "${RUN_LEGACY_SCHEMA_RELAX:-true}" = "true" ]; then
+    php artisan app:fix-legacy-columns || true
+  fi
+else
+  echo "RUN_MIGRATIONS=false — skipping migrations on boot."
+fi
+
+# Superadmin bootstrap runs only when credentials are supplied via env.
+if [ -n "$SUPERADMIN_EMAIL" ] && [ -n "$SUPERADMIN_PASSWORD" ]; then
+  php artisan db:seed --class=Database\\Seeders\\SuperadminSeeder --force || true
+  php artisan app:ensure-superadmin || true
+fi
 
 # One-time (idempotent) copy of pre-volume uploads into the volume-backed roots.
 php artisan app:migrate-uploads || true
