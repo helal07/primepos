@@ -177,6 +177,7 @@ class RestPermsTest extends TestCase
         $cust = $this->api()->postJson('/api/rest/installment_customers', [
             'name'  => 'Karim',
             'phone' => '01700000099',
+            'nid'   => '1234567890',
         ])->assertStatus(201)
             ->assertJsonPath('tenant_id', $this->tenant->id)
             ->json();
