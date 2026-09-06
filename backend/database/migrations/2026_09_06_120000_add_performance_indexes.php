@@ -65,7 +65,7 @@ return new class extends Migration {
                 $t->index($columns, $name);
             });
         } catch (\Throwable $e) {
-            // Duplicate/覆盖 index or unsupported column type — safe to skip.
+            // Duplicate index or unsupported column type — safe to skip.
         }
     }
 

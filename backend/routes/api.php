@@ -12,7 +12,31 @@ use App\Http\Controllers\Api\TenantBackupController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\RestController;
 
-Route::get('/health', fn () => ['status' => 'ok', 'time' => now()->toIso8601String()]);
+Route::get('/health', function () {
+    $checks = ['database' => false, 'cache' => false];
+
+    try {
+        \Illuminate\Support\Facades\DB::select('select 1');
+        $checks['database'] = true;
+    } catch (\Throwable $e) {
+        // reported as false below
+    }
+
+    try {
+        \Illuminate\Support\Facades\Cache::put('health:ping', 1, 10);
+        $checks['cache'] = \Illuminate\Support\Facades\Cache::get('health:ping') == 1;
+    } catch (\Throwable $e) {
+        // reported as false below
+    }
+
+    $ok = ! in_array(false, $checks, true);
+
+    return response()->json([
+        'status' => $ok ? 'ok' : 'degraded',
+        'checks' => $checks,
+        'time'   => now()->toIso8601String(),
+    ], $ok ? 200 : 503);
+});
 
 Route::prefix('auth')->group(function () {
     // Brute-force protection: 6 attempts/min per IP, 40/hour per IP.
