@@ -14,14 +14,17 @@ export function DynamicManifest() {
     const name = (pwa.name || "Prime POS").toString().slice(0, 60);
     const shortName = (pwa.short_name || name).toString().slice(0, 30);
     const themeColor = pwa.theme_color || "#0369a1";
-    const icon = pwa.icon_url || "/icon-512.png";
+    // A blob: manifest has no base URL, so every URL inside it must be absolute.
+    const abs = (u: string) => new URL(u, window.location.origin).href;
+    const icon = abs(pwa.icon_url || "/icon-512.png");
 
     const manifest = {
       name,
       short_name: shortName,
       description: pwa.description || "POS, Inventory, Accounts & ERP",
-      start_url: "/dashboard",
-      scope: "/",
+      start_url: abs("/dashboard"),
+      scope: abs("/"),
+      id: abs("/"),
       display: "standalone",
       orientation: "portrait",
       background_color: pwa.background_color || "#0f172a",
