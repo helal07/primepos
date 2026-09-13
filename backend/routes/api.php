@@ -121,6 +121,12 @@ Route::middleware(['auth:sanctum', 'tenant.active'])->group(function () {
     Route::patch('/admin/payment-gateways/{gatewayId}', [\App\Http\Controllers\Api\PaymentGatewayAdminController::class, 'update'])
         ->middleware('role:superadmin');
 
+    // Superadmin global settings (SMTP, SMS, templates, CMS) — single-row upsert
+    Route::get('/admin/settings/{key}', [\App\Http\Controllers\Api\SaasSettingController::class, 'show'])
+        ->middleware('role:superadmin');
+    Route::put('/admin/settings/{key}', [\App\Http\Controllers\Api\SaasSettingController::class, 'upsert'])
+        ->middleware('role:superadmin');
+
     // Notifications
     Route::post('/notifications/send', [NotificationController::class, 'send']);
 
