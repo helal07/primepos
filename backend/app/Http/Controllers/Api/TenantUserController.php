@@ -82,6 +82,6 @@ class TenantUserController extends Controller
         if (! $auth->isSuperadmin() && $user->tenant_id !== $auth->tenant_id) abort(403);
 
         $user->forceFill(['password' => $data['password']])->saveQuietly();
-        return response()->json(['ok' => true]);
+        return response()->json(['ok' => true, 'email' => $user->email]);
     }
 }
