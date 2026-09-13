@@ -54,6 +54,9 @@ const emptyForm: TenantForm = {
   payment_method: "manual", payment_amount: "",
 };
 
+/** `<input type="date">` accepts only yyyy-MM-dd; the API returns ISO timestamps. */
+const toDateInput = (v?: string | null) => (v ? String(v).slice(0, 10) : "");
+
 const statusColors: Record<string, string> = {
   active: "bg-emerald-500/20 text-primary border-emerald-500/30",
   trial: "bg-amber-500/20 text-amber-400 border-amber-500/30",
