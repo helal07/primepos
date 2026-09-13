@@ -46,8 +46,8 @@ export const deleteTenantUser = (userId: string) =>
   api.delete<{ ok: true }>(`/api/tenant-users/${userId}`);
 
 export const resetTenantPassword = (userId: string, newPassword: string) =>
-  api.post<{ email: string }>(`/api/tenant-users/${userId}/reset-password`, {
-    new_password: newPassword,
+  api.post<{ ok: boolean }>(`/api/tenant-users/${userId}/reset-password`, {
+    password: newPassword,
   });
 
 // ---- Payments --------------------------------------------------------------
