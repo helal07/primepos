@@ -54,6 +54,9 @@ const emptyForm: TenantForm = {
   payment_method: "manual", payment_amount: "",
 };
 
+/** `<input type="date">` accepts only yyyy-MM-dd; the API returns ISO timestamps. */
+const toDateInput = (v?: string | null) => (v ? String(v).slice(0, 10) : "");
+
 const statusColors: Record<string, string> = {
   active: "bg-emerald-500/20 text-primary border-emerald-500/30",
   trial: "bg-amber-500/20 text-amber-400 border-amber-500/30",
@@ -288,7 +291,8 @@ export default function TenantManagement() {
       name: t.name, company_name: t.company_name ?? "", phone: t.phone ?? "",
       email: t.email ?? "", address: t.address ?? "", domain: t.domain ?? "",
       package_id: t.package_id ?? "", subscription_type: t.subscription_type ?? "monthly",
-      subscription_start: t.subscription_start ?? "", subscription_end: t.subscription_end ?? "",
+      // <input type="date"> only accepts yyyy-MM-dd, the API returns full ISO timestamps.
+      subscription_start: toDateInput(t.subscription_start), subscription_end: toDateInput(t.subscription_end),
       status: t.status, notes: t.notes ?? "",
       payment_method: "manual", payment_amount: "",
     });

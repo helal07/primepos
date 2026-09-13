@@ -169,11 +169,20 @@ export function useTenantActionLogs(tenantId?: string) {
 }
 
 // ─── Landing CMS (business_settings key/value, global tenant_id IS NULL) ───
+/**
+ * `cms_*` keys are public landing content; everything else (SMTP, SMS,
+ * templates) holds credentials and is read through the superadmin endpoint.
+ */
+const isPublicSettingKey = (key: string) => key.startsWith("cms_");
+
 export function useLandingCms(key: string) {
   return useQuery({
     queryKey: ["business_settings", key],
     queryFn: async () => {
-      const res = await api.get<{ value: any }>(`/api/public/landing/cms/${encodeURIComponent(key)}`);
+      const path = isPublicSettingKey(key)
+        ? `/api/public/landing/cms/${encodeURIComponent(key)}`
+        : `/api/admin/settings/${encodeURIComponent(key)}`;
+      const res = await api.get<{ value: any }>(path);
       return res.value ?? null;
     },
   });
@@ -184,17 +193,9 @@ export function useLandingCmsMutation() {
   const { toast } = useToast();
 
   return useMutation({
+    // Single-request upsert on the global (tenant_id NULL) row.
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      // Admin-only write — global rows have tenant_id IS NULL.
-      const existing = await rest.all<{ id: string }>("business_settings", {
-        filter: { key, tenant_id: { null: true } },
-        perPage: 1,
-      });
-      if (existing[0]) {
-        await rest.update("business_settings", existing[0].id, { value });
-      } else {
-        await rest.create("business_settings", { key, value, tenant_id: null });
-      }
+      await api.put(`/api/admin/settings/${encodeURIComponent(key)}`, { value: value ?? {} });
     },
     onSuccess: (_, { key }) => {
       qc.invalidateQueries({ queryKey: ["business_settings", key] });

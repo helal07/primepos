@@ -78,7 +78,14 @@ class PublicController extends Controller
 
     public function landingCms(Request $request, string $key)
     {
-        // Global rows only: tenant_id null. UI only reads CMS content this way.
+        // Public reads are limited to landing-page CMS blocks (`cms_*`).
+        // Credential-bearing settings (SMTP, SMS, templates) are superadmin-only
+        // and served by /api/admin/settings/{key}.
+        if (! str_starts_with($key, 'cms_')) {
+            return response()->json(['value' => null]);
+        }
+
+        // Global rows only: tenant_id null.
         $row = BusinessSetting::query()
             ->whereNull('tenant_id')
             ->where('key', $key)
