@@ -28,6 +28,7 @@ class TenantController extends Controller
             'owner_name'    => ['required', 'string', 'max:120'],
             'email'         => ['required', 'email', 'max:200', 'unique:users,email'],
             'phone'         => ['nullable', 'string', 'max:32'],
+            'address'       => ['nullable', 'string', 'max:500'],
             'password'      => ['required', 'string', 'min:8'],
             'package_id'    => ['nullable', 'uuid'],
         ]);
@@ -46,6 +47,7 @@ class TenantController extends Controller
                 'slug'          => $slug,
                 'email'         => $data['email'],
                 'phone'         => $data['phone'] ?? null,
+                'address'       => $data['address'] ?? null,
                 'package_id'    => $package?->id,
                 'status'        => 'trial',
                 'trial_ends_at' => Carbon::today()->addDays((int) config('app.trial_days', 14)),
