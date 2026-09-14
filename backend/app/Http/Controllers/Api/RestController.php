@@ -29,6 +29,7 @@ class RestController extends Controller
 
         /** @var Builder $q */
         $q = $modelClass::query();
+        $this->scopeBusinessSettings($q, $resource, $request);
         $this->applyWith($q, $cfg, $request);
         $this->applyFilters($q, $cfg, $request);
         $this->applySearch($q, $cfg, $request);
@@ -60,6 +61,7 @@ class RestController extends Controller
         $this->authorizePerm($request, $cfg['module'], 'view');
 
         $q = $modelClass::query();
+        $this->scopeBusinessSettings($q, $resource, $request);
         $this->applyWith($q, $cfg, $request);
         $row = $q->findOrFail($id);
         return response()->json($row);
@@ -75,6 +77,15 @@ class RestController extends Controller
         $data = $request->all();
         // Drop guarded server-managed fields
         unset($data['id'], $data['created_at'], $data['updated_at']);
+
+        // business_settings rows always belong to the caller's tenant (or
+        // NULL for a superadmin's global keys) — never trust client input.
+        if ($resource === 'business_settings') {
+            $user = $request->user();
+            $data['tenant_id'] = ($user && method_exists($user, 'isSuperadmin') && $user->isSuperadmin())
+                ? null
+                : $user?->tenant_id;
+        }
 
         /** @var Model $model */
         $model = new $modelClass();
