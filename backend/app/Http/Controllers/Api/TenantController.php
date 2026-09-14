@@ -81,6 +81,8 @@ class TenantController extends Controller
                 'tenant_id' => $tenant->id,
             ]);
 
+            $this->seedBusinessInfo($tenant);
+
             return response()->json([
                 'tenant' => $tenant,
                 'user'   => ['id' => $user->id, 'email' => $user->email],
@@ -252,6 +254,29 @@ class TenantController extends Controller
         });
 
         return response()->json(['ok' => true, 'tenant_id' => $tenantId]);
+    }
+
+    /**
+     * Pre-fill the new tenant's Business Information settings from the data
+     * collected at registration, so Settings doesn't show stale defaults.
+     */
+    private function seedBusinessInfo(Tenant $tenant): void
+    {
+        $settings = array_filter([
+            'business_name' => $tenant->name,
+            'contact_email' => $tenant->email,
+            'contact_phone' => $tenant->phone,
+            'address'       => $tenant->address,
+        ], fn ($v) => $v !== null && $v !== '');
+
+        foreach ($settings as $key => $value) {
+            BusinessSetting::query()->withoutGlobalScopes()->create([
+                'id'        => (string) Str::uuid(),
+                'tenant_id' => $tenant->id,
+                'key'       => $key,
+                'value'     => $value,
+            ]);
+        }
     }
 
     private function uniqueSlug(string $base): string
