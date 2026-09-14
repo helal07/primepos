@@ -47,6 +47,7 @@ class TenantController extends Controller
                 'slug'          => $slug,
                 'email'         => $data['email'],
                 'phone'         => $data['phone'] ?? null,
+                'address'       => $data['address'] ?? null,
                 'package_id'    => $package?->id,
                 'status'        => 'trial',
                 'trial_ends_at' => Carbon::today()->addDays((int) config('app.trial_days', 14)),
