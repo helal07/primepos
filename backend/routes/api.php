@@ -39,11 +39,14 @@ Route::get('/health', function () {
 });
 
 Route::prefix('auth')->group(function () {
-    // Brute-force protection: 6 attempts/min per IP, 40/hour per IP.
+    // Brute-force protection: 20 attempts/min per IP, 120/hour per IP.
+    // Shops share one office IP/NAT, so a very low per-IP cap locked out
+    // legitimate staff intermittently (429 shown as "backend unreachable").
     Route::post('/login',  [AuthController::class, 'login'])
-        ->middleware(['throttle:6,1', 'throttle:40,60']);   // SPA cookie session
+        ->middleware(['throttle:20,1', 'throttle:120,60']);   // SPA cookie session
     Route::post('/token',  [AuthController::class, 'token'])
-        ->middleware(['throttle:6,1', 'throttle:40,60']);   // bearer token (mobile)
+        ->middleware(['throttle:20,1', 'throttle:120,60']);   // bearer token (mobile)
+
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me',      [AuthController::class, 'me']);
