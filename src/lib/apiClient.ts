@@ -88,12 +88,18 @@ async function request<T = unknown>(method: string, path: string, body?: Body, o
     payload = JSON.stringify(body);
   }
 
-  const res = await fetch(buildUrl(path, opts.query), {
-    method,
-    headers,
-    body: payload,
-    signal: opts.signal,
-  });
+  // Transient network blips (idle container, brief 502/503/504) are retried once
+  // so users don't see a spurious "could not reach the server" error.
+  let res: Response;
+  try {
+    res = await fetch(buildUrl(path, opts.query), { method, headers, body: payload, signal: opts.signal });
+    if ([502, 503, 504].includes(res.status)) throw new Error("transient");
+  } catch (e) {
+    if (opts.signal?.aborted) throw e;
+    await new Promise((r) => setTimeout(r, 800));
+    res = await fetch(buildUrl(path, opts.query), { method, headers, body: payload, signal: opts.signal });
+  }
+
 
   const contentType = res.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
