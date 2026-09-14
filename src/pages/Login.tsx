@@ -29,17 +29,22 @@ export default function Login() {
       const u = await signIn(loginData.email, loginData.password);
       navigate(u.is_superadmin ? "/superadmin" : "/dashboard");
     } catch (err) {
-      const backendUnavailable = err instanceof ApiError && (err.status === 404 || err.status === 502);
+      const status = err instanceof ApiError ? err.status : 0;
+      const tooMany = status === 429;
+      const backendUnavailable = status === 404 || status === 502 || status === 503 || status === 504;
       toast({
-        title: backendUnavailable ? "Backend not connected" : "Login failed",
-        description: backendUnavailable
-          ? "The Laravel API was not found. Configure VITE_API_BASE_URL to your VPS backend URL and redeploy the frontend."
-          : err instanceof ApiError && err.status === 422
-            ? "Invalid email or password."
-            : "Could not reach the Laravel backend. Please try again.",
+        title: tooMany ? "Too many attempts" : backendUnavailable ? "Server busy" : "Login failed",
+        description: tooMany
+          ? "Too many sign-in attempts from your network. Please wait a minute and try again."
+          : backendUnavailable
+            ? "The server did not respond in time. Please wait a moment and try signing in again."
+            : status === 422 || status === 401
+              ? "Invalid email or password."
+              : "Could not reach the server. Check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {
+
       setLoading(false);
     }
   };
