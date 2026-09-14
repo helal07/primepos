@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BusinessSetting;
 use App\Models\Role;
 use App\Models\SaasPackage;
 use App\Models\Tenant;
