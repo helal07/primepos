@@ -19,7 +19,16 @@ export interface TenantSignupPayload {
 export interface TenantSignupResult { tenant_id: string; user_id: string }
 
 export const tenantSignup = (body: TenantSignupPayload) =>
-  api.post<TenantSignupResult>("/api/tenants/signup", body);
+  // Backend validates snake_case fields (see TenantController::signup).
+  api.post<TenantSignupResult>("/api/tenants/signup", {
+    business_name: body.businessName,
+    owner_name: body.contactName,
+    email: body.contactEmail,
+    phone: body.contactPhone,
+    address: body.address,
+    password: body.password,
+    package_id: body.packageId,
+  });
 
 export interface AdminCreateTenantPayload {
   admin_email: string;

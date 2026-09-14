@@ -28,6 +28,7 @@ class TenantController extends Controller
             'owner_name'    => ['required', 'string', 'max:120'],
             'email'         => ['required', 'email', 'max:200', 'unique:users,email'],
             'phone'         => ['nullable', 'string', 'max:32'],
+            'address'       => ['nullable', 'string', 'max:500'],
             'password'      => ['required', 'string', 'min:8'],
             'package_id'    => ['nullable', 'uuid'],
         ]);
