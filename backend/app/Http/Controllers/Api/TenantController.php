@@ -206,6 +206,8 @@ class TenantController extends Controller
                 ]);
             }
 
+            $this->seedBusinessInfo($tenant);
+
             return response()->json([
                 'tenant_id' => $tenant->id,
                 'user_id'   => $user->id,
