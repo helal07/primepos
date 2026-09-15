@@ -153,6 +153,20 @@ class RestController extends Controller
         );
     }
 
+    /**
+     * business_settings is a shared table: tenant rows + global (tenant_id NULL)
+     * superadmin keys. Force per-tenant visibility so a tenant can never read,
+     * overwrite, or delete another tenant's settings (or the global CMS keys).
+     */
+    private function scopeBusinessSettings(Builder $q, string $resource, Request $request): void
+    {
+        if ($resource !== 'business_settings') return;
+        $user = $request->user();
+        abort_unless($user, 401);
+        if (method_exists($user, 'isSuperadmin') && $user->isSuperadmin()) return;
+        $q->where('tenant_id', $user->tenant_id);
+    }
+
     private function authorizePerm(Request $request, string $module, string $action): void
     {
         $user = $request->user();
