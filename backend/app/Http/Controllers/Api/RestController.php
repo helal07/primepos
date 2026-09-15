@@ -101,7 +101,9 @@ class RestController extends Controller
         $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'edit');
 
-        $row = $modelClass::query()->findOrFail($id);
+        $q = $modelClass::query();
+        $this->scopeBusinessSettings($q, $resource, $request);
+        $row = $q->findOrFail($id);
         $data = $request->all();
         unset($data['id'], $data['tenant_id'], $data['created_at'], $data['updated_at']);
         $row->fill($data);
@@ -116,7 +118,9 @@ class RestController extends Controller
         $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'delete');
 
-        $row = $modelClass::query()->findOrFail($id);
+        $q = $modelClass::query();
+        $this->scopeBusinessSettings($q, $resource, $request);
+        $row = $q->findOrFail($id);
         $row->delete();
         return response()->json(['ok' => true]);
     }
@@ -147,6 +151,20 @@ class RestController extends Controller
             403,
             'Forbidden: superadmin only'
         );
+    }
+
+    /**
+     * business_settings is a shared table: tenant rows + global (tenant_id NULL)
+     * superadmin keys. Force per-tenant visibility so a tenant can never read,
+     * overwrite, or delete another tenant's settings (or the global CMS keys).
+     */
+    private function scopeBusinessSettings(Builder $q, string $resource, Request $request): void
+    {
+        if ($resource !== 'business_settings') return;
+        $user = $request->user();
+        abort_unless($user, 401);
+        if (method_exists($user, 'isSuperadmin') && $user->isSuperadmin()) return;
+        $q->where('tenant_id', $user->tenant_id);
     }
 
     private function authorizePerm(Request $request, string $module, string $action): void
