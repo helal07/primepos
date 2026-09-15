@@ -101,7 +101,9 @@ class RestController extends Controller
         $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'edit');
 
-        $row = $modelClass::query()->findOrFail($id);
+        $q = $modelClass::query();
+        $this->scopeBusinessSettings($q, $resource, $request);
+        $row = $q->findOrFail($id);
         $data = $request->all();
         unset($data['id'], $data['tenant_id'], $data['created_at'], $data['updated_at']);
         $row->fill($data);
@@ -116,7 +118,9 @@ class RestController extends Controller
         $this->authorizeResource($request, $cfg);
         $this->authorizePerm($request, $cfg['module'], 'delete');
 
-        $row = $modelClass::query()->findOrFail($id);
+        $q = $modelClass::query();
+        $this->scopeBusinessSettings($q, $resource, $request);
+        $row = $q->findOrFail($id);
         $row->delete();
         return response()->json(['ok' => true]);
     }
